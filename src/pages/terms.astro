@@ -1,0 +1,73 @@
+---
+import PolicyPage from '../components/PolicyPage.astro';
+
+const sections = [
+  {
+    heading: 'Acceptance',
+    paragraphs: ['When you use this portal, you agree to these terms. If you do not agree, do not use the portal.'],
+  },
+  {
+    heading: 'Who can use the portal',
+    items: [
+      'Any person can use the Public Verification page.',
+      'Only authorised officers of AICTE, institutions and universities can use the officer portals.',
+      'Only a registered student can use the Student portal.',
+    ],
+  },
+  {
+    heading: 'Your account',
+    items: [
+      'Keep your password secret. Do not share your account.',
+      'You are responsible for all actions done with your account.',
+      'Sign out when you finish, mainly on a shared computer.',
+      'Tell your administrator immediately if you think someone used your account.',
+    ],
+  },
+  {
+    heading: 'Correct use',
+    paragraphs: ['You must not:'],
+    items: [
+      'Upload data that you know is false.',
+      'Try to see data that you are not authorised to see.',
+      'Try to break, overload or test the security of the portal without written permission.',
+      'Use automated tools to copy data from the portal.',
+      'Use verification results for any purpose other than the one the student agreed to.',
+    ],
+  },
+  {
+    heading: 'Accuracy of data',
+    paragraphs: [
+      'Institutions and universities supply the data. They are responsible for its accuracy. AICTE makes reasonable efforts to keep the portal correct, but does not guarantee that all data is free from error.',
+    ],
+  },
+  {
+    heading: 'Availability',
+    paragraphs: ['We try to keep the portal available at all times. We can stop the portal for maintenance or for security reasons without notice.'],
+  },
+  {
+    heading: 'Liability',
+    paragraphs: [
+      'AICTE is not liable for any loss that comes from the use of this portal, from data supplied by others, or from the portal being unavailable, to the extent that the law permits.',
+    ],
+  },
+  {
+    heading: 'Suspension',
+    paragraphs: ['If you break these terms, we can suspend or close your account. We can also report the matter to the correct authority.'],
+  },
+  {
+    heading: 'Governing law',
+    paragraphs: ['These terms follow the laws of India. Only the courts in New Delhi can hear disputes about these terms.'],
+  },
+  {
+    heading: 'Changes',
+    paragraphs: ['We can change these terms. The date at the top of this page shows the last change.'],
+  },
+];
+---
+
+<PolicyPage
+  title="Terms of Use"
+  updated="28 October 2026"
+  intro="These terms tell you the rules for using the National Student Registry and Verification Portal."
+  sections={sections}
+/>

@@ -1,0 +1,39 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+export interface PolicySection {
+  heading: string;
+  paragraphs?: string[];
+  items?: string[];
+}
+
+interface Props {
+  title: string;
+  lang?: 'en' | 'hi';
+  updated: string;
+  intro: string;
+  sections: PolicySection[];
+}
+
+const { title, lang = 'en', updated, intro, sections } = Astro.props;
+const updatedLabel = lang === 'hi' ? 'अंतिम अद्यतन' : 'Last updated';
+---
+
+<Layout title={`${title} | SIH 2026 National Student Registry`} lang={lang}>
+  <article class="bg-white rounded border border-slate-200 p-6 sm:p-10 shadow-sm max-w-4xl mx-auto">
+    <h1 class="text-2xl font-bold text-[#0F2942] mb-1">{title}</h1>
+    <p class="text-xs text-slate-500 mb-6">{updatedLabel}: {updated}</p>
+    <p class="text-sm leading-relaxed text-slate-700 mb-8">{intro}</p>
+    {sections.map((s, i) => (
+      <section class="mb-7" aria-labelledby={`sec-${i}`}>
+        <h2 id={`sec-${i}`} class="text-base font-bold text-[#0F2942] mb-2">{i + 1}. {s.heading}</h2>
+        {s.paragraphs?.map((p) => <p class="text-sm leading-relaxed text-slate-700 mb-2">{p}</p>)}
+        {s.items && (
+          <ul class="list-disc pl-6 space-y-1 text-sm text-slate-700">
+            {s.items.map((it) => <li>{it}</li>)}
+          </ul>
+        )}
+      </section>
+    ))}
+  </article>
+</Layout>

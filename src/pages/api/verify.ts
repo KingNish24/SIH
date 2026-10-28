@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getDB } from '../../lib/db';
 import type { Student, Degree, Admission, Institution } from '../../lib/types';
+import { verifyDegree } from '../../lib/signing';
 
 export const POST: APIRoute = async ({ request, locals }) => {
   const startTime = Date.now();
@@ -56,18 +57,30 @@ export const POST: APIRoute = async ({ request, locals }) => {
       };
     });
 
-    const enrichedDegrees = degrees.map((d) => {
+    const enrichedDegrees = await Promise.all(degrees.map(async (d: any) => {
       const inst = institutions.find((i) => i.id === d.institution_id);
+      const signatureValid = await verifyDegree({
+        id: d.id,
+        apaar_id: d.apaar_id,
+        institution_id: d.institution_id,
+        degree_name: d.degree_name,
+        specialization: d.specialization,
+        cgpa: d.cgpa,
+        year_of_passing: d.year_of_passing,
+        issuing_authority: d.issuing_authority,
+        issued_at: d.issued_at,
+      }, d.signature, d.signing_key_id);
       return {
         ...d,
         institution_name: inst?.name || d.institution_id,
+        signatureValid,
       };
-    });
+    }));
 
     const elapsedMs = Date.now() - startTime;
 
     // 5. Log verification request
-    const reqId = `REQ-${Date.now().toString().slice(-4)}${Math.floor(Math.random() * 90 + 10)}`;
+    const reqId = `REQ-${crypto.randomUUID()}`;
     const verifier = verifier_name || 'Authorized Verifier (e.g. TCS / UPSC)';
     const reqPurpose = purpose || 'Employment / Higher Education Credential Verification';
 
@@ -114,7 +127,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
         totalDegrees: enrichedDegrees.length,
         revokedDegrees: enrichedDegrees.filter((d) => d.status === 'REVOKED').length,
         hasDuplicateEnrollment: enrichedAdmissions.some((a) => a.is_duplicate === 1),
-        cryptographicProofVerified: enrichedDegrees.every((d) => d.digital_signature_hash.startsWith('SHA256:')),
+        cryptographicProofVerified: enrichedDegrees.length > 0 && enrichedDegrees.every((d) => d.signatureValid),
+        unsignedOrInvalidDegrees: enrichedDegrees.filter((d) => !d.signatureValid).map((d) => d.id),
       },
     };
 

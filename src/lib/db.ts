@@ -383,6 +383,12 @@ class MemoryDBAdapter implements DatabaseAdapter {
     };
   }
 
+  async batch(statements: Array<{ run: () => Promise<any> }>): Promise<any[]> {
+    const out = [];
+    for (const s of statements) out.push(await s.run());
+    return out;
+  }
+
   private executeSelect(query: string, params: any[]): any[] {
     const upper = query.toUpperCase();
 
@@ -526,6 +532,18 @@ class MemoryDBAdapter implements DatabaseAdapter {
 
   private executeMutation(query: string, params: any[]): { success: boolean; meta?: any } {
     const upper = query.toUpperCase();
+
+    // ATOMIC QUOTA RESERVATION: params = [count, count, instId, count]
+    if (upper.includes('CURRENT_ENROLLMENT = CURRENT_ENROLLMENT + ?')) {
+      const n = Number(params[0]);
+      const inst = this.institutions.find((i) => i.id === params[2]);
+      if (!inst || inst.current_enrollment + n > inst.sanctioned_intake) {
+        return { success: true, meta: { changes: 0 } };
+      }
+      inst.current_enrollment += n;
+      inst.status = inst.current_enrollment >= inst.sanctioned_intake * 0.95 ? 'WARNING' : 'NORMAL';
+      return { success: true, meta: { changes: 1 } };
+    }
 
     // UPDATE INSTITUTIONS ENROLLMENT
     if (upper.includes('UPDATE INSTITUTIONS SET CURRENT_ENROLLMENT')) {
@@ -745,13 +763,19 @@ try {
   // Running in local Bun / Node dev environment
 }
 
+/** Cloudflare env bindings (null outside the Workers runtime). */
+export function getEnv(): Record<string, any> | null {
+  return cfEnv;
+}
+
 export function getDB(locals?: any): DatabaseAdapter {
-  try {
-    if (cfEnv?.DB) {
-      return cfEnv.DB as DatabaseAdapter;
-    }
-  } catch {
-    // Ignore and fallback
+  const db = cfEnv?.DB ?? locals?.runtime?.env?.DB;
+  if (db) {
+    return db as DatabaseAdapter;
+  }
+  // In-memory fallback is for local development only; never silently serve mock data in production.
+  if (cfEnv || import.meta.env.PROD) {
+    throw new Error('D1 binding "DB" is not configured. Refusing to fall back to in-memory database in production.');
   }
   return memoryDB;
 }

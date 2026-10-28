@@ -65,28 +65,68 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     const sanctionedCap = institution.sanctioned_intake;
     const currentEnrollment = institution.current_enrollment;
-    const incomingCount = students.length;
-    const projectedEnrollment = currentEnrollment + incomingCount;
-    const isOverrun = projectedEnrollment > sanctionedCap;
-    const excessSeats = Math.max(0, projectedEnrollment - sanctionedCap);
 
+    // 2. Validate payload up front (malformed APAARs are skipped, not counted against quota)
+    const MAX_BATCH = 1000;
+    if (students.length > MAX_BATCH) {
+      return new Response(JSON.stringify({ success: false, error: `Batch too large: max ${MAX_BATCH} students per sync` }), {
+        status: 413,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    const valid = students
+      .map((st) => ({ ...st, apaar: String(st.apaar_id).trim() }))
+      .filter((st) => /^\d{12}$/.test(st.apaar));
+    const incomingCount = valid.length;
+
+    if (incomingCount === 0) {
+      return new Response(JSON.stringify({ success: false, error: 'No valid 12-digit APAAR IDs in payload' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // 3. Atomically reserve seats: only succeeds if the cap is not exceeded (no read-then-write race)
+    const reserve = await db.prepare(
+      `UPDATE institutions
+         SET current_enrollment = current_enrollment + ?,
+             status = CASE WHEN current_enrollment + ? >= sanctioned_intake * 0.95 THEN 'WARNING' ELSE 'NORMAL' END
+       WHERE id = ? AND current_enrollment + ? <= sanctioned_intake`
+    ).bind(incomingCount, incomingCount, institutionId, incomingCount).run();
+
+    if (!reserve.meta || reserve.meta.changes !== 1) {
+      const available = Math.max(0, sanctionedCap - currentEnrollment);
+      return new Response(JSON.stringify({
+        success: false,
+        error: `Sanctioned intake exceeded: ${incomingCount} students requested, only ${available} seat(s) available (cap ${sanctionedCap}). Sync rejected.`,
+        data: {
+          institutionId,
+          currentEnrollment,
+          sanctionedCap,
+          requested: incomingCount,
+          available,
+          isOverrun: true,
+          excessSeats: Math.max(0, currentEnrollment + incomingCount - sanctionedCap),
+        },
+      }), {
+        status: 409,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // 4. Build inserts, flagging cross-campus duplicates
     const insertedStudents = [];
     const duplicateAlerts = [];
+    const statements = [];
+    const today = new Date().toISOString().split('T')[0];
 
-    // 2. Process each valid student
-    for (const st of students) {
-      const apaar = String(st.apaar_id).trim();
-      if (!/^\d{12}$/.test(apaar)) {
-        continue; // Skip malformed APAARs from syncing directly
-      }
-
-      // Check if this student is already enrolled in another institution
+    for (const st of valid) {
+      const apaar = st.apaar;
       const existingAdmissions = await db.prepare('SELECT * FROM admissions WHERE apaar_id = ?').bind(apaar).all();
       const crossEnrolled = existingAdmissions.results.some((a: any) => a.institution_id !== institutionId);
 
       const admissionStatus = crossEnrolled ? 'FLAGGED_DUPLICATE' : 'ENROLLED';
       const isDuplicate = crossEnrolled ? 1 : 0;
-
       const studentName = st.full_name || st.name || 'Candidate';
 
       if (crossEnrolled) {
@@ -97,44 +137,51 @@ export const POST: APIRoute = async ({ request, locals }) => {
         });
       }
 
-      // Insert or update student record
-      await db.prepare(
-        `INSERT OR REPLACE INTO students (apaar_id, full_name, dob, gender, email, phone, dpdp_consent_status)
-         VALUES (?, ?, ?, ?, ?, ?, COALESCE((SELECT dpdp_consent_status FROM students WHERE apaar_id = ?), 'PENDING'))`
-      ).bind(
-        apaar,
-        studentName,
-        st.dob || '2004-01-01',
-        st.gender || 'Not Specified',
-        st.email || `${apaar}@campus.edu.in`,
-        st.phone || '+91 90000 00000',
-        apaar
-      ).run();
-
-      // Insert admission
-      const admissionId = `ADM-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-      await db.prepare(
-        `INSERT INTO admissions (id, apaar_id, institution_id, program, batch_year, enrollment_date, status, is_duplicate)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-      ).bind(
-        admissionId,
-        apaar,
-        institutionId,
-        st.program || 'B.Tech Computer Science',
-        st.batch_year || 2024,
-        new Date().toISOString().split('T')[0],
-        admissionStatus,
-        isDuplicate
-      ).run();
+      statements.push(
+        db.prepare(
+          `INSERT OR REPLACE INTO students (apaar_id, full_name, dob, gender, email, phone, dpdp_consent_status)
+           VALUES (?, ?, ?, ?, ?, ?, COALESCE((SELECT dpdp_consent_status FROM students WHERE apaar_id = ?), 'PENDING'))`
+        ).bind(
+          apaar,
+          studentName,
+          st.dob || '2004-01-01',
+          st.gender || 'Not Specified',
+          st.email || `${apaar}@campus.edu.in`,
+          st.phone || '+91 90000 00000',
+          apaar
+        ),
+        db.prepare(
+          `INSERT INTO admissions (id, apaar_id, institution_id, program, batch_year, enrollment_date, status, is_duplicate)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(
+          `ADM-${crypto.randomUUID()}`,
+          apaar,
+          institutionId,
+          st.program || 'B.Tech Computer Science',
+          st.batch_year || 2024,
+          today,
+          admissionStatus,
+          isDuplicate
+        )
+      );
 
       insertedStudents.push({ apaar_id: apaar, full_name: studentName, status: admissionStatus });
     }
 
-    // 3. Update institution enrollment and status
-    const updatedStatus = isOverrun ? 'OVERRUN_RISK' : projectedEnrollment >= sanctionedCap * 0.95 ? 'WARNING' : 'NORMAL';
-    await db.prepare(
-      'UPDATE institutions SET current_enrollment = ?, status = ? WHERE id = ?'
-    ).bind(projectedEnrollment, updatedStatus, institutionId).run();
+    // 5. Insert everything in one batch (D1 batch is transactional); release seats on failure
+    try {
+      if (db.batch) {
+        await db.batch(statements);
+      } else {
+        for (const s of statements) await s.run();
+      }
+    } catch (err) {
+      await db.prepare('UPDATE institutions SET current_enrollment = current_enrollment - ? WHERE id = ?')
+        .bind(incomingCount, institutionId).run();
+      throw err;
+    }
+
+    const projectedEnrollment = currentEnrollment + incomingCount;
 
     return new Response(JSON.stringify({
       success: true,
@@ -143,13 +190,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
         previousEnrollment: currentEnrollment,
         currentEnrollment: projectedEnrollment,
         sanctionedCap,
-        isOverrun,
-        excessSeats,
+        isOverrun: false,
+        excessSeats: 0,
         syncedCount: insertedStudents.length,
         duplicateAlerts,
-        message: isOverrun
-          ? `WARNING: Sanctioned cap of ${sanctionedCap} seats exceeded! Current enrollment is ${projectedEnrollment} (+${excessSeats} excess). Regulatory risk trigger activated.`
-          : `Successfully synchronized ${insertedStudents.length} students to Cloudflare D1.`,
+        message: `Successfully synchronized ${insertedStudents.length} students to Cloudflare D1.`,
       },
     }), {
       status: 200,

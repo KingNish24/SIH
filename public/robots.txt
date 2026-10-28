@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /aicte
+Disallow: /institution
+Disallow: /university
+Disallow: /student
+
+Sitemap: https://sih.nish24.workers.dev/sitemap.xml

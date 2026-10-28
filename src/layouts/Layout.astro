@@ -2,10 +2,21 @@
 interface Props {
   title?: string;
   activeRole?: 'overview' | 'institution' | 'aicte' | 'university' | 'student' | 'verifier' | 'mandate';
+  lang?: 'en' | 'hi';
 }
 
-const { title = 'SIH 2026 | National Student Data Management & Verification Portal', activeRole = 'overview' } = Astro.props;
+const { title = 'SIH 2026 | National Student Data Management & Verification Portal', activeRole = 'overview', lang = 'en' } = Astro.props;
 const user = Astro.locals.user;
+
+// Language switcher: pages that have a Hindi version under /hi
+const BILINGUAL_PATHS = ['/', '/privacy', '/terms', '/accessibility', '/hyperlinking-policy'];
+const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
+const isHindi = lang === 'hi';
+const enPath = isHindi ? (currentPath.replace(/^\/hi/, '') || '/') : currentPath;
+const hasHindi = BILINGUAL_PATHS.includes(enPath);
+const hiHref = hasHindi ? (enPath === '/' ? '/hi' : `/hi${enPath}`) : '/hi';
+const enHref = hasHindi ? enPath : '/';
+const policyBase = isHindi ? '/hi' : '';
 
 const roleLabels: Record<string, string> = {
   AICTE_ADMIN: 'AICTE Regulatory Council',
@@ -48,7 +59,7 @@ if (!user) {
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={lang}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -148,11 +159,19 @@ if (!user) {
           <span class="text-slate-300">|</span>
 
           <!-- Language Indicator English / हिन्दी -->
-          <div class="flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded border border-slate-200 font-semibold text-slate-700 text-[11px]">
-            <span class="text-[#0F2942] font-bold">English</span>
-            <span class="text-slate-400">/</span>
-            <span class="text-slate-500 hover:text-slate-800 cursor-pointer" title="Switch Language">हिन्दी</span>
-          </div>
+          <nav class="flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded border border-slate-200 font-semibold text-slate-700 text-[11px]" aria-label="Language / भाषा">
+            {isHindi ? (
+              <a href={enHref} hreflang="en" lang="en" class="text-slate-500 hover:text-slate-800 underline-offset-2 hover:underline">English</a>
+            ) : (
+              <span class="text-[#0F2942] font-bold" aria-current="true">English</span>
+            )}
+            <span class="text-slate-400" aria-hidden="true">/</span>
+            {isHindi ? (
+              <span class="text-[#0F2942] font-bold" aria-current="true">हिन्दी</span>
+            ) : (
+              <a href={hiHref} hreflang="hi" lang="hi" class="text-slate-500 hover:text-slate-800 underline-offset-2 hover:underline">हिन्दी</a>
+            )}
+          </nav>
 
           <span class="text-slate-300">|</span>
 
@@ -373,7 +392,7 @@ if (!user) {
               <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
-              GIGW 3.0 Certified
+              Designed to GIGW 3.0
             </span>
 
             <!-- DPDP Act 2023 Statutory Badge -->
@@ -427,7 +446,7 @@ if (!user) {
               Technical Infrastructure
             </div>
             <p class="leading-relaxed mb-2">
-              Edge serverless deployment with client-side WebAssembly isolation. Zero unverified PII transmission.
+              Runs on Cloudflare Workers with a Cloudflare D1 database. Roster files are checked in your browser before upload.
             </p>
             <div class="inline-block bg-slate-800 text-slate-300 px-2.5 py-1 rounded text-[10px] font-mono border border-slate-700">
               System ID: SIH-AICTE-PROD-2026
@@ -440,13 +459,15 @@ if (!user) {
             &copy; 2026 Government of India &bull; All India Council for Technical Education (AICTE). All Rights Reserved.
           </div>
           <div class="flex items-center gap-4">
-            <span class="hover:text-slate-300 cursor-pointer">Privacy Policy</span>
-            <span>&bull;</span>
-            <span class="hover:text-slate-300 cursor-pointer">Terms of Use</span>
-            <span>&bull;</span>
-            <span class="hover:text-slate-300 cursor-pointer">Hyperlinking Policy</span>
-            <span>&bull;</span>
-            <span class="hover:text-slate-300 cursor-pointer">Accessibility Statement</span>
+            <a href={`${policyBase}/privacy`} class="hover:text-slate-300 hover:underline">{isHindi ? 'गोपनीयता नीति' : 'Privacy Policy'}</a>
+            <span aria-hidden="true">&bull;</span>
+            <a href={`${policyBase}/terms`} class="hover:text-slate-300 hover:underline">{isHindi ? 'उपयोग की शर्तें' : 'Terms of Use'}</a>
+            <span aria-hidden="true">&bull;</span>
+            <a href={`${policyBase}/hyperlinking-policy`} class="hover:text-slate-300 hover:underline">{isHindi ? 'हाइपरलिंकिंग नीति' : 'Hyperlinking Policy'}</a>
+            <span aria-hidden="true">&bull;</span>
+            <a href={`${policyBase}/accessibility`} class="hover:text-slate-300 hover:underline">{isHindi ? 'सुगम्यता विवरण' : 'Accessibility Statement'}</a>
+            <span aria-hidden="true">&bull;</span>
+            <a href="/sitemap.xml" class="hover:text-slate-300 hover:underline">{isHindi ? 'साइटमैप' : 'Sitemap'}</a>
           </div>
         </div>
       </div>

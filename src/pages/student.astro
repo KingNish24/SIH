@@ -179,16 +179,28 @@ const studentApaar = user?.role === 'STUDENT' ? user.apaar_id : null;
     </div>
   </div>
 
-  <script is:inline>
-    const selector = document.getElementById('studentSelector');
+  <script>
+    import { startRegistration, startAuthentication, browserSupportsWebAuthn } from '@simplewebauthn/browser';
+
+    const toast = (msg: string, kind: string) => (window as any).showToast?.(msg, kind);
+    const selector = document.getElementById('studentSelector') as HTMLSelectElement | null;
     const nameDisplay = document.getElementById('studentNameDisplay');
     const emailDisplay = document.getElementById('studentEmailDisplay');
     const phoneDisplay = document.getElementById('studentPhoneDisplay');
     const apaarDisplay = document.getElementById('studentApaarDisplay');
-    const toggleBtn = document.getElementById('toggleConsentBtn');
-    const registerBtn = document.getElementById('registerPasskeyBtn');
+    const toggleBtn = document.getElementById('toggleConsentBtn') as HTMLButtonElement | null;
+    const registerBtn = document.getElementById('registerPasskeyBtn') as HTMLButtonElement | null;
 
-    function updateConsentUI(status) {
+    async function postJSON(url: string, body: unknown) {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      return res.json();
+    }
+
+    function updateConsentUI(status: string) {
       const consentBadge = document.getElementById('consentBadge');
       if (status === 'GRANTED') {
         if (toggleBtn) {
@@ -221,7 +233,7 @@ const studentApaar = user?.role === 'STUDENT' ? user.apaar_id : null;
       const avatar = document.getElementById('studentAvatar');
       if (avatar && opt.dataset.name) {
         const parts = opt.dataset.name.split(' ');
-        avatar.textContent = parts.map(p => p[0]).join('').slice(0, 2).toUpperCase();
+        avatar.textContent = parts.map((p) => p[0]).join('').slice(0, 2).toUpperCase();
       }
       updateConsentUI(opt.dataset.consent || 'PENDING');
     });
@@ -230,39 +242,43 @@ const studentApaar = user?.role === 'STUDENT' ? user.apaar_id : null;
       updateConsentUI(selector.selectedOptions[0].dataset.consent || 'GRANTED');
     }
 
+    // Consent grant/revoke requires a successful passkey assertion, verified server-side.
     toggleBtn?.addEventListener('click', async () => {
       const opt = selector ? selector.selectedOptions[0] : null;
       const apaar = selector ? selector.value : '';
       if (!apaar) return;
+      if (!browserSupportsWebAuthn()) {
+        toast('This browser does not support passkeys (WebAuthn).', 'error');
+        return;
+      }
 
-      const currentConsent = opt ? opt.dataset.consent : (toggleBtn.textContent.includes('Active') ? 'GRANTED' : 'REVOKED');
+      const currentConsent = opt ? opt.dataset.consent : (toggleBtn.textContent?.includes('Active') ? 'GRANTED' : 'REVOKED');
       const targetConsent = currentConsent === 'GRANTED' ? 'REVOKED' : 'GRANTED';
 
       toggleBtn.disabled = true;
       try {
-        const res = await fetch('/api/student/consent', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            apaar_id: apaar,
-            consent_status: targetConsent,
-          }),
-        });
+        const ch = await postJSON('/api/passkey/verify', { action: 'GET_CHALLENGE', apaar_id: apaar });
+        if (!ch.success) throw new Error(ch.error || 'Could not get passkey challenge. Register a passkey first.');
 
-        const data = await res.json();
-        if (data.success) {
-          if (opt) opt.dataset.consent = targetConsent;
-          updateConsentUI(targetConsent);
-          if (targetConsent === 'REVOKED') {
-            window.showToast('DPDP Consent REVOKED in Central D1 Registry. Third-party verifiers are now blocked from querying your records.', 'warning');
-          } else {
-            window.showToast('DPDP Consent GRANTED in Central D1 Registry. Third-party verifiers are authorized.', 'success');
-          }
+        const assertion = await startAuthentication({ optionsJSON: ch.options });
+
+        const data = await postJSON('/api/passkey/verify', {
+          action: 'COMPLETE_VERIFICATION',
+          apaar_id: apaar,
+          assertion,
+          consent_status: targetConsent,
+        });
+        if (!data.success) throw new Error(data.error || 'Server rejected passkey assertion');
+
+        if (opt) opt.dataset.consent = targetConsent;
+        updateConsentUI(targetConsent);
+        if (targetConsent === 'REVOKED') {
+          toast('DPDP Consent REVOKED in Central D1 Registry. Third-party verifiers are now blocked from querying your records.', 'warning');
         } else {
-          window.showToast('Error updating consent: ' + (data.error || 'Server rejected request'), 'error');
+          toast('DPDP Consent GRANTED in Central D1 Registry. Third-party verifiers are authorized.', 'success');
         }
-      } catch (err) {
-        window.showToast('Network error updating DPDP consent.', 'error');
+      } catch (err: any) {
+        toast('Error updating consent: ' + (err?.message || 'Passkey verification failed'), 'error');
       } finally {
         toggleBtn.disabled = false;
       }
@@ -271,7 +287,11 @@ const studentApaar = user?.role === 'STUDENT' ? user.apaar_id : null;
     registerBtn?.addEventListener('click', async () => {
       const apaar = selector ? selector.value : '';
       if (!apaar) {
-        window.showToast('Please select a candidate first.', 'error');
+        toast('Please select a candidate first.', 'error');
+        return;
+      }
+      if (!browserSupportsWebAuthn()) {
+        toast('This browser does not support passkeys (WebAuthn).', 'error');
         return;
       }
 
@@ -279,90 +299,36 @@ const studentApaar = user?.role === 'STUDENT' ? user.apaar_id : null;
       registerBtn.innerHTML = '<span>Communicating with Hardware Authenticator...</span>';
 
       try {
-        // Step 1: Request WebAuthn options from server
-        const optRes = await fetch('/api/passkey/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'GET_OPTIONS', apaar_id: apaar }),
-        });
-        const optData = await optRes.json();
+        const optData = await postJSON('/api/passkey/register', { action: 'GET_OPTIONS', apaar_id: apaar });
         if (!optData.success || !optData.options) {
           throw new Error(optData.error || 'Failed to fetch registration options');
         }
 
-        const options = optData.options;
-        let credentialId = null;
-        let deviceType = 'Platform Biometric Hardware (WebAuthn)';
+        const credential = await startRegistration({ optionsJSON: optData.options });
+        const deviceType = credential.authenticatorAttachment === 'platform'
+          ? 'Platform Biometric Passkey (FIDO2)'
+          : 'Roaming Security Key / Passkey (FIDO2)';
 
-        // Step 2: Invoke real navigator.credentials.create()
-        if (window.PublicKeyCredential && navigator.credentials?.create) {
-          try {
-            const challengeBytes = Uint8Array.from(atob(options.challenge), c => c.charCodeAt(0));
-            const userIdBytes = Uint8Array.from(atob(options.user.id), c => c.charCodeAt(0));
-
-            const creationOptions = {
-              publicKey: {
-                challenge: challengeBytes,
-                rp: options.rp,
-                user: {
-                  id: userIdBytes,
-                  name: options.user.name,
-                  displayName: options.user.displayName,
-                },
-                pubKeyCredParams: options.pubKeyCredParams,
-                authenticatorSelection: options.authenticatorSelection,
-                timeout: options.timeout,
-                attestation: options.attestation,
-              },
-            };
-
-            const cred = await navigator.credentials.create(creationOptions);
-            if (cred && cred.id) {
-              credentialId = cred.id;
-              deviceType = 'FIDO2 / WebAuthn Biometric Passkey';
-            }
-          } catch (credErr) {
-            console.warn('Hardware WebAuthn prompt dismissed or unsupported, engaging secure fallback:', credErr);
-            credentialId = 'cred_bio_' + apaar.slice(-6) + '_' + Math.floor(Math.random() * 10000);
-            deviceType = 'WebAuthn Compatible Passkey (Software Protected)';
-          }
-        } else {
-          credentialId = 'cred_bio_' + apaar.slice(-6) + '_' + Math.floor(Math.random() * 10000);
-          deviceType = 'Platform Biometric Emulated (FIDO2)';
-        }
-
-        if (!credentialId) {
-          credentialId = 'cred_bio_' + apaar.slice(-6) + '_' + Math.floor(Math.random() * 10000);
-        }
-
-        // Step 3: Complete registration on server
-        const regRes = await fetch('/api/passkey/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'COMPLETE_REGISTRATION',
-            apaar_id: apaar,
-            credential: { id: credentialId },
-            device_type: deviceType,
-          }),
+        const regData = await postJSON('/api/passkey/register', {
+          action: 'COMPLETE_REGISTRATION',
+          apaar_id: apaar,
+          credential,
+          device_type: deviceType,
         });
 
-        const regData = await regRes.json();
-        if (regData.success) {
-          window.showToast('Passkey hardware credentials registered and bound to student APAAR in Central D1 Registry.', 'success');
-          const opt = selector?.selectedOptions[0];
-          if (opt) {
-            opt.dataset.consent = 'GRANTED';
-            opt.dataset.haspasskey = 'true';
-          }
-          updateConsentUI('GRANTED');
-          const passkeyDisplay = document.getElementById('passkeyDeviceDisplay');
-          if (passkeyDisplay) passkeyDisplay.textContent = deviceType;
-        } else {
-          window.showToast('Passkey registration error: ' + (regData.error || 'Server error'), 'error');
+        if (!regData.success) throw new Error(regData.error || 'Server error');
+
+        toast('Passkey hardware credentials registered and bound to student APAAR in Central D1 Registry.', 'success');
+        const opt = selector?.selectedOptions[0];
+        if (opt) {
+          opt.dataset.consent = 'GRANTED';
+          opt.dataset.haspasskey = 'true';
         }
-      } catch (err) {
-        window.showToast('Passkey registration error: ' + err.message, 'error');
+        updateConsentUI('GRANTED');
+        const passkeyDisplay = document.getElementById('passkeyDeviceDisplay');
+        if (passkeyDisplay) passkeyDisplay.textContent = deviceType;
+      } catch (err: any) {
+        toast('Passkey registration error: ' + (err?.message || 'Unknown error'), 'error');
       } finally {
         registerBtn.disabled = false;
         registerBtn.innerHTML = '<span>Bind Hardware Biometric Passkey</span>';

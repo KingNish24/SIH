@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getDB } from '../../../lib/db';
 import type { Degree } from '../../../lib/types';
+import { canonicalDegree, signDegree, type SignableDegree } from '../../../lib/signing';
 
 export const GET: APIRoute = async ({ url, locals }) => {
   try {
@@ -47,31 +48,45 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     const db = getDB(locals);
-    const degreeId = `DEG-${year_of_passing || 2024}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const degreeId = `DEG-${crypto.randomUUID()}`;
     const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
 
-    // Generate genuine 64-character SHA-256 digital stamp using Web Crypto API
-    const stampPayload = `${degreeId}|${apaar_id}|${institution_id || 'INST-001'}|${degree_name}|${specialization || 'General'}|${cgpa}|${year_of_passing}|${issuing_authority}|${now}`;
-    const digestBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(stampPayload));
+    const signable: SignableDegree = {
+      id: degreeId,
+      apaar_id: String(apaar_id),
+      institution_id: institution_id || 'INST-001',
+      degree_name: String(degree_name),
+      specialization: specialization || 'General',
+      cgpa: Number(cgpa) || 8.0,
+      year_of_passing: Number(year_of_passing) || 2024,
+      issuing_authority: String(issuing_authority),
+      issued_at: now,
+    };
+    const canonical = canonicalDegree(signable);
+    const digestBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(canonical));
     const digestHex = Array.from(new Uint8Array(digestBuffer))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
     const sigHash = `SHA256:${digestHex}`;
+    // Ed25519 signature over canonical JSON (fails closed if key is missing)
+    const { signature, keyId } = await signDegree(signable);
 
     await db.prepare(
-      `INSERT INTO degrees (id, apaar_id, institution_id, degree_name, specialization, cgpa, year_of_passing, status, issuing_authority, issued_at, digital_signature_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'ISSUED', ?, ?, ?)`
+      `INSERT INTO degrees (id, apaar_id, institution_id, degree_name, specialization, cgpa, year_of_passing, status, issuing_authority, issued_at, digital_signature_hash, signature, signing_key_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'ISSUED', ?, ?, ?, ?, ?)`
     ).bind(
-      degreeId,
-      apaar_id,
-      institution_id || 'INST-001',
-      degree_name,
-      specialization || 'General',
-      Number(cgpa) || 8.0,
-      Number(year_of_passing) || 2024,
-      issuing_authority,
-      now,
-      sigHash
+      signable.id,
+      signable.apaar_id,
+      signable.institution_id,
+      signable.degree_name,
+      signable.specialization,
+      signable.cgpa,
+      signable.year_of_passing,
+      signable.issuing_authority,
+      signable.issued_at,
+      sigHash,
+      signature,
+      keyId
     ).run();
 
     return new Response(JSON.stringify({
@@ -84,6 +99,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
         status: 'ISSUED',
         issued_at: now,
         digital_signature_hash: sigHash,
+        signature,
+        signing_key_id: keyId,
       },
     }), {
       status: 201,

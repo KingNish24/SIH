@@ -1,0 +1,51 @@
+---
+import PolicyPage from '../components/PolicyPage.astro';
+
+const sections = [
+  {
+    heading: 'Our target',
+    paragraphs: [
+      'We want all persons, including persons with disabilities, to use this portal. Our target is Level AA of the Web Content Accessibility Guidelines (WCAG) 2.1 and the Guidelines for Indian Government Websites (GIGW) 3.0.',
+    ],
+  },
+  {
+    heading: 'Features',
+    items: [
+      'A "Skip to main content" link at the top of each page.',
+      'Text size controls (A-, A, A+) in the top bar.',
+      'All functions work with a keyboard. Focus is shown with a clear orange outline.',
+      'Images have text alternatives.',
+      'Pages use correct headings, labels and landmarks for screen readers.',
+      'Messages from the portal are read out by screen readers.',
+      'Content is in English and Hindi.',
+    ],
+  },
+  {
+    heading: 'Known limits',
+    items: [
+      'Some charts on officer dashboards do not yet have a full text alternative.',
+      'Some uploaded files from institutions may not be accessible.',
+    ],
+    paragraphs: ['We are working to correct these limits.'],
+  },
+  {
+    heading: 'Screen readers',
+    paragraphs: ['The portal is made to work with screen readers such as NVDA (Windows) and TalkBack (Android), and with the latest versions of Chrome, Edge, Firefox and Safari. A full audit by an independent tester is not yet done.'],
+  },
+  {
+    heading: 'Give feedback',
+    paragraphs: [
+      'If you cannot use a part of this portal, tell us. Give the page address and the problem. We will reply within 15 working days.',
+      'E-mail: [accessibility contact e-mail — to be notified]',
+      'Address: All India Council for Technical Education, Nelson Mandela Marg, Vasant Kunj, New Delhi-110070',
+    ],
+  },
+];
+---
+
+<PolicyPage
+  title="Accessibility Statement"
+  updated="28 October 2026"
+  intro="This statement tells you how accessible this portal is, what its known limits are and how to tell us about a problem."
+  sections={sections}
+/>

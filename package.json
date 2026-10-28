@@ -10,18 +10,24 @@
     "build:cf": "BUILD_CF=true astro build",
     "preview": "astro preview",
     "db:init": "wrangler d1 execute vidya-db --local --file=./db/schema.sql",
-    "db:seed": "wrangler d1 execute vidya-db --local --file=./db/seed.sql"
+    "db:seed": "wrangler d1 execute vidya-db --local --file=./db/seed.sql",
+    "test": "bun test tests/unit",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.2",
     "@astrojs/node": "^11.1.9",
     "@astrojs/tailwind": "^6.0.2",
+    "@simplewebauthn/browser": "^14.0.0",
+    "@simplewebauthn/server": "^14.0.3",
     "astro": "^7.4.2",
     "lucide-astro": "^0.556.0",
     "tailwindcss": "^3.4.17"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@types/bun": "latest",
     "wrangler": "^4.154.0"
   }
 }
+

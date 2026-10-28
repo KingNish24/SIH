@@ -1,91 +1,55 @@
 import type { APIRoute } from 'astro';
 import { getDB } from '../../../lib/db';
+import { startAuthentication, verifyAssertion } from '../../../lib/webauthn';
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+
+/**
+ * GET_CHALLENGE -> authentication options (challenge stored single-use in KV, 120s TTL)
+ * COMPLETE_VERIFICATION -> verifies assertion server-side, then sets consent to
+ *   `consent_status` (GRANTED | REVOKED; default GRANTED).
+ */
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
-    const body = await request.json();
-    const { action, apaar_id, assertion } = body;
-
+    const { action, apaar_id, assertion, consent_status } = await request.json();
+    if (!apaar_id) return json({ success: false, error: 'apaar_id required' }, 400);
     const db = getDB(locals);
 
     if (action === 'GET_CHALLENGE') {
-      if (!apaar_id) {
-        return new Response(JSON.stringify({ success: false, error: 'apaar_id required' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-
-      const credRes = await db.prepare('SELECT * FROM passkey_credentials WHERE apaar_id = ?').bind(apaar_id).all();
-      const credentials = credRes.results;
-
-      const hostname = new URL(request.url).hostname;
-      const challenge = btoa(`vidya_auth_challenge_${Date.now()}_${Math.random()}`);
-      const options = {
-        challenge,
-        timeout: 60000,
-        rpId: hostname,
-        allowCredentials: credentials.map((c: any) => ({
-          id: c.id,
-          type: 'public-key',
-        })),
-        userVerification: 'required',
-      };
-
-      return new Response(JSON.stringify({
-        success: true,
-        options,
-        hasRegisteredPasskey: credentials.length > 0,
-      }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const { options, hasRegisteredPasskey } = await startAuthentication(db, request, apaar_id);
+      if (!hasRegisteredPasskey) return json({ success: false, error: 'No passkey registered for this student', hasRegisteredPasskey }, 404);
+      return json({ success: true, options, hasRegisteredPasskey });
     }
 
     if (action === 'COMPLETE_VERIFICATION') {
-      if (!apaar_id) {
-        return new Response(JSON.stringify({ success: false, error: 'apaar_id required' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+      const target = consent_status || 'GRANTED';
+      if (!['GRANTED', 'REVOKED'].includes(target)) {
+        return json({ success: false, error: 'consent_status must be GRANTED or REVOKED' }, 400);
+      }
+      const student: any = (await db.prepare('SELECT * FROM students WHERE apaar_id = ?').bind(apaar_id).all()).results[0];
+      if (!student) return json({ success: false, error: 'Student not found' }, 404);
+
+      try {
+        await verifyAssertion(db, request, apaar_id, assertion);
+      } catch (e: any) {
+        return json({ success: false, authenticated: false, error: e.message }, 401);
       }
 
-      // Check student
-      const studentRes = await db.prepare('SELECT * FROM students WHERE apaar_id = ?').bind(apaar_id).all();
-      const student = studentRes.results[0];
-      if (!student) {
-        return new Response(JSON.stringify({ success: false, error: 'Student not found' }), {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
+      await db.prepare('UPDATE students SET dpdp_consent_status = ? WHERE apaar_id = ?').bind(target, apaar_id).run();
 
-      // Update student consent status to GRANTED
-      await db.prepare('UPDATE students SET dpdp_consent_status = ? WHERE apaar_id = ?')
-        .bind('GRANTED', apaar_id)
-        .run();
-
-      return new Response(JSON.stringify({
+      return json({
         success: true,
         authenticated: true,
         studentName: student.full_name,
         apaar_id,
-        dpdp_consent_status: 'GRANTED',
+        dpdp_consent_status: target,
         verified_at: new Date().toISOString(),
-      }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    return new Response(JSON.stringify({ success: false, error: 'Invalid action' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return json({ success: false, error: 'Invalid action' }, 400);
   } catch (error: any) {
-    return new Response(JSON.stringify({ success: false, error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return json({ success: false, error: error.message }, 500);
   }
 };

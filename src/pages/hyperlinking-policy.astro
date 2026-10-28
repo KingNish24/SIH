@@ -1,0 +1,36 @@
+---
+import PolicyPage from '../components/PolicyPage.astro';
+
+const sections = [
+  {
+    heading: 'Links to other websites',
+    paragraphs: [
+      'This portal has links to other websites, for example APAAR, DigiLocker and AICTE. We give these links for your convenience.',
+      'We are not responsible for the content or the availability of other websites. A link does not mean that we approve the website. Other websites can have different privacy policies.',
+    ],
+  },
+  {
+    heading: 'Links to this portal',
+    paragraphs: [
+      'You do not need permission to link to the public pages of this portal. Please tell us about your link.',
+    ],
+    items: [
+      'Do not show our pages inside frames on your website.',
+      'Open our pages in a new browser window or tab.',
+      'Do not link to the officer or student portals. These need a sign in.',
+      'Do not use the State Emblem or the AICTE logo without permission.',
+    ],
+  },
+  {
+    heading: 'Contact',
+    paragraphs: ['All India Council for Technical Education, Nelson Mandela Marg, Vasant Kunj, New Delhi-110070.'],
+  },
+];
+---
+
+<PolicyPage
+  title="Hyperlinking Policy"
+  updated="28 October 2026"
+  intro="This policy tells you about links from this portal to other websites, and about links from other websites to this portal."
+  sections={sections}
+/>

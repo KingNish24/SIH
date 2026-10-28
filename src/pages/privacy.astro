@@ -1,0 +1,100 @@
+---
+import PolicyPage from '../components/PolicyPage.astro';
+
+const sections = [
+  {
+    heading: 'Who we are',
+    paragraphs: [
+      'This portal is the National Student Registry and Verification Portal. It is a Smart India Hackathon 2026 project for the All India Council for Technical Education (AICTE). For this portal, AICTE is the Data Fiduciary under the Digital Personal Data Protection Act, 2023 (DPDP Act).',
+    ],
+  },
+  {
+    heading: 'Data that we collect',
+    items: [
+      'Student data from institutions: name, APAAR ID, programme, year of admission, institution code and enrolment status.',
+      'Contact data, if the institution gives it: e-mail address and mobile number.',
+      'Degree data from universities: degree type, year, result and revocation status.',
+      'Account data for officers and students: user name, role, institution code and a salted password hash. We do not keep your password in plain text.',
+      'Session data: a random session token in an HTTP-only cookie, and the time it expires.',
+      'Audit data: what action a user did, and when. We keep this to stop misuse.',
+    ],
+  },
+  {
+    heading: 'Why we use your data (purpose)',
+    items: [
+      'To keep one correct record of each student in AICTE approved institutions.',
+      'To find duplicate enrolment and intake over the approved limit.',
+      'To let a university issue and revoke degrees.',
+      'To let an employer or other verifier check a degree, only with student consent.',
+      'To keep the portal safe and to answer complaints.',
+    ],
+    paragraphs: ['We do not use your data for advertising. We do not sell your data.'],
+  },
+  {
+    heading: 'Consent',
+    paragraphs: [
+      'A verifier can see your degree details only when you give consent in the Student portal. You can give consent for one verifier and for a fixed time.',
+      'You can withdraw consent at any time in the Student portal. After you withdraw consent, the verifier cannot see your data again. Withdrawal does not change checks that were done before.',
+      'Some data is processed without consent because the law permits it for a legitimate use by the State (Section 7 of the DPDP Act), for example the statutory record of enrolment.',
+    ],
+  },
+  {
+    heading: 'How we show data',
+    paragraphs: [
+      'The portal masks personal data on public screens. For example, an APAAR ID shows as XXXX-XXXX-1234. Only an authorised officer of your own institution or university can see full details.',
+    ],
+  },
+  {
+    heading: 'How long we keep data (retention)',
+    items: [
+      'Enrolment and degree records: as long as the law and AICTE rules need them.',
+      'Consent records: for the time of consent, and then 3 years as proof.',
+      'Session data: until you sign out or the session expires (maximum 7 days).',
+      'Audit logs: 1 year, unless an inquiry needs them for more time.',
+    ],
+  },
+  {
+    heading: 'Your rights',
+    items: [
+      'Right to get a summary of your personal data and how we use it.',
+      'Right to correct, complete or update your data.',
+      'Right to erase data that we no longer need, if the law permits.',
+      'Right to make a complaint (grievance redressal).',
+      'Right to nominate a person to use your rights if you die or cannot act.',
+    ],
+  },
+  {
+    heading: 'Security',
+    paragraphs: [
+      'We use HTTPS for all traffic. Passwords are hashed with PBKDF2 and a random salt. Each institution can see only its own data. If a personal data breach occurs, we will tell the Data Protection Board of India and the affected persons, as the DPDP Act requires.',
+    ],
+  },
+  {
+    heading: 'Cookies',
+    paragraphs: [
+      'We use one necessary cookie (vidya_session) to keep you signed in. We do not use tracking or advertising cookies. The text size setting is kept in your browser local storage only.',
+    ],
+  },
+  {
+    heading: 'Grievance Officer',
+    paragraphs: [
+      'If you have a complaint about your personal data, contact the Grievance Officer. We will reply within 30 days.',
+      'Name: [Grievance Officer name — to be notified by AICTE]',
+      'Address: All India Council for Technical Education, Nelson Mandela Marg, Vasant Kunj, New Delhi-110070',
+      'E-mail: [grievance e-mail — to be notified]',
+      'If you are not satisfied with our reply, you can complain to the Data Protection Board of India.',
+    ],
+  },
+  {
+    heading: 'Changes to this policy',
+    paragraphs: ['We can change this policy. We will show the new date at the top of this page.'],
+  },
+];
+---
+
+<PolicyPage
+  title="Privacy Policy"
+  updated="28 October 2026"
+  intro="This policy tells you what personal data this portal collects, why we collect it, how long we keep it and what your rights are. It follows the Digital Personal Data Protection Act, 2023."
+  sections={sections}
+/>
