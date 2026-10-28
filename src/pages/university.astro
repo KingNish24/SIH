@@ -1,0 +1,335 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getDB } from '../lib/db';
+import type { Institution, Degree, Student } from '../lib/types';
+import { maskApaar, maskName } from '../lib/types';
+
+const db = getDB(Astro.locals);
+
+const instRes = await db.prepare('SELECT * FROM institutions').bind().all<Institution>();
+const institutions = instRes.results || [];
+
+const degRes = await db.prepare('SELECT * FROM degrees ORDER BY issued_at DESC').bind().all<Degree>();
+const rawDegrees = degRes.results || [];
+
+const stuRes = await db.prepare('SELECT * FROM students').bind().all<Student>();
+const students = stuRes.results || [];
+
+const degrees = rawDegrees.map((d) => {
+  const st = students.find((s) => s.apaar_id === d.apaar_id);
+  const inst = institutions.find((i) => i.id === d.institution_id);
+  return {
+    ...d,
+    student_name: st?.full_name ? maskName(st.full_name) : 'Candidate ' + d.apaar_id.slice(-4),
+    institution_name: inst?.name || d.institution_id,
+  };
+});
+---
+
+<Layout title="SIH 2026 | Affiliating University Degree Provenance" activeRole="university">
+  <div class="space-y-6">
+    <!-- Header -->
+    <div class="border-b border-slate-200 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div>
+        <div class="text-xs font-semibold text-[#1E40AF] uppercase tracking-wider mb-1">
+          Affiliating University Module &bull; Code UNIV-03
+        </div>
+        <h1 class="text-xl sm:text-2xl font-bold text-[#0F2942]">
+          Academic Degree Provenance & Revocation Ledger
+        </h1>
+        <p class="text-xs text-slate-600 mt-0.5">
+          Permanent degree anchoring to student APAAR IDs with instant statutory revocation capabilities.
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <a
+          href="#issueDegreeSection"
+          class="px-3.5 py-1.5 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white text-xs font-semibold transition-colors"
+        >
+          Issue Degree Record
+        </a>
+      </div>
+    </div>
+
+    <!-- Affiliated Institutions Status -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {institutions.map((i) => (
+        <div class="bg-white border border-slate-200 rounded p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-mono font-bold text-slate-700">{i.code}</span>
+            <span class={`text-[10px] font-bold px-2 py-0.5 rounded ${i.current_enrollment > i.sanctioned_intake ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'}`}>
+              {i.current_enrollment > i.sanctioned_intake ? 'OVERRUN DETECTED' : 'AFFILIATED'}
+            </span>
+          </div>
+          <h3 class="text-xs font-bold text-slate-900 truncate">{i.name}</h3>
+          <div class="mt-2 flex items-center justify-between text-[11px] text-slate-500 font-mono">
+            <span>Enrolled: <strong>{i.current_enrollment} / {i.sanctioned_intake}</strong></span>
+            <span>Risk Score: <strong>{i.risk_score}%</strong></span>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <!-- Degrees Ledger Table -->
+    <div class="bg-white border border-slate-200 rounded shadow-sm">
+      <div class="p-4 border-b border-slate-200">
+        <h2 class="text-xs font-bold text-[#0F2942] uppercase tracking-wider">
+          University Degree Registry ({degrees.length} Records in Central D1)
+        </h2>
+        <p class="text-[11px] text-slate-500 mt-0.5">
+          Each degree is cryptographically bound to a 12-digit APAAR with SHA-256 digital stamp.
+        </p>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+            <tr>
+              <th class="p-3">Degree ID</th>
+              <th class="p-3">Candidate & APAAR (Masked)</th>
+              <th class="p-3">Degree & Specialization</th>
+              <th class="p-3">Graduation</th>
+              <th class="p-3">Registry Status</th>
+              <th class="p-3">SHA-256 Hash</th>
+              <th class="p-3 text-right">Administrative Action</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 text-slate-800">
+            {degrees.map((d) => (
+              <tr class="hover:bg-slate-50">
+                <td class="p-3 font-mono font-bold text-slate-900">{d.id}</td>
+                <td class="p-3">
+                  <div class="font-medium text-slate-900">{d.student_name}</div>
+                  <div class="text-[11px] font-mono text-slate-500">{maskApaar(d.apaar_id)}</div>
+                </td>
+                <td class="p-3">
+                  <div class="font-medium text-slate-900">{d.degree_name}</div>
+                  <div class="text-[11px] text-slate-500">{d.specialization}</div>
+                </td>
+                <td class="p-3 font-mono">
+                  <div>CGPA: {d.cgpa}</div>
+                  <div class="text-[11px] text-slate-500">Year: {d.year_of_passing}</div>
+                </td>
+                <td class="p-3">
+                  {d.status === 'ISSUED' ? (
+                    <span class="bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded text-[11px] border border-emerald-200">
+                      ISSUED (VALID)
+                    </span>
+                  ) : (
+                    <div>
+                      <span class="bg-red-100 text-red-800 font-semibold px-2 py-0.5 rounded text-[11px] border border-red-200">
+                        REVOKED
+                      </span>
+                      {d.revocation_reason && (
+                        <div class="text-[10px] text-red-700 font-medium mt-1 max-w-xs leading-tight">
+                          {d.revocation_reason}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </td>
+                <td class="p-3 font-mono text-[10px] text-slate-500 max-w-xs truncate" title={d.digital_signature_hash}>
+                  {d.digital_signature_hash.slice(0, 22)}...
+                </td>
+                <td class="p-3 text-right">
+                  {d.status === 'ISSUED' ? (
+                    <button
+                      type="button"
+                      onclick={`revokeDegreePrompt('${d.id}')`}
+                      class="px-2.5 py-1 rounded bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 font-semibold text-[11px] transition-colors"
+                    >
+                      Revoke Degree
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onclick={`reinstateDegreePrompt('${d.id}')`}
+                      class="px-2.5 py-1 rounded bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-700 font-semibold text-[11px] transition-colors"
+                    >
+                      Reinstate Degree
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Issue Degree Section -->
+    <div id="issueDegreeSection" class="bg-white border border-slate-200 rounded p-6 shadow-sm">
+      <h2 class="text-xs font-bold text-[#0F2942] uppercase tracking-wider mb-2">
+        Issue New Degree Record
+      </h2>
+      <p class="text-xs text-slate-600 mb-4">
+        Bind academic degree to student 12-digit APAAR ID with cryptographic SHA-256 digital stamp.
+      </p>
+
+      <form id="issueDegreeForm" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Candidate APAAR ID (12 Digits):</label>
+          <input
+            type="text"
+            id="degApaar"
+            required
+            pattern="[0-9]{12}"
+            placeholder="e.g. 901238471920"
+            class="w-full bg-slate-50 border border-slate-300 rounded p-2 font-mono text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-600"
+          />
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Affiliated Institution:</label>
+          <select id="degInst" class="w-full bg-slate-50 border border-slate-300 rounded p-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-600">
+            {institutions.map((i) => (
+              <option value={i.id}>{i.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Degree Title:</label>
+          <input
+            type="text"
+            id="degName"
+            value="Bachelor of Technology"
+            class="w-full bg-slate-50 border border-slate-300 rounded p-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-600"
+          />
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Specialization Program:</label>
+          <input
+            type="text"
+            id="degSpec"
+            value="Computer Science & Engineering"
+            class="w-full bg-slate-50 border border-slate-300 rounded p-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-600"
+          />
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Cumulative CGPA (0.00 - 10.00):</label>
+          <input
+            type="number"
+            id="degCgpa"
+            step="0.01"
+            min="0"
+            max="10"
+            value="8.75"
+            class="w-full bg-slate-50 border border-slate-300 rounded p-2 font-mono text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-600"
+          />
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Year of Passing:</label>
+          <input
+            type="number"
+            id="degYear"
+            value="2024"
+            class="w-full bg-slate-50 border border-slate-300 rounded p-2 font-mono text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-600"
+          />
+        </div>
+
+        <div class="sm:col-span-2 md:col-span-3 pt-2">
+          <button
+            type="submit"
+            id="issueSubmitBtn"
+            class="px-5 py-2 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-semibold text-xs transition-colors"
+          >
+            Authenticate & Issue Degree to Central D1
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script is:inline>
+    async function revokeDegreePrompt(degreeId) {
+      const reason = prompt("Enter formal statutory reason for revoking degree " + degreeId + ":", "Academic Integrity Violation detected during AICTE quota inspection.");
+      if (!reason) return;
+
+      try {
+        const res = await fetch('/api/university/degree', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            degreeId: degreeId,
+            action: 'REVOKE',
+            reason: reason,
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          window.showToast("Degree record marked REVOKED in Central D1 Registry.", "success");
+          setTimeout(() => window.location.reload(), 1200);
+        } else {
+          window.showToast("Revocation failed: " + (data.error || 'Server error'), "error");
+        }
+      } catch (err) {
+        window.showToast("Network error processing revocation.", "error");
+      }
+    }
+
+    async function reinstateDegreePrompt(degreeId) {
+      if (!confirm("Are you sure you want to reinstate degree " + degreeId + " to VALID status?")) return;
+
+      try {
+        const res = await fetch('/api/university/degree', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            degreeId: degreeId,
+            action: 'REINSTATE',
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          window.showToast("Degree record REINSTATED in Central D1 Registry.", "success");
+          setTimeout(() => window.location.reload(), 1200);
+        } else {
+          window.showToast("Reinstatement failed: " + (data.error || 'Server error'), "error");
+        }
+      } catch (err) {
+        window.showToast("Network error processing reinstatement.", "error");
+      }
+    }
+
+    document.getElementById('issueDegreeForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const apaar = document.getElementById('degApaar').value.trim();
+      const inst = document.getElementById('degInst').value;
+      const name = document.getElementById('degName').value.trim();
+      const spec = document.getElementById('degSpec').value.trim();
+      const cgpa = parseFloat(document.getElementById('degCgpa').value);
+      const year = parseInt(document.getElementById('degYear').value);
+
+      try {
+        const res = await fetch('/api/university/degree', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            apaar_id: apaar,
+            institution_id: inst,
+            degree_name: name,
+            specialization: spec,
+            cgpa: cgpa,
+            year_of_passing: year,
+            issuing_authority: 'State Technological Affiliating University',
+          }),
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          window.showToast("Degree issued successfully to Central D1 Registry with SHA-256 digital stamp.", "success");
+          setTimeout(() => window.location.reload(), 1200);
+        } else {
+          window.showToast("Issuance error: " + (data.error || 'Server error'), "error");
+        }
+      } catch (err) {
+        window.showToast("Network error issuing degree.", "error");
+      }
+    });
+  </script>
+</Layout>

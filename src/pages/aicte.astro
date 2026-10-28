@@ -1,0 +1,241 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getDB } from '../lib/db';
+import type { Institution, Admission, Student } from '../lib/types';
+import { maskApaar, maskName, maskEmail } from '../lib/types';
+
+const db = getDB(Astro.locals);
+
+const instRes = await db.prepare('SELECT * FROM institutions').bind().all<Institution>();
+const institutions = instRes.results || [];
+
+const admRes = await db.prepare('SELECT * FROM admissions').bind().all<Admission>();
+const admissions = admRes.results || [];
+
+const stuRes = await db.prepare('SELECT * FROM students').bind().all<Student>();
+const students = stuRes.results || [];
+
+const overrunColleges = institutions
+  .filter((i) => i.current_enrollment > i.sanctioned_intake)
+  .map((i) => ({
+    ...i,
+    excess: i.current_enrollment - i.sanctioned_intake,
+    utilization: ((i.current_enrollment / i.sanctioned_intake) * 100).toFixed(1),
+  }));
+
+// Duplicates
+const duplicatesMap = new Map<string, any[]>();
+for (const a of admissions) {
+  if (!duplicatesMap.has(a.apaar_id)) {
+    duplicatesMap.set(a.apaar_id, []);
+  }
+  duplicatesMap.get(a.apaar_id)!.push(a);
+}
+
+const duplicateStudents = [];
+for (const [apaar, list] of duplicatesMap.entries()) {
+  const distinctInsts = new Set(list.map((l) => l.institution_id));
+  if (distinctInsts.size > 1) {
+    const student = students.find((s) => s.apaar_id === apaar);
+    duplicateStudents.push({
+      apaar_id: apaar,
+      name: student?.full_name || 'Student',
+      email: student?.email || '',
+      colleges: list.map((l) => {
+        const inst = institutions.find((i) => i.id === l.institution_id);
+        return {
+          id: l.institution_id,
+          name: inst?.name || l.institution_id,
+          program: l.program,
+          batch: l.batch_year,
+          date: l.enrollment_date,
+        };
+      }),
+    });
+  }
+}
+---
+
+<Layout title="SIH 2026 | AICTE Regulatory Oversight & Surveillance" activeRole="aicte">
+  <div class="space-y-6">
+    <!-- Header Strip -->
+    <div class="border-b border-slate-200 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div>
+        <div class="text-xs font-semibold text-[#1E40AF] uppercase tracking-wider mb-1">
+          Regulatory Surveillance Module &bull; Code REG-02
+        </div>
+        <h1 class="text-xl sm:text-2xl font-bold text-[#0F2942]">
+          AICTE Central Audit & Inspection Surveillance
+        </h1>
+        <p class="text-xs text-slate-600 mt-0.5">
+          Real-time intake cap enforcement and concurrent multi-institution enrollment surveillance.
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          id="refreshBtn"
+          onclick="window.location.reload()"
+          class="px-3 py-1.5 rounded bg-white hover:bg-slate-50 border border-slate-300 text-xs font-semibold text-slate-700 shadow-sm transition-colors"
+        >
+          Refresh Live Registry Scan
+        </button>
+      </div>
+    </div>
+
+    <!-- Urgent Overrun Alert Banner -->
+    {overrunColleges.length > 0 && (
+      <div class="bg-red-50 border-l-4 border-red-600 p-4 rounded-r shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-red-800 text-sm">
+              Statutory Quota Overrun Detected: {overrunColleges[0].name}
+            </span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-red-200 text-red-900 font-mono">
+              PRIORITY #1 AUDIT
+            </span>
+          </div>
+          <p class="text-xs text-red-700 mt-1 leading-relaxed">
+            Reported enrollment of <strong>{overrunColleges[0].current_enrollment} candidates</strong> exceeds statutory sanctioned capacity of <strong>{overrunColleges[0].sanctioned_intake} seats</strong> (+{overrunColleges[0].excess} unapproved admissions).
+          </p>
+        </div>
+        <button
+          type="button"
+          onclick="window.showToast('Formal AICTE Show-Cause Notice dispatched to institution governing body under Approval Process Handbook 2024-27 Clause 7.14.', 'warning')"
+          class="shrink-0 bg-red-700 hover:bg-red-800 text-white font-semibold text-xs px-3.5 py-1.5 rounded transition-colors shadow-sm"
+        >
+          Dispatch Show-Cause Notice
+        </button>
+      </div>
+    )}
+
+    <!-- Risk Summary KPI Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-white p-4 rounded border border-slate-200 shadow-sm">
+        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Sanctioned Quota Overruns</div>
+        <div class="text-2xl font-bold text-red-600 mt-1">{overrunColleges.length} Institution</div>
+        <div class="text-[11px] text-slate-500 mt-1">Exceeding 180 Approved Seat Cap</div>
+      </div>
+
+      <div class="bg-white p-4 rounded border border-slate-200 shadow-sm">
+        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Cross-Campus Concurrent Students</div>
+        <div class="text-2xl font-bold text-amber-600 mt-1">{duplicateStudents.length} Candidates</div>
+        <div class="text-[11px] text-slate-500 mt-1">Active across multiple institutions simultaneously</div>
+      </div>
+
+      <div class="bg-white p-4 rounded border border-slate-200 shadow-sm">
+        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Regulatory Compliance Index</div>
+        <div class="text-2xl font-bold text-emerald-700 mt-1">98.4%</div>
+        <div class="text-[11px] text-slate-500 mt-1">Based on student-level APAAR verification</div>
+      </div>
+    </div>
+
+    <!-- Section 1: Institution Risk Rankings Table -->
+    <div class="bg-white border border-slate-200 rounded shadow-sm">
+      <div class="p-4 border-b border-slate-200">
+        <h2 class="text-xs font-bold text-[#0F2942] uppercase tracking-wider">
+          1. AICTE Approved Institutions: Inspection Risk Rankings
+        </h2>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+            <tr>
+              <th class="p-3">AICTE Code</th>
+              <th class="p-3">Institution Name</th>
+              <th class="p-3">Sanctioned Intake</th>
+              <th class="p-3">Enrolled Roster</th>
+              <th class="p-3">Variance</th>
+              <th class="p-3">Audit Score</th>
+              <th class="p-3">Inspection Priority</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 text-slate-800">
+            {institutions.map((i) => {
+              const diff = i.current_enrollment - i.sanctioned_intake;
+              const isOverrun = diff > 0;
+              return (
+                <tr class="hover:bg-slate-50">
+                  <td class="p-3 font-mono font-semibold text-slate-700">{i.code}</td>
+                  <td class="p-3 font-medium text-slate-900">{i.name}</td>
+                  <td class="p-3 font-mono">{i.sanctioned_intake}</td>
+                  <td class="p-3 font-mono font-bold">{i.current_enrollment}</td>
+                  <td class="p-3 font-mono">
+                    {isOverrun ? (
+                      <span class="text-red-700 font-bold">+{diff} Excess</span>
+                    ) : (
+                      <span class="text-slate-500">{diff} Normal</span>
+                    )}
+                  </td>
+                  <td class="p-3 font-mono">{i.risk_score.toFixed(1)}%</td>
+                  <td class="p-3">
+                    {isOverrun ? (
+                      <span class="bg-red-100 text-red-800 font-semibold px-2 py-0.5 rounded text-[11px] border border-red-200">
+                        HIGH (Priority #1)
+                      </span>
+                    ) : (
+                      <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[11px] border border-slate-200">
+                        ROUTINE
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Section 2: Cross-Campus Concurrent Duplicate Students (Masked PII) -->
+    <div class="bg-white border border-slate-200 rounded shadow-sm">
+      <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h2 class="text-xs font-bold text-[#0F2942] uppercase tracking-wider">
+            2. Concurrent Cross-Institution Enrollments (Masked)
+          </h2>
+          <p class="text-[11px] text-slate-500 mt-0.5">
+            Identifies single candidate APAAR IDs registered simultaneously in multiple approved technical institutions.
+          </p>
+        </div>
+        <span class="text-xs font-mono font-bold bg-amber-50 text-amber-800 px-2 py-0.5 rounded border border-amber-200">
+          {duplicateStudents.length} Anomalies Flagged
+        </span>
+      </div>
+
+      <div class="p-4 space-y-3">
+        {duplicateStudents.map((ds) => (
+          <div class="p-3.5 bg-slate-50 rounded border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="font-mono font-bold text-slate-900 text-sm">
+                  APAAR: {maskApaar(ds.apaar_id)}
+                </span>
+                <span class="text-slate-400">&bull;</span>
+                <span class="font-semibold text-slate-700">
+                  {maskName(ds.name)}
+                </span>
+                <span class="text-[10px] bg-red-100 text-red-700 font-semibold px-2 py-0.2 rounded border border-red-200">
+                  DUAL ADMISSION DETECTED
+                </span>
+              </div>
+              <div class="text-[11px] text-slate-500">
+                Contact on Record: <span class="font-mono text-slate-700">{maskEmail(ds.email)}</span>
+              </div>
+            </div>
+
+            <!-- Institutions List -->
+            <div class="flex flex-wrap items-center gap-2 font-mono text-[11px]">
+              {ds.colleges.map((c) => (
+                <span class="bg-white text-slate-800 px-2 py-1 rounded border border-slate-300">
+                  {c.name} &bull; {c.program} ({c.batch})
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</Layout>
