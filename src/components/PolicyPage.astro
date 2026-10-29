@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { getUIDictionary, isSupportedLang, type LangCode } from '../lib/i18n';
 
 export interface PolicySection {
   heading: string;
@@ -9,25 +10,27 @@ export interface PolicySection {
 
 interface Props {
   title: string;
-  lang?: 'en' | 'hi';
+  lang?: LangCode | string;
   updated: string;
   intro: string;
   sections: PolicySection[];
 }
 
 const { title, lang = 'en', updated, intro, sections } = Astro.props;
-const isHindi = lang === 'hi';
-const updatedLabel = isHindi ? 'अंतिम अद्यतन' : 'Last updated';
-const badgeLabel = isHindi ? 'आधिकारिक वैधानिक दस्तावेज़ • GIGW 3.0' : 'Official Statutory Document • GIGW 3.0';
-const backHomeLabel = isHindi ? '← मुख्य पृष्ठ पर वापस जाएँ' : '← Back to National Portal';
-const backHomeHref = isHindi ? '/hi' : '/';
+const resolvedLang: LangCode = isSupportedLang(lang) ? lang : 'en';
+const isIndic = resolvedLang !== 'en';
+const t = getUIDictionary(resolvedLang);
+const updatedLabel = isIndic ? 'अंतिम अद्यतन' : 'Last updated';
+const badgeLabel = isIndic ? 'आधिकारिक वैधानिक दस्तावेज़ • GIGW 3.0' : 'Official Statutory Document • GIGW 3.0';
+const backHomeLabel = isIndic ? `← ${t.navOverview}` : '← Back to National Portal';
+const backHomeHref = isIndic ? `/${resolvedLang}` : '/';
 ---
 
 <Layout
-  title={`${title} | National Student Registry & Verification Portal`}
+  title={`${title} | ${t.portalTitle}`}
   activeRole="policy"
   breadcrumb={title}
-  lang={lang}
+  lang={resolvedLang}
 >
   <article class="bg-white rounded-lg border border-slate-200 border-t-4 border-t-[#0F2942] shadow-xs max-w-4xl mx-auto overflow-hidden">
     <!-- UX4G Card Header -->
@@ -80,7 +83,7 @@ const backHomeHref = isHindi ? '/hi' : '/';
           {backHomeLabel}
         </a>
         <span class="text-slate-500">
-          {isHindi ? 'अखिल भारतीय तकनीकी शिक्षा परिषद (AICTE)' : 'All India Council for Technical Education (AICTE)'}
+          {t.portalSubtitle}
         </span>
       </footer>
     </div>

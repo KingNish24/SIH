@@ -23,6 +23,8 @@ test('verifier loads without sign in', async ({ page }) => {
 const policyPages = [
   '/privacy', '/terms', '/accessibility', '/hyperlinking-policy',
   '/hi', '/hi/privacy', '/hi/terms', '/hi/accessibility', '/hi/hyperlinking-policy',
+  '/ta', '/te', '/bn', '/mr', '/gu', '/kn', '/ml', '/pa', '/or', '/as', '/ur', '/sa',
+  '/ta/privacy', '/bn/terms', '/te/accessibility', '/mr/hyperlinking-policy',
 ];
 for (const p of policyPages) {
   test(`${p} returns 200 with h1`, async ({ page }) => {
@@ -41,12 +43,13 @@ test('footer policy links are real anchors', async ({ page }) => {
 
 test('language switcher works both ways', async ({ page }) => {
   await page.goto('/privacy');
-  await page.locator('a[hreflang="hi"]').click();
+  await page.locator('nav[aria-label*="Language"] a[hreflang="hi"]').first().click();
   await expect(page).toHaveURL(/\/hi\/privacy$/);
   await expect(page.locator('html')).toHaveAttribute('lang', 'hi');
-  await page.locator('a[hreflang="en"]').click();
+  await page.locator('nav[aria-label*="Language"] a[hreflang="en"]').first().click();
   await expect(page).toHaveURL(/\/privacy$/);
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect(page.locator('#gov-lang-select option')).toHaveCount(23);
 });
 
 test('sitemap.xml and robots.txt', async ({ request }) => {

@@ -149,12 +149,13 @@ const route = async (context: Parameters<Parameters<typeof defineMiddleware>[0]>
 
 const CSP = [
   "default-src 'self'",
-  // Astro may inline small hoisted scripts/styles, so 'unsafe-inline' is required here
-  "script-src 'self' 'unsafe-inline'",
+  // Astro may inline small hoisted scripts/styles, and @huggingface/transformers ONNX/WASM runtime requires 'wasm-unsafe-eval'
+  "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://huggingface.co https://*.hf.co https://*.huggingface.co",
+  "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
   "img-src 'self' data: blob:",
-  `connect-src 'self'${import.meta.env.DEV ? ' ws: wss:' : ''}`,
+  `connect-src 'self' https://huggingface.co https://*.hf.co https://*.huggingface.co https://cdn.jsdelivr.net blob: data:${import.meta.env.DEV ? ' ws: wss:' : ''}`,
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",

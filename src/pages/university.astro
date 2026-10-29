@@ -24,6 +24,76 @@ const degrees = rawDegrees.map((d) => {
     institution_name: inst?.name || d.institution_id,
   };
 });
+
+interface UnivAbcLedgerRow {
+  apaar_id: string;
+  student_name: string;
+  program: string;
+  accumulated_credits: number;
+  nep_threshold_badge: string;
+  entry_mode: string;
+  prior_diploma_board: string;
+  transferred_credits: number;
+  verification_status: 'VERIFIED_ANCHORED' | 'STANDARD_DIRECT' | 'FRAUD_REVOKED';
+}
+
+const univAbcLedger: UnivAbcLedgerRow[] = [
+  {
+    apaar_id: '412398471029',
+    student_name: maskName('Sneha Sundaram'),
+    program: 'B.Tech Computer Science & Engineering',
+    accumulated_credits: 160,
+    nep_threshold_badge: '160 Cr — 4-Yr B.Tech Honours (Exit Year 4)',
+    entry_mode: '1st-Year Regular (10+2 PCM)',
+    prior_diploma_board: 'N/A (All 8 Semesters Earned at INST-001)',
+    transferred_credits: 0,
+    verification_status: 'STANDARD_DIRECT',
+  },
+  {
+    apaar_id: '739284019283',
+    student_name: maskName('Rahul Sharma'),
+    program: 'B.Tech Computer Science & Engineering',
+    accumulated_credits: 120,
+    nep_threshold_badge: "120 Cr — 3-Yr Bachelor's Eligible (Exit Year 3)",
+    entry_mode: '2nd-Year Lateral Entry (Sem 3 Direct)',
+    prior_diploma_board: 'MSBTE State Polytechnic Diploma (80 ABC Credits Anchored)',
+    transferred_credits: 80,
+    verification_status: 'VERIFIED_ANCHORED',
+  },
+  {
+    apaar_id: '582910384729',
+    student_name: maskName('Priya Verma'),
+    program: 'B.Tech Electronics & Comm.',
+    accumulated_credits: 80,
+    nep_threshold_badge: '80 Cr — UG Diploma / Lateral Entry Eligible (Exit Year 2)',
+    entry_mode: '2nd-Year Lateral Entry (Sem 3 Direct)',
+    prior_diploma_board: 'DTE Karnataka Polytechnic Diploma (80 ABC Credits Anchored)',
+    transferred_credits: 80,
+    verification_status: 'VERIFIED_ANCHORED',
+  },
+  {
+    apaar_id: '901238471920',
+    student_name: maskName('Aaditya Patel'),
+    program: 'B.Tech Mechanical Engineering',
+    accumulated_credits: 40,
+    nep_threshold_badge: '40 Cr — UG Certificate Eligible (Exit Year 1)',
+    entry_mode: '1st-Year Regular (10+2 PCM)',
+    prior_diploma_board: 'N/A (Semesters 1–2 Completed at INST-001)',
+    transferred_credits: 0,
+    verification_status: 'STANDARD_DIRECT',
+  },
+  {
+    apaar_id: '601928374819',
+    student_name: maskName('Vikram Malhotra'),
+    program: 'B.Tech Civil Engineering',
+    accumulated_credits: 120,
+    nep_threshold_badge: 'REVOKED — Unverified Lateral Entry Credit Transfer',
+    entry_mode: '2nd-Year Lateral Entry (Disputed)',
+    prior_diploma_board: 'Unverified Private Diploma (Missing APAAR / ABC Anchor)',
+    transferred_credits: 80,
+    verification_status: 'FRAUD_REVOKED',
+  },
+];
 ---
 
 <Layout title="SIH 2026 | Affiliating University Degree Provenance" activeRole="university">
@@ -38,7 +108,7 @@ const degrees = rawDegrees.map((d) => {
           Academic Degree Provenance &amp; Revocation Ledger
         </h1>
         <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
-          Permanent degree anchoring to student APAAR IDs with Ed25519 asymmetric signatures &amp; instant statutory revocation.
+          Permanent degree anchoring to student APAAR IDs with Ed25519 asymmetric signatures, NEP 2020 ABC Lateral-Entry credit validation &amp; Section 63 BSA Merkle audit.
         </p>
       </div>
 
@@ -79,7 +149,7 @@ const degrees = rawDegrees.map((d) => {
       <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider">
-            University Degree Registry ({degrees.length} Records in Central D1)
+            1. University Degree Registry ({degrees.length} Records in Central D1)
           </h2>
           <p class="text-xs text-slate-500 mt-0.5">
             Each degree is cryptographically bound to a 12-digit APAAR with an Ed25519 Signature &amp; SHA-256 Stamp.
@@ -173,10 +243,192 @@ const degrees = rawDegrees.map((d) => {
       </div>
     </div>
 
+    <!-- FEATURE #3: NEP 2020 Academic Bank of Credits (ABC) & Multiple Entry/Exit Ledger -->
+    <div class="bg-white border border-slate-200 border-t-4 border-t-[#138808] rounded shadow-sm">
+      <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div>
+          <div class="flex flex-wrap items-center gap-2 mb-1">
+            <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded">
+              <svg class="w-3.5 h-3.5 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>NEP 2020 Multiple Entry / Exit &amp; NCrF</span>
+            </span>
+            <span class="text-[11px] font-mono font-semibold bg-amber-50 text-amber-900 border border-amber-200 px-2.5 py-0.5 rounded">
+              2nd-Year Lateral Entry Credit Transfer Guard
+            </span>
+          </div>
+          <h2 class="text-sm sm:text-base font-bold text-[#0F2942]">
+            2. NEP 2020 Academic Bank of Credits (ABC) &amp; Multiple Entry/Exit Ledger
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">
+            Maps candidate credit accumulation (<strong class="text-slate-700">0 to 160 Credits</strong>) against NEP 2020 statutory awards and verifies prior Polytechnic Diploma credits anchored to 12-digit APAAR IDs.
+          </p>
+        </div>
+
+        <!-- NEP 2020 4 Threshold Pills -->
+        <div class="flex flex-wrap items-center gap-1.5 text-[11px] font-mono font-bold shrink-0">
+          <span class="px-2.5 py-1 rounded bg-slate-100 text-slate-800 border border-slate-300">40 Cr: UG Cert (Yr 1)</span>
+          <span class="px-2.5 py-1 rounded bg-blue-50 text-blue-900 border border-blue-200">80 Cr: UG Diploma / Lateral (Yr 2)</span>
+          <span class="px-2.5 py-1 rounded bg-indigo-50 text-indigo-900 border border-indigo-200">120 Cr: Bachelor's (Yr 3)</span>
+          <span class="px-2.5 py-1 rounded bg-emerald-50 text-emerald-900 border border-emerald-200">160 Cr: B.Tech Honours (Yr 4)</span>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs sm:text-sm border-collapse">
+          <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+            <tr>
+              <th class="py-3 px-4">Candidate &amp; APAAR</th>
+              <th class="py-3 px-4">ABC Credit Accumulation (0–160 Cr)</th>
+              <th class="py-3 px-4">NEP 2020 Award / Exit Eligibility</th>
+              <th class="py-3 px-4">Lateral-Entry Credit Transfer Provenance</th>
+              <th class="py-3 px-4 text-right">Audit Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 text-slate-800">
+            {univAbcLedger.map((row) => {
+              const pct = Math.min(100, Math.round((row.accumulated_credits / 160) * 100));
+              const isFraud = row.verification_status === 'FRAUD_REVOKED';
+              const isLateralVerified = row.verification_status === 'VERIFIED_ANCHORED';
+              return (
+                <tr class={isFraud ? 'bg-red-50/40 hover:bg-red-50/70' : 'hover:bg-slate-50'}>
+                  <td class="py-3.5 px-4">
+                    <div class="font-bold text-slate-900">{row.student_name}</div>
+                    <div class="text-xs font-mono text-slate-500">{maskApaar(row.apaar_id)} &bull; {row.program}</div>
+                  </td>
+                  <td class="py-3.5 px-4 min-w-[200px]">
+                    <div class="flex justify-between text-xs font-mono mb-1">
+                      <span class="font-bold text-[#0F2942]">{row.accumulated_credits} / 160 Credits</span>
+                      <span class="text-slate-500">{pct}%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-2.5 border border-slate-300 overflow-hidden">
+                      <div
+                        class={`h-full ${isFraud ? 'bg-red-600' : 'bg-emerald-600'}`}
+                        style={`width: ${pct}%;`}
+                      ></div>
+                    </div>
+                  </td>
+                  <td class="py-3.5 px-4">
+                    <span class={`inline-block font-mono font-bold text-xs px-2.5 py-1 rounded border ${
+                      isFraud
+                        ? 'bg-red-100 text-red-900 border-red-200'
+                        : 'bg-slate-100 text-[#0F2942] border-slate-300'
+                    }`}>
+                      {row.nep_threshold_badge}
+                    </span>
+                  </td>
+                  <td class="py-3.5 px-4">
+                    <div class="font-semibold text-slate-900">{row.entry_mode}</div>
+                    <div class="text-xs text-slate-600 mt-0.5">
+                      {row.prior_diploma_board}
+                      {row.transferred_credits > 0 && (
+                        <span class="ml-1 font-mono font-bold text-[#0F2942]">
+                          ({row.transferred_credits} Cr Transferred)
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td class="py-3.5 px-4 text-right">
+                    {isLateralVerified ? (
+                      <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-100 text-emerald-900 border border-emerald-200 font-bold text-xs">
+                        <svg class="w-3.5 h-3.5 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Lateral Credits Verified</span>
+                      </span>
+                    ) : isFraud ? (
+                      <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-red-100 text-red-900 border border-red-200 font-bold text-xs">
+                        <svg class="w-3.5 h-3.5 text-red-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        <span>Unverified Lateral Blocked</span>
+                      </span>
+                    ) : (
+                      <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-blue-50 text-blue-900 border border-blue-200 font-bold text-xs">
+                        <span>Regular Direct Entry</span>
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- FEATURE #5: Section 63 BSA Cryptographic Hash-Chain & Merkle Audit Verifier -->
+    <div class="bg-white border border-slate-200 border-t-4 border-t-[#0F2942] rounded p-5 sm:p-6 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 pb-4 mb-4">
+        <div>
+          <div class="flex flex-wrap items-center gap-2 mb-1">
+            <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-900 border border-indigo-200 px-2.5 py-0.5 rounded">
+              <svg class="w-3.5 h-3.5 text-indigo-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              <span>Bharatiya Sakshya Adhiniyam (BSA) 2023 Section 63</span>
+            </span>
+            <span class="text-[11px] font-mono font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded">
+              Tamper-Evident SHA-256 Hash Chain
+            </span>
+          </div>
+          <h2 class="text-sm sm:text-base font-bold text-[#0F2942]">
+            3. Section 63 BSA Cryptographic Hash-Chain &amp; Merkle Audit Verifier
+          </h2>
+          <p class="text-xs text-slate-600 mt-0.5">
+            Independently verifies that no university degree or institutional admission record has been altered in SQLite/D1 by recomputing <code class="font-mono text-[11px] bg-slate-100 px-1 py-0.5 rounded">SHA256(prev_hash + ":" + canonical_payload)</code> and the Merkle Root in the browser.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          id="verifyMerkleBtnUniv"
+          class="shrink-0 h-10 px-4 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold text-xs sm:text-sm transition-colors inline-flex items-center gap-2 shadow-xs"
+        >
+          <svg class="w-4 h-4 text-emerald-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Verify Full Ledger Hash-Chain in Browser</span>
+        </button>
+      </div>
+
+      <!-- Summary Status Strip -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 text-xs">
+        <div class="p-3.5 bg-slate-50 rounded border border-slate-200">
+          <div class="text-[10px] font-bold uppercase text-slate-500">Verification Status</div>
+          <div id="merkleStatusTextUniv" class="font-bold text-slate-800 mt-1 flex items-center gap-1.5">
+            <span>Ready for Client-Side Cryptographic Audit</span>
+          </div>
+        </div>
+        <div class="p-3.5 bg-slate-50 rounded border border-slate-200">
+          <div class="text-[10px] font-bold uppercase text-slate-500">Verified Merkle Root (SHA-256)</div>
+          <div id="merkleRootTextUniv" class="font-mono font-bold text-[#0F2942] mt-1 truncate">
+            Click "Verify Full Ledger Hash-Chain" to compute
+          </div>
+        </div>
+        <div class="p-3.5 bg-slate-50 rounded border border-slate-200">
+          <div class="text-[10px] font-bold uppercase text-slate-500">Total Ledger Blocks Verified</div>
+          <div id="merkleBlockCountUniv" class="font-mono font-bold text-emerald-700 mt-1">
+            -- Blocks (Institutions + Admissions + Degrees)
+          </div>
+        </div>
+      </div>
+
+      <!-- Individual Block Links Table -->
+      <div id="merkleBlocksContainerUniv" class="hidden border border-slate-200 rounded overflow-hidden">
+        <div class="bg-slate-100 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between text-xs font-bold text-slate-700">
+          <span>Cryptographic Block Chain Links (prev_hash to block_hash)</span>
+          <span class="font-mono text-[11px] text-emerald-800">100% Browser Recomputed via crypto.subtle.digest('SHA-256')</span>
+        </div>
+        <div class="max-h-64 overflow-y-auto divide-y divide-slate-200 text-xs font-mono" id="merkleBlocksListUniv"></div>
+      </div>
+    </div>
+
     <!-- Issue Degree Section -->
     <div id="issueDegreeSection" class="bg-white border border-slate-200 rounded p-6 shadow-sm">
       <h2 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider mb-1.5">
-        Issue New Degree Record
+        4. Issue New Degree Record
       </h2>
       <p class="text-xs sm:text-sm text-slate-600 mb-5">
         Bind academic degree to student 12-digit APAAR ID with cryptographic Ed25519 Signature &amp; SHA-256 Stamp.
@@ -553,6 +805,114 @@ const degrees = rawDegrees.map((d) => {
         }
       } catch (err) {
         window.showToast('Network error issuing degree.', 'error');
+      }
+    });
+
+    // Browser SHA-256 helper for Section 63 BSA Merkle Audit Verifier
+    async function sha256Univ(text) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+      return Array.from(new Uint8Array(buf))
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+    }
+
+    async function computeMerkleRootUniv(hashes) {
+      if (!hashes || hashes.length === 0) return sha256Univ('VIDYA-EMPTY-LEDGER');
+      let level = [...hashes];
+      while (level.length > 1) {
+        const next = [];
+        for (let i = 0; i < level.length; i += 2) {
+          const left = level[i];
+          const right = i + 1 < level.length ? level[i + 1] : left;
+          next.push(await sha256Univ(left + ':' + right));
+        }
+        level = next;
+      }
+      return level[0];
+    }
+
+    const verifyMerkleBtnUniv = document.getElementById('verifyMerkleBtnUniv');
+    verifyMerkleBtnUniv?.addEventListener('click', async () => {
+      verifyMerkleBtnUniv.disabled = true;
+      const statusEl = document.getElementById('merkleStatusTextUniv');
+      const rootEl = document.getElementById('merkleRootTextUniv');
+      const countEl = document.getElementById('merkleBlockCountUniv');
+      const containerEl = document.getElementById('merkleBlocksContainerUniv');
+      const listEl = document.getElementById('merkleBlocksListUniv');
+
+      if (statusEl) statusEl.textContent = 'Recomputing SHA-256 Hash-Chain in Browser...';
+
+      try {
+        const res = await fetch('/api/ledger/merkle');
+        const data = await res.json();
+        if (!data.success || !Array.isArray(data.blocks)) {
+          throw new Error(data.error || 'Failed to load ledger blocks');
+        }
+
+        let prev = data.genesis_prev_hash;
+        let allValid = true;
+        const computedHashes = [];
+        let rowsHtml = '';
+
+        for (const blk of data.blocks) {
+          const expectedHash = await sha256Univ(prev + ':' + blk.canonical_payload);
+          const linkMatches = expectedHash === blk.block_hash && prev === blk.prev_hash;
+          if (!linkMatches) allValid = false;
+          computedHashes.push(expectedHash);
+
+          rowsHtml += `
+            <div class="p-3 bg-white hover:bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 rounded bg-slate-100 text-[#0F2942] font-bold border border-slate-300">#${blk.index} ${blk.block_type}</span>
+                  <span class="font-sans font-semibold text-slate-800">${blk.summary}</span>
+                </div>
+                <div class="text-[11px] text-slate-500 mt-1">
+                  prev: <span class="text-slate-700">${blk.prev_hash.slice(0, 16)}...</span> &rarr;
+                  hash: <span class="text-[#0F2942] font-bold">${expectedHash.slice(0, 20)}...</span>
+                </div>
+              </div>
+              <span class="px-2.5 py-0.5 rounded text-[10px] font-bold border shrink-0 ${
+                linkMatches
+                  ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                  : 'bg-red-100 text-red-800 border-red-200'
+              }">
+                ${linkMatches ? 'SHA-256 LINK VERIFIED' : 'TAMPER DETECTED'}
+              </span>
+            </div>
+          `;
+          prev = expectedHash;
+        }
+
+        const browserMerkleRoot = await computeMerkleRootUniv(computedHashes);
+        const rootMatches = browserMerkleRoot === data.merkle_root;
+
+        if (statusEl) {
+          statusEl.innerHTML =
+            allValid && rootMatches
+              ? `<svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg><span class="text-emerald-800">TAMPER-FREE VERIFIED (Section 63 BSA Compliant)</span>`
+              : `<span class="text-red-700">HASH DISCREPANCY DETECTED</span>`;
+        }
+        if (rootEl) {
+          rootEl.textContent = browserMerkleRoot;
+          rootEl.title = browserMerkleRoot;
+        }
+        if (countEl) {
+          countEl.textContent = `${data.blocks.length} Blocks Verified (${data.counts.institutions} Inst, ${data.counts.admissions} Adm, ${data.counts.degrees} Deg)`;
+        }
+        if (listEl && containerEl) {
+          listEl.innerHTML = rowsHtml;
+          containerEl.classList.remove('hidden');
+        }
+        window.showToast?.(
+          `Verified ${data.blocks.length} cryptographic ledger blocks. Merkle Root: ${browserMerkleRoot.slice(0, 16)}...`,
+          'success'
+        );
+      } catch (err) {
+        if (statusEl) statusEl.textContent = 'Verification failed: ' + (err?.message || 'Error');
+        window.showToast?.('Error verifying Merkle ledger', 'error');
+      } finally {
+        verifyMerkleBtnUniv.disabled = false;
       }
     });
   </script>

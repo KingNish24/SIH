@@ -52,6 +52,103 @@ const enrichedDegrees = degrees.map((d) => {
     institution_name: inst?.name || d.institution_id,
   };
 });
+
+interface AbcCreditProfile {
+  apaar_id: string;
+  student_name: string;
+  accumulated_credits: number;
+  max_credits: number;
+  nep_exit_stage: string;
+  semester_breakdown: number[];
+  is_lateral_entry: boolean;
+  prior_diploma_board: string;
+  transferred_credits: number;
+  lateral_status: 'VERIFIED_ANCHORED' | 'STANDARD_ENTRY' | 'DISCREPANCY_FLAGGED';
+  lateral_note: string;
+}
+
+const abcProfiles: Record<string, AbcCreditProfile> = {
+  '739284019283': {
+    apaar_id: '739284019283',
+    student_name: maskName('Rahul Sharma'),
+    accumulated_credits: 120,
+    max_credits: 160,
+    nep_exit_stage: "120 Credits — 3-Year Bachelor's Degree Eligible (Semester 6 Completed)",
+    semester_breakdown: [20, 20, 20, 20, 20, 20, 0, 0],
+    is_lateral_entry: true,
+    prior_diploma_board: 'MSBTE State Polytechnic Diploma (Computer Engg — 80 Credits)',
+    transferred_credits: 80,
+    lateral_status: 'VERIFIED_ANCHORED',
+    lateral_note: 'Prior 3-Year Polytechnic Diploma (80 ABC Credits) cryptographically verified via DigiLocker & MSBTE ledger before 2nd-Year B.Tech Lateral Entry.',
+  },
+  '412398471029': {
+    apaar_id: '412398471029',
+    student_name: maskName('Sneha Sundaram'),
+    accumulated_credits: 160,
+    max_credits: 160,
+    nep_exit_stage: '160 Credits — 4-Year B.Tech Honours / Research Degree Conferred',
+    semester_breakdown: [20, 20, 20, 20, 20, 20, 20, 20],
+    is_lateral_entry: false,
+    prior_diploma_board: 'Direct 1st-Year Regular Admission (10+2 PCM Qualifying)',
+    transferred_credits: 0,
+    lateral_status: 'STANDARD_ENTRY',
+    lateral_note: 'All 8 semesters (160 Credits) earned continuously at AICTE-approved parent institution.',
+  },
+  '582910384729': {
+    apaar_id: '582910384729',
+    student_name: maskName('Priya Verma'),
+    accumulated_credits: 80,
+    max_credits: 160,
+    nep_exit_stage: '80 Credits — UG Diploma / Lateral Entry Eligible (Exit Year 2)',
+    semester_breakdown: [20, 20, 20, 20, 0, 0, 0, 0],
+    is_lateral_entry: true,
+    prior_diploma_board: 'DTE Karnataka Polytechnic Diploma (Electronics — 80 Credits)',
+    transferred_credits: 80,
+    lateral_status: 'VERIFIED_ANCHORED',
+    lateral_note: 'Verified 80-credit UG Diploma anchored to 12-digit APAAR ID; eligible for NEP 2020 2nd-Year Lateral Entry.',
+  },
+  '901238471920': {
+    apaar_id: '901238471920',
+    student_name: maskName('Aaditya Patel'),
+    accumulated_credits: 40,
+    max_credits: 160,
+    nep_exit_stage: '40 Credits — UG Certificate Threshold Reached (Exit Year 1)',
+    semester_breakdown: [20, 20, 0, 0, 0, 0, 0, 0],
+    is_lateral_entry: false,
+    prior_diploma_board: 'Direct 1st-Year Regular Admission (10+2 Qualifying)',
+    transferred_credits: 0,
+    lateral_status: 'STANDARD_ENTRY',
+    lateral_note: 'Completed Year 1 (40 Credits); qualifies for NEP 2020 UG Certificate if exiting early.',
+  },
+  '601928374819': {
+    apaar_id: '601928374819',
+    student_name: maskName('Vikram Malhotra'),
+    accumulated_credits: 120,
+    max_credits: 160,
+    nep_exit_stage: 'REVOKED — Unverified Lateral Entry Credit Transfer Blocked',
+    semester_breakdown: [0, 0, 20, 20, 20, 20, 20, 20],
+    is_lateral_entry: true,
+    prior_diploma_board: 'Unverified Private Polytechnic Certificate (No ABC / APAAR Anchor)',
+    transferred_credits: 80,
+    lateral_status: 'DISCREPANCY_FLAGGED',
+    lateral_note: 'ALERT: Claimed 80 lateral-entry diploma credits lacked cryptographic APAAR/ABC provenance. Degree revoked during AICTE audit.',
+  },
+  '819203847561': {
+    apaar_id: '819203847561',
+    student_name: maskName('Ananya Sen'),
+    accumulated_credits: 160,
+    max_credits: 160,
+    nep_exit_stage: '160 Credits — 4-Year B.Tech Honours / Research Degree Conferred',
+    semester_breakdown: [20, 20, 20, 20, 20, 20, 20, 20],
+    is_lateral_entry: false,
+    prior_diploma_board: 'Direct 1st-Year Regular Admission (10+2 Qualifying)',
+    transferred_credits: 0,
+    lateral_status: 'STANDARD_ENTRY',
+    lateral_note: 'Full 160-credit B.Tech curriculum verified and anchored on National Academic Bank of Credits.',
+  },
+};
+
+const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abcProfiles['739284019283'];
 ---
 
 <Layout title="SIH 2026 | Student Consent Authority (DPDP Act 2023)" activeRole="student">
@@ -66,7 +163,7 @@ const enrichedDegrees = degrees.map((d) => {
           Digital Personal Data Protection (DPDP) Consent Vault
         </h1>
         <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
-          Statutory student consent authority under Section 6 of India DPDP Act 2023 via W3C WebAuthn Biometric Passkeys.
+          Statutory student consent authority under Section 6 of India DPDP Act 2023 via W3C WebAuthn Biometric Passkeys &amp; Scoped One-Time Tokens.
         </p>
       </div>
 
@@ -91,7 +188,10 @@ const enrichedDegrees = degrees.map((d) => {
               ))}
             </select>
             <span class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-900 border border-emerald-300 px-2.5 py-1 rounded text-[11px] font-bold whitespace-nowrap">
-              Candidate Authenticated ({user.username})
+              <svg class="w-3.5 h-3.5 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span>Candidate Authenticated ({user.username})</span>
             </span>
           </div>
         ) : (
@@ -158,17 +258,315 @@ const enrichedDegrees = degrees.map((d) => {
             <span class="text-[10px] font-bold uppercase text-slate-500">Security Standard</span>
             <span
               id="passkeyBindingBadge"
-              class={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+              class={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded border ${
                 initialHasPasskey
                   ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
                   : 'bg-amber-100 text-amber-800 border-amber-200'
               }`}
             >
-              {initialHasPasskey ? 'Passkey Bound ✓' : 'No Passkey Bound — Click Below to Register'}
+              {initialHasPasskey ? (
+                <>
+                  <svg class="w-3 h-3 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Passkey Bound</span>
+                </>
+              ) : (
+                <span>No Passkey Bound — Click Below to Register</span>
+              )}
             </span>
           </div>
           <div id="passkeyDeviceDisplay" class="font-bold text-slate-900 mt-1">FIDO2 / WebAuthn Biometric Passkey</div>
           <div class="text-[11px] text-emerald-700 font-medium mt-0.5">Hardware Bound (Windows Hello / Touch ID)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FEATURE #2: Purpose-Scoped One-Time Consent Tokens (DPDP Section 6 Data Minimization) -->
+    <div class="bg-white border border-slate-200 border-t-4 border-t-[#0F2942] rounded p-5 sm:p-6 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-200 pb-4 mb-5">
+        <div>
+          <div class="flex flex-wrap items-center gap-2 mb-1">
+            <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider bg-blue-50 text-[#1E40AF] border border-blue-200 px-2.5 py-0.5 rounded">
+              <svg class="w-3.5 h-3.5 text-[#1E40AF] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <span>DPDP Act 2023 Section 6(1) &amp; 6(4)</span>
+            </span>
+            <span class="text-[11px] font-mono font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded">
+              Zero-Knowledge Selective Disclosure
+            </span>
+          </div>
+          <h2 class="text-base sm:text-lg font-bold text-[#0F2942]">
+            Purpose-Scoped One-Time Consent Tokens (DPDP Section 6 Data Minimization)
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
+            Instead of granting blanket transcript access, mint a time-bound, single-use cryptographic token scoped to a specific Verifier Organization, Purpose, and Attribute Set.
+          </p>
+        </div>
+        <div class="shrink-0">
+          <span class="inline-flex items-center gap-1.5 text-xs font-mono font-bold bg-slate-100 text-slate-800 px-3 py-1.5 rounded border border-slate-300">
+            <svg class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <span>SHA-256 Signed Token Ledger</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Left: Token Minting Form -->
+        <div class="lg:col-span-5 bg-slate-50 border border-slate-200 rounded p-4 sm:p-5 space-y-4">
+          <div class="text-xs font-bold uppercase tracking-wider text-[#0F2942] border-b border-slate-200 pb-2 flex items-center justify-between">
+            <span>Mint New Purpose-Scoped Token</span>
+            <span class="font-mono text-[11px] text-slate-500">POST /api/student/token</span>
+          </div>
+
+          <div>
+            <label for="tokenVerifierOrg" class="block text-xs font-semibold text-slate-700 mb-1">
+              Target Verifier Organization:
+            </label>
+            <select
+              id="tokenVerifierOrg"
+              class="w-full h-9 bg-white border border-slate-300 rounded px-2.5 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0F2942]"
+            >
+              <option value="UPSC Civil Services Board">UPSC Civil Services Board</option>
+              <option value="TCS Background Verification">TCS Background Verification</option>
+              <option value="GATE Admissions Committee (IIT Roorkee)">GATE Admissions Committee (IIT Roorkee)</option>
+              <option value="DRDO Scientist Entry Recruitment Board">DRDO Scientist Entry Recruitment Board</option>
+              <option value="National Scholarship Portal (NSP) Nodal Cell">National Scholarship Portal (NSP) Nodal Cell</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="tokenPurpose" class="block text-xs font-semibold text-slate-700 mb-1">
+              Statutory Verification Purpose:
+            </label>
+            <select
+              id="tokenPurpose"
+              class="w-full h-9 bg-white border border-slate-300 rounded px-2.5 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0F2942]"
+            >
+              <option value="Degree & Eligibility Verification">Degree &amp; Eligibility Verification</option>
+              <option value="Zero-Knowledge CGPA >= 7.5 Check">Zero-Knowledge CGPA &gt;= 7.5 Check</option>
+              <option value="NEP 2020 ABC Credit & Lateral-Entry Audit">NEP 2020 ABC Credit &amp; Lateral-Entry Audit</option>
+              <option value="Pre-Employment Credential Authenticity Check">Pre-Employment Credential Authenticity Check</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="tokenScope" class="block text-xs font-semibold text-slate-700 mb-1">
+              Disclosed Attribute Scope (Data Minimization):
+            </label>
+            <select
+              id="tokenScope"
+              class="w-full h-9 bg-white border border-slate-300 rounded px-2.5 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0F2942]"
+            >
+              <option value="degree_status,cgpa_threshold">Minimal Proof: Degree Status + CGPA &gt;= 7.5 Only (Hide Marks)</option>
+              <option value="degree_status,cgpa_threshold,abc_credits">Academic Credit Proof: Degree Status + ABC Credits (160 Cr)</option>
+              <option value="full_transcript">Full Disclosure: Complete Semester Transcript &amp; Signature</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="tokenTtl" class="block text-xs font-semibold text-slate-700 mb-1">
+              Token Validity &amp; Usage Policy (TTL):
+            </label>
+            <select
+              id="tokenTtl"
+              class="w-full h-9 bg-white border border-slate-300 rounded px-2.5 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0F2942]"
+            >
+              <option value="24" data-single="true">24 Hours — Single-Use Auto-Burn (Recommended)</option>
+              <option value="1" data-single="true">1 Hour — Single-Use High-Security Window</option>
+              <option value="24" data-single="false">24 Hours — Multi-Query Audit Window</option>
+            </select>
+          </div>
+
+          <button
+            type="button"
+            id="mintTokenBtn"
+            class="w-full h-10 px-4 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold text-xs sm:text-sm transition-colors flex items-center justify-center gap-2 shadow-xs"
+          >
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Mint Purpose-Scoped Consent Token</span>
+          </button>
+
+          <!-- Newly Minted Token Banner -->
+          <div id="mintedTokenBanner" class="hidden p-3.5 rounded bg-emerald-50 border border-emerald-300 text-xs space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-emerald-900 uppercase tracking-wider text-[11px]">Minted One-Time Token</span>
+              <span class="text-[10px] font-mono text-emerald-700 font-semibold">Single-Use Active</span>
+            </div>
+            <div class="flex items-center justify-between gap-2 bg-white px-3 py-2 rounded border border-emerald-200">
+              <code id="mintedTokenCode" class="font-mono font-bold text-sm text-[#0F2942]">VIDYA-DPDP-0000-0000</code>
+              <button
+                type="button"
+                id="copyMintedTokenBtn"
+                class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs transition-colors"
+              >
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                <span>Copy Token</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Active Scoped Tokens List with Instant Revoke -->
+        <div class="lg:col-span-7 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between border-b border-slate-200 pb-2 mb-3">
+              <span class="text-xs font-bold uppercase tracking-wider text-[#0F2942]">
+                Active &amp; Historical Scoped Consent Tokens
+              </span>
+              <span id="scopedTokenCountBadge" class="text-[11px] font-mono font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                Loading tokens...
+              </span>
+            </div>
+            <div id="scopedTokensList" class="space-y-2.5 max-h-[340px] overflow-y-auto pr-1 text-xs">
+              <div class="p-4 text-center text-slate-500 bg-slate-50 rounded border border-slate-200">
+                Loading scoped consent tokens for selected candidate...
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
+            <span>Statutory Guarantee: Unselected fields are cryptographically redacted at the edge gateway.</span>
+            <span class="font-mono font-semibold text-slate-700">DPDP Sec. 6(4) Instant Withdrawal</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FEATURE #3: NEP 2020 Academic Bank of Credits (ABC) & Multiple Entry/Exit Ledger -->
+    <div class="bg-white border border-slate-200 border-t-4 border-t-[#138808] rounded p-5 sm:p-6 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-200 pb-4 mb-5">
+        <div>
+          <div class="flex flex-wrap items-center gap-2 mb-1">
+            <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded">
+              <svg class="w-3.5 h-3.5 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>NEP 2020 National Credit Framework (NCrF)</span>
+            </span>
+            <span class="text-[11px] font-mono font-semibold bg-amber-50 text-amber-900 border border-amber-200 px-2.5 py-0.5 rounded">
+              Lateral-Entry Provenance Validator
+            </span>
+          </div>
+          <h2 class="text-base sm:text-lg font-bold text-[#0F2942]">
+            NEP 2020 Academic Bank of Credits (ABC) &amp; Multiple Entry/Exit Ledger
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
+            Tracks semester-wise credit accumulation (<strong class="text-slate-800">0 to 160 Credits</strong>) across NEP 2020 exit thresholds and verifies prior Polytechnic Diploma credits for 2nd-year Lateral Entry.
+          </p>
+        </div>
+        <div class="shrink-0">
+          <span
+            id="abcTotalBadge"
+            class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-mono font-bold bg-[#0F2942] text-white px-3.5 py-1.5 rounded shadow-xs"
+          >
+            {initialAbc.accumulated_credits} / 160 ABC Credits
+          </span>
+        </div>
+      </div>
+
+      <!-- Credit Accumulation Progress Bar with 4 NEP 2020 Milestones -->
+      <div class="bg-slate-50 border border-slate-200 rounded p-4 sm:p-5 mb-5">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2 text-xs">
+          <span class="font-bold text-slate-800 uppercase tracking-wider">
+            Cumulative Credit Progression (40 / 80 / 120 / 160 Thresholds)
+          </span>
+          <span id="abcStageText" class="font-bold text-emerald-800 font-mono">
+            {initialAbc.nep_exit_stage}
+          </span>
+        </div>
+
+        <div class="w-full bg-slate-200 rounded-full h-4 border border-slate-300 overflow-hidden relative">
+          <div
+            id="abcProgressBar"
+            class="h-full bg-gradient-to-r from-[#0F2942] via-blue-700 to-[#138808] transition-all duration-300"
+            style={`width: ${Math.min(100, (initialAbc.accumulated_credits / 160) * 100)}%`}
+          ></div>
+        </div>
+
+        <!-- 4 Official NEP 2020 Exit Threshold Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4 text-xs">
+          <div id="nepMilestone40" class={`p-3 rounded border ${initialAbc.accumulated_credits >= 40 ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950' : 'bg-white border-slate-200 text-slate-500'}`}>
+            <div class="flex items-center justify-between font-mono font-bold mb-1">
+              <span>40 CREDITS</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">Exit Year 1</span>
+            </div>
+            <div class="font-bold text-slate-900">UG Certificate</div>
+            <div class="text-[11px] text-slate-600 mt-0.5">Semesters 1–2 Verified</div>
+          </div>
+
+          <div id="nepMilestone80" class={`p-3 rounded border ${initialAbc.accumulated_credits >= 80 ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950' : 'bg-white border-slate-200 text-slate-500'}`}>
+            <div class="flex items-center justify-between font-mono font-bold mb-1">
+              <span>80 CREDITS</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">Exit Year 2</span>
+            </div>
+            <div class="font-bold text-slate-900">UG Diploma / Lateral Entry</div>
+            <div class="text-[11px] text-slate-600 mt-0.5">2nd-Year Direct Entry Eligible</div>
+          </div>
+
+          <div id="nepMilestone120" class={`p-3 rounded border ${initialAbc.accumulated_credits >= 120 ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950' : 'bg-white border-slate-200 text-slate-500'}`}>
+            <div class="flex items-center justify-between font-mono font-bold mb-1">
+              <span>120 CREDITS</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800">Exit Year 3</span>
+            </div>
+            <div class="font-bold text-slate-900">3-Year Bachelor's Degree</div>
+            <div class="text-[11px] text-slate-600 mt-0.5">B.Sc / B.Voc / B.Tech Exit</div>
+          </div>
+
+          <div id="nepMilestone160" class={`p-3 rounded border ${initialAbc.accumulated_credits >= 160 ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950' : 'bg-white border-slate-200 text-slate-500'}`}>
+            <div class="flex items-center justify-between font-mono font-bold mb-1">
+              <span>160 CREDITS</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-900">Exit Year 4</span>
+            </div>
+            <div class="font-bold text-slate-900">4-Year B.Tech Honours</div>
+            <div class="text-[11px] text-slate-600 mt-0.5">Full Engineering / Research Degree</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lateral-Entry Credit Transfer Provenance Box -->
+      <div id="abcLateralCard" class="p-4 rounded border border-slate-200 bg-white flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs sm:text-sm">
+        <div class="space-y-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="font-bold text-[#0F2942] uppercase tracking-wider text-xs">
+              Lateral-Entry Credit Transfer Provenance:
+            </span>
+            <span
+              id="abcLateralBadge"
+              class={`text-[11px] font-bold px-2.5 py-0.5 rounded border ${
+                initialAbc.lateral_status === 'VERIFIED_ANCHORED'
+                  ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                  : initialAbc.lateral_status === 'DISCREPANCY_FLAGGED'
+                  ? 'bg-red-100 text-red-800 border-red-200'
+                  : 'bg-blue-50 text-blue-800 border-blue-200'
+              }`}
+            >
+              {initialAbc.lateral_status === 'VERIFIED_ANCHORED'
+                ? 'LATERAL DIPLOMA CREDITS VERIFIED (80 CR)'
+                : initialAbc.lateral_status === 'DISCREPANCY_FLAGGED'
+                ? 'UNVERIFIED LATERAL ENTRY FLAGGED'
+                : 'REGULAR 1ST-YEAR DIRECT ADMISSION'}
+            </span>
+          </div>
+          <div id="abcDiplomaSource" class="font-semibold text-slate-800">
+            Qualifying Channel: {initialAbc.prior_diploma_board}
+          </div>
+          <p id="abcLateralNote" class="text-xs text-slate-600 leading-relaxed">
+            {initialAbc.lateral_note}
+          </p>
+        </div>
+
+        <div class="shrink-0 bg-slate-50 px-4 py-2.5 rounded border border-slate-200 font-mono text-xs text-right">
+          <div class="text-slate-500 text-[10px] uppercase font-bold">Transferred Credits</div>
+          <div id="abcTransferredCredits" class="text-base font-bold text-[#0F2942]">{initialAbc.transferred_credits} Credits</div>
+          <div class="text-[10px] text-emerald-700">APAAR 12-Digit Bound</div>
         </div>
       </div>
     </div>
@@ -279,7 +677,7 @@ const enrichedDegrees = degrees.map((d) => {
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div class="bg-white border border-slate-200 rounded p-5 shadow-sm space-y-4">
         <h2 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider">
-          DPDP Statutory Consent Controls
+          DPDP Statutory Global Consent Switch
         </h2>
         <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
           Under Section 6 of the DPDP Act 2023, employers, recruiters, and third parties cannot view or query your degree transcripts without your explicit hardware-authenticated consent.
@@ -287,8 +685,8 @@ const enrichedDegrees = degrees.map((d) => {
 
         <div class="flex items-center justify-between p-4 bg-slate-50 rounded border border-slate-200 text-xs sm:text-sm">
           <div>
-            <div class="font-bold text-slate-900">Third-Party Verification Consent</div>
-            <div class="text-xs text-slate-500 mt-0.5">Allow employers to confirm verified degrees</div>
+            <div class="font-bold text-slate-900">Global Third-Party Verification Consent</div>
+            <div class="text-xs text-slate-500 mt-0.5">Master switch for public verifier queries</div>
           </div>
           <button
             type="button"
@@ -362,6 +760,11 @@ const enrichedDegrees = degrees.map((d) => {
     </div>
   </div>
 
+  <!-- Serialize ABC Profiles for instant client-side switching -->
+  <script is:inline define:vars={{ abcProfiles }}>
+    window.__ABC_PROFILES__ = abcProfiles;
+  </script>
+
   <script>
     import { startRegistration, startAuthentication, browserSupportsWebAuthn } from '@simplewebauthn/browser';
 
@@ -387,11 +790,11 @@ const enrichedDegrees = degrees.map((d) => {
     function updatePasskeyBadge(hasPasskey: boolean) {
       if (!passkeyBadge) return;
       if (hasPasskey) {
-        passkeyBadge.textContent = 'Passkey Bound ✓';
-        passkeyBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded border bg-emerald-100 text-emerald-800 border-emerald-200';
+        passkeyBadge.innerHTML = `<svg class="w-3 h-3 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg><span>Passkey Bound</span>`;
+        passkeyBadge.className = 'inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded border bg-emerald-100 text-emerald-800 border-emerald-200';
       } else {
         passkeyBadge.textContent = 'No Passkey Bound — Click Below to Register';
-        passkeyBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded border bg-amber-100 text-amber-800 border-amber-200';
+        passkeyBadge.className = 'inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded border bg-amber-100 text-amber-800 border-amber-200';
       }
     }
 
@@ -427,6 +830,163 @@ const enrichedDegrees = degrees.map((d) => {
       }
     }
 
+    function updateAbcLedgerUI(apaar: string) {
+      const profiles = (window as any).__ABC_PROFILES__ || {};
+      const p = profiles[apaar] || profiles['739284019283'];
+      if (!p) return;
+
+      const totalBadge = document.getElementById('abcTotalBadge');
+      const stageText = document.getElementById('abcStageText');
+      const bar = document.getElementById('abcProgressBar');
+      const latBadge = document.getElementById('abcLateralBadge');
+      const dipSource = document.getElementById('abcDiplomaSource');
+      const latNote = document.getElementById('abcLateralNote');
+      const transCredits = document.getElementById('abcTransferredCredits');
+
+      if (totalBadge) totalBadge.textContent = `${p.accumulated_credits} / 160 ABC Credits`;
+      if (stageText) stageText.textContent = p.nep_exit_stage;
+      if (bar) bar.style.width = `${Math.min(100, (p.accumulated_credits / 160) * 100)}%`;
+
+      const setMilestone = (id: string, threshold: number) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const reached = p.accumulated_credits >= threshold;
+        el.className = `p-3 rounded border ${
+          reached ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950' : 'bg-white border-slate-200 text-slate-500'
+        }`;
+      };
+      setMilestone('nepMilestone40', 40);
+      setMilestone('nepMilestone80', 80);
+      setMilestone('nepMilestone120', 120);
+      setMilestone('nepMilestone160', 160);
+
+      if (latBadge) {
+        if (p.lateral_status === 'VERIFIED_ANCHORED') {
+          latBadge.textContent = 'LATERAL DIPLOMA CREDITS VERIFIED (80 CR)';
+          latBadge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded border bg-emerald-100 text-emerald-800 border-emerald-200';
+        } else if (p.lateral_status === 'DISCREPANCY_FLAGGED') {
+          latBadge.textContent = 'UNVERIFIED LATERAL ENTRY FLAGGED';
+          latBadge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded border bg-red-100 text-red-800 border-red-200';
+        } else {
+          latBadge.textContent = 'REGULAR 1ST-YEAR DIRECT ADMISSION';
+          latBadge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded border bg-blue-50 text-blue-800 border-blue-200';
+        }
+      }
+      if (dipSource) dipSource.textContent = `Qualifying Channel: ${p.prior_diploma_board}`;
+      if (latNote) latNote.textContent = p.lateral_note;
+      if (transCredits) transCredits.textContent = `${p.transferred_credits} Credits`;
+    }
+
+    async function loadScopedTokens(apaar: string) {
+      const listEl = document.getElementById('scopedTokensList');
+      const countBadge = document.getElementById('scopedTokenCountBadge');
+      if (!listEl) return;
+
+      try {
+        const res = await fetch(`/api/student/token?apaar_id=${encodeURIComponent(apaar)}`);
+        const json = await res.json();
+        const tokens: any[] = json.data || [];
+
+        const activeCount = tokens.filter((t) => t.status === 'ACTIVE').length;
+        if (countBadge) {
+          countBadge.textContent = `${activeCount} Active / ${tokens.length} Total`;
+        }
+
+        if (tokens.length === 0) {
+          listEl.innerHTML = `<div class="p-4 text-center text-slate-500 bg-slate-50 rounded border border-slate-200">No purpose-scoped consent tokens minted for this candidate yet. Use the form on the left to mint a 24-hour single-use token.</div>`;
+          return;
+        }
+
+        listEl.innerHTML = tokens
+          .map((t) => {
+            const isActive = t.status === 'ACTIVE';
+            const badgeClass = isActive
+              ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+              : 'bg-red-100 text-red-800 border-red-200';
+            const scopeLabels = (t.disclosed_fields || []).join(', ');
+            return `
+              <div class="p-3.5 rounded border border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="space-y-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <code class="font-mono font-bold text-[#0F2942] bg-white px-2 py-0.5 rounded border border-slate-300 text-xs">${t.token_id}</code>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded border ${badgeClass}">${t.status}</span>
+                    <span class="text-[11px] font-mono text-slate-500">${t.ttl_label}</span>
+                  </div>
+                  <div class="font-bold text-slate-900 text-xs sm:text-sm">${t.verifier_org}</div>
+                  <div class="text-xs text-slate-600">
+                    Purpose: <strong>${t.purpose}</strong> &bull; Disclosed Scope: <code class="font-mono text-[11px] bg-slate-200/70 px-1.5 py-0.5 rounded">${scopeLabels}</code>
+                  </div>
+                  <div class="text-[10px] font-mono text-slate-400 truncate max-w-md" title="${t.signature_digest}">
+                    ${t.signature_digest} &bull; Expires: ${t.expires_at.replace('T', ' ').slice(0, 16)} UTC
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    data-copy-token="${t.token_id}"
+                    class="copy-token-btn px-2.5 py-1.5 rounded bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-semibold text-xs inline-flex items-center gap-1 transition-colors"
+                  >
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <span>Copy</span>
+                  </button>
+                  ${
+                    isActive
+                      ? `<button
+                          type="button"
+                          data-revoke-token="${t.token_id}"
+                          class="revoke-token-btn px-2.5 py-1.5 rounded bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 font-semibold text-xs inline-flex items-center gap-1 transition-colors"
+                        >
+                          <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          <span>Revoke Token</span>
+                        </button>`
+                      : ''
+                  }
+                </div>
+              </div>
+            `;
+          })
+          .join('');
+
+        listEl.querySelectorAll<HTMLButtonElement>('.copy-token-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const code = btn.getAttribute('data-copy-token') || '';
+            navigator.clipboard?.writeText(code);
+            toast(`Consent token ${code} copied to clipboard.`, 'info');
+          });
+        });
+
+        listEl.querySelectorAll<HTMLButtonElement>('.revoke-token-btn').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            const code = btn.getAttribute('data-revoke-token') || '';
+            if (!code) return;
+            btn.disabled = true;
+            try {
+              const delRes = await fetch(`/api/student/token?token_id=${encodeURIComponent(code)}`, {
+                method: 'DELETE',
+              });
+              const delJson = await delRes.json();
+              if (delJson.success) {
+                toast(`Scoped Consent Token ${code} revoked immediately under DPDP Section 6(4).`, 'warning');
+                await loadScopedTokens(apaar);
+              } else {
+                toast(delJson.error || 'Failed to revoke token', 'error');
+              }
+            } catch {
+              toast('Network error revoking token', 'error');
+            } finally {
+              btn.disabled = false;
+            }
+          });
+        });
+      } catch {
+        listEl.innerHTML = `<div class="p-4 text-center text-red-600 bg-red-50 rounded border border-red-200">Error loading scoped consent tokens.</div>`;
+      }
+    }
+
     function filterStudentRecords(apaar: string) {
       const toggleSection = (itemSelector: string, emptyId: string) => {
         const items = document.querySelectorAll<HTMLElement>(itemSelector);
@@ -448,6 +1008,8 @@ const enrichedDegrees = degrees.map((d) => {
       toggleSection('.student-admission-item', 'noAdmissionsMsg');
       toggleSection('.student-degree-item', 'noDegreesMsg');
       toggleSection('.student-audit-item', 'noAuditMsg');
+      updateAbcLedgerUI(apaar);
+      loadScopedTokens(apaar);
     }
 
     selector?.addEventListener('change', () => {
@@ -473,6 +1035,57 @@ const enrichedDegrees = degrees.map((d) => {
       updatePasskeyBadge(initialOpt.dataset.haspasskey === 'true');
       filterStudentRecords(initialOpt.value);
     }
+
+    // Mint Purpose-Scoped One-Time Consent Token
+    const mintBtn = document.getElementById('mintTokenBtn') as HTMLButtonElement | null;
+    const mintedBanner = document.getElementById('mintedTokenBanner');
+    const mintedCodeEl = document.getElementById('mintedTokenCode');
+    const copyMintedBtn = document.getElementById('copyMintedTokenBtn');
+
+    mintBtn?.addEventListener('click', async () => {
+      const apaar = selector ? selector.value : '739284019283';
+      const verifierOrg = (document.getElementById('tokenVerifierOrg') as HTMLSelectElement)?.value || 'UPSC Civil Services Board';
+      const purpose = (document.getElementById('tokenPurpose') as HTMLSelectElement)?.value || 'Degree & Eligibility Verification';
+      const scopeRaw = (document.getElementById('tokenScope') as HTMLSelectElement)?.value || 'degree_status,cgpa_threshold';
+      const ttlSelect = document.getElementById('tokenTtl') as HTMLSelectElement | null;
+      const ttlHours = Number(ttlSelect?.value || 24);
+      const singleUse = ttlSelect?.selectedOptions?.[0]?.getAttribute('data-single') !== 'false';
+
+      mintBtn.disabled = true;
+      try {
+        const data = await postJSON('/api/student/token', {
+          apaar_id: apaar,
+          verifier_org: verifierOrg,
+          purpose,
+          disclosed_fields: scopeRaw.split(',').map((s) => s.trim()),
+          ttl_hours: ttlHours,
+          single_use: singleUse,
+        });
+
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to mint consent token');
+        }
+
+        if (mintedBanner && mintedCodeEl) {
+          mintedCodeEl.textContent = data.data.token_id;
+          mintedBanner.classList.remove('hidden');
+        }
+        toast(`Scoped Token ${data.data.token_id} minted for ${verifierOrg}.`, 'success');
+        await loadScopedTokens(apaar);
+      } catch (err: any) {
+        toast(err?.message || 'Error minting scoped token', 'error');
+      } finally {
+        mintBtn.disabled = false;
+      }
+    });
+
+    copyMintedBtn?.addEventListener('click', () => {
+      const code = mintedCodeEl?.textContent || '';
+      if (code) {
+        navigator.clipboard?.writeText(code);
+        toast(`Copied token ${code} to clipboard.`, 'info');
+      }
+    });
 
     // Consent grant/revoke requires a successful passkey assertion, verified server-side.
     toggleBtn?.addEventListener('click', async () => {
@@ -564,7 +1177,12 @@ const enrichedDegrees = degrees.map((d) => {
         toast('Passkey registration error: ' + (err?.message || 'Unknown error'), 'error');
       } finally {
         registerBtn.disabled = false;
-        registerBtn.innerHTML = '<span>Bind Hardware Biometric Passkey</span>';
+        registerBtn.innerHTML = `
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+          </svg>
+          <span>Bind Hardware Biometric Passkey</span>
+        `;
       }
     });
   </script>

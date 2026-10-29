@@ -11,6 +11,12 @@ import {
   buildClearSessionCookie,
   SESSION_COOKIE_NAME,
 } from '../../src/lib/auth';
+import {
+  EIGHTH_SCHEDULE_LANGUAGES,
+  isSupportedLang,
+  getLanguageInfo,
+  getUIDictionary,
+} from '../../src/lib/i18n';
 
 describe('masking (DPDP)', () => {
   test('maskApaar keeps only last 4 digits', () => {
@@ -74,5 +80,27 @@ describe('auth helpers', () => {
     expect(c).toContain('Secure');
     expect(c).toMatch(/SameSite=(Lax|Strict)/);
     expect(buildClearSessionCookie()).toContain('Max-Age=0');
+  });
+});
+
+describe('22 Eighth Schedule Indian languages + English (i18n)', () => {
+  test('exports all 23 supported language entries', () => {
+    expect(EIGHTH_SCHEDULE_LANGUAGES.length).toBe(23);
+    const expectedCodes = [
+      'en', 'hi', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'ml',
+      'or', 'pa', 'as', 'mai', 'sat', 'ks', 'ne', 'sd', 'kok', 'doi',
+      'mni', 'brx', 'sa',
+    ];
+    for (const code of expectedCodes) {
+      expect(isSupportedLang(code)).toBe(true);
+      const info = getLanguageInfo(code);
+      expect(info.code).toBe(code as any);
+      expect(info.nativeName.length).toBeGreaterThan(0);
+      const dict = getUIDictionary(code);
+      expect(dict.portalTitle.length).toBeGreaterThan(0);
+      expect(dict.verifyCta.length).toBeGreaterThan(0);
+    }
+    expect(getLanguageInfo('ur').dir).toBe('rtl');
+    expect(isSupportedLang('xx')).toBe(false);
   });
 });
