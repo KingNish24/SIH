@@ -34,6 +34,24 @@ const initialDiff = collegeA.current_enrollment - collegeA.sanctioned_intake;
 const initialIsOverrun = initialDiff > 0;
 const initialPct = ((collegeA.current_enrollment / Math.max(1, collegeA.sanctioned_intake)) * 100).toFixed(1);
 const initialBarWidth = Math.min(100, (collegeA.current_enrollment / Math.max(1, collegeA.sanctioned_intake)) * 100).toFixed(1);
+
+// Deterministic statutory category breakdown per institution (AICTE APH 2024-27 Norms)
+function computeCategoryBreakdown(sanctioned: number, current: number) {
+  const supernumerary = Math.round(sanctioned * 0.15); // 15% TFW / EWS / PMSSS
+  const nri = Math.round(sanctioned * 0.05); // 5% NRI quota
+  const oci = Math.max(1, Math.round(sanctioned * 0.02)); // 2% OCI status
+  const fn = Math.max(1, Math.round(sanctioned * 0.03)); // 3% Foreign National (FN)
+  return {
+    approvedIntake: sanctioned,
+    actualEnrolment: current,
+    supernumerary,
+    nri,
+    oci,
+    fn,
+  };
+}
+
+const initialCat = computeCategoryBreakdown(collegeA.sanctioned_intake, collegeA.current_enrollment);
 ---
 
 <Layout title="SIH 2026 | Approved Institution Portal" activeRole="institution">
@@ -175,6 +193,59 @@ const initialBarWidth = Math.min(100, (collegeA.current_enrollment / Math.max(1,
           </div>
         </div>
       </div>
+
+      <!-- Statutory Seat & Admission Category Breakdown (AICTE APH Norms) — 6-Column Strip -->
+      <div class="mt-5 pt-4 border-t border-slate-200">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div class="text-xs font-bold uppercase tracking-wider text-[#0F2942] flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-[#1E40AF] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span>Statutory Seat &amp; Admission Category Breakdown (AICTE APH Norms)</span>
+          </div>
+          <span class="text-[11px] font-mono font-semibold bg-slate-100 text-slate-700 border border-slate-200 px-2.5 py-0.5 rounded">
+            APH 2024–27 Chapter II &amp; VII Monitored Quotas
+          </span>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+          <div class="p-3 rounded bg-slate-50 border border-slate-200">
+            <div class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Approved Intake</div>
+            <div id="catApprovedIntake" class="text-base sm:text-lg font-bold font-mono text-[#0F2942] mt-1">{initialCat.approvedIntake}</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">Sanctioned Base Quota</div>
+          </div>
+
+          <div class="p-3 rounded bg-slate-50 border border-slate-200">
+            <div class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Actual Enrolment</div>
+            <div id="catActualEnrolment" class={`text-base sm:text-lg font-bold font-mono mt-1 ${initialIsOverrun ? 'text-red-600' : 'text-emerald-700'}`}>{initialCat.actualEnrolment}</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">Active APAAR Verified</div>
+          </div>
+
+          <div class="p-3 rounded bg-blue-50/50 border border-blue-200">
+            <div class="text-[10px] font-bold uppercase text-blue-800 tracking-wider">Supernumerary Seats</div>
+            <div id="catSupernumerary" class="text-base sm:text-lg font-bold font-mono text-blue-900 mt-1">{initialCat.supernumerary}</div>
+            <div class="text-[10px] text-blue-700 mt-0.5">TFW (5%) / EWS (10%) / PMSSS</div>
+          </div>
+
+          <div class="p-3 rounded bg-amber-50/50 border border-amber-200">
+            <div class="text-[10px] font-bold uppercase text-amber-900 tracking-wider">NRI Category</div>
+            <div id="catNri" class="text-base sm:text-lg font-bold font-mono text-amber-900 mt-1">{initialCat.nri}</div>
+            <div class="text-[10px] text-amber-800 mt-0.5">Up to 5% Approved Cap</div>
+          </div>
+
+          <div class="p-3 rounded bg-indigo-50/50 border border-indigo-200">
+            <div class="text-[10px] font-bold uppercase text-indigo-900 tracking-wider">OCI Status</div>
+            <div id="catOci" class="text-base sm:text-lg font-bold font-mono text-indigo-900 mt-1">{initialCat.oci}</div>
+            <div class="text-[10px] text-indigo-800 mt-0.5">Overseas Citizen of India</div>
+          </div>
+
+          <div class="p-3 rounded bg-emerald-50/50 border border-emerald-200">
+            <div class="text-[10px] font-bold uppercase text-emerald-900 tracking-wider">Foreign National (FN)</div>
+            <div id="catFn" class="text-base sm:text-lg font-bold font-mono text-emerald-900 mt-1">{initialCat.fn}</div>
+            <div class="text-[10px] text-emerald-800 mt-0.5">PIO / FN / Gulf Quota</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Main Workspace Grid: File Ingestion & Triage -->
@@ -204,7 +275,7 @@ const initialBarWidth = Math.min(100, (collegeA.current_enrollment / Math.max(1,
               </svg>
             </div>
             <span class="text-xs sm:text-sm font-bold text-[#0F2942] group-hover:text-blue-800">Select CSV Roster File to Upload</span>
-            <span class="text-[11px] font-mono text-slate-500 mt-1">apaar_id, full_name, program, batch_year</span>
+            <span class="text-[11px] font-mono text-slate-500 mt-1">apaar_id, student_roll_id, full_name, program, batch_year, admission_category</span>
             <input type="file" id="csvFileInput" accept=".csv" class="hidden" />
           </label>
 
@@ -259,6 +330,48 @@ const initialBarWidth = Math.min(100, (collegeA.current_enrollment / Math.max(1,
             </button>
           </div>
         </div>
+
+        <!-- ERP & AICTE Portal REST API Integration Card (Key Requirement #1 & #7) -->
+        <div class="bg-white border border-slate-200 rounded p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-1.5">
+            <h3 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider">
+              ERP &amp; AICTE Portal REST API Integration
+            </h3>
+            <span class="text-[10px] font-mono font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded">
+              POST /api/roster/sync
+            </span>
+          </div>
+          <p class="text-xs text-slate-600 mb-3 leading-relaxed">
+            Seamless machine-to-machine synchronization for institutional ERP software, state CET cells, and the AICTE Web Portal using standardized JSON payloads.
+          </p>
+          <details class="group border border-slate-200 rounded bg-slate-50">
+            <summary class="px-3 py-2 text-xs font-bold text-[#0F2942] cursor-pointer flex items-center justify-between select-none">
+              <span>Inspect Live REST API Payload Specification</span>
+              <svg class="w-4 h-4 text-slate-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div class="p-3 border-t border-slate-200 bg-slate-950 text-emerald-300 font-mono text-[10px] leading-relaxed overflow-x-auto rounded-b">
+<pre>{`POST /api/roster/sync HTTP/1.1
+Content-Type: application/json
+
+{
+  "institutionId": "${collegeA.id}",
+  "students": [
+    {
+      "apaar_id": "901238471920",
+      "student_roll_id": "INST-2024-CSE-001",
+      "full_name": "Aarav Sharma",
+      "program": "B.Tech Computer Science",
+      "batch_year": 2024,
+      "admission_category": "APPROVED_INTAKE"
+    }
+  ]
+}
+/* Categories: APPROVED_INTAKE | SUPERNUMERARY | NRI | OCI | FN */`}</pre>
+            </div>
+          </details>
+        </div>
       </div>
 
       <!-- Right Column: Verification & Audit Log Table -->
@@ -305,15 +418,16 @@ const initialBarWidth = Math.min(100, (collegeA.current_enrollment / Math.max(1,
               <thead class="bg-slate-100 text-slate-700 font-semibold sticky top-0 border-b border-slate-200">
                 <tr>
                   <th class="py-3 px-4">S.No</th>
-                  <th class="py-3 px-4">Masked APAAR ID</th>
+                  <th class="py-3 px-4">Masked APAAR &amp; Roll ID</th>
                   <th class="py-3 px-4">Candidate (Masked)</th>
                   <th class="py-3 px-4">Academic Program</th>
+                  <th class="py-3 px-4">Admission Category</th>
                   <th class="py-3 px-4">Validation Status</th>
                 </tr>
               </thead>
               <tbody id="triageTableBody" class="divide-y divide-slate-200 text-slate-800">
                 <tr>
-                  <td colspan="5" class="py-10 px-4 text-center text-slate-500 text-xs sm:text-sm">
+                  <td colspan="6" class="py-10 px-4 text-center text-slate-500 text-xs sm:text-sm">
                     No roster uploaded. Select a CSV file, download the sample CSV template, or load a regulatory test dataset.
                   </td>
                 </tr>
@@ -395,6 +509,24 @@ const initialBarWidth = Math.min(100, (collegeA.current_enrollment / Math.max(1,
         pctEl.textContent = `${pct}% (${isOverrun ? 'Non-Compliant' : 'Compliant'})`;
         pctEl.className = `font-bold ${isOverrun ? 'text-red-700' : 'text-emerald-700'}`;
       }
+
+      // Dynamically update 6-column Statutory Seat & Admission Category Breakdown
+      const catApprovedEl = document.getElementById('catApprovedIntake');
+      const catActualEl = document.getElementById('catActualEnrolment');
+      const catSuperEl = document.getElementById('catSupernumerary');
+      const catNriEl = document.getElementById('catNri');
+      const catOciEl = document.getElementById('catOci');
+      const catFnEl = document.getElementById('catFn');
+
+      if (catApprovedEl) catApprovedEl.textContent = String(sanctioned);
+      if (catActualEl) {
+        catActualEl.textContent = String(current);
+        catActualEl.className = `text-base sm:text-lg font-bold font-mono mt-1 ${isOverrun ? 'text-red-600' : 'text-emerald-700'}`;
+      }
+      if (catSuperEl) catSuperEl.textContent = String(Math.round(sanctioned * 0.15));
+      if (catNriEl) catNriEl.textContent = String(Math.round(sanctioned * 0.05));
+      if (catOciEl) catOciEl.textContent = String(Math.max(1, Math.round(sanctioned * 0.02)));
+      if (catFnEl) catFnEl.textContent = String(Math.max(1, Math.round(sanctioned * 0.03)));
     }
 
     collegeSelect?.addEventListener('change', updateCollegeMeter);
@@ -402,12 +534,12 @@ const initialBarWidth = Math.min(100, (collegeA.current_enrollment / Math.max(1,
     // Download 5-row valid sample CSV template
     downloadSampleCsvBtn?.addEventListener('click', () => {
       const csvContent = [
-        'apaar_id,full_name,program,batch_year',
-        '901238471920,Aarav Sharma,B.Tech Computer Science & Engineering,2024',
-        '812349582031,Priya Nair,B.Tech Information Technology,2024',
-        '723450693142,Rohan Deshmukh,B.Tech Electronics & Telecommunication,2024',
-        '634561704253,Ananya Kulkarni,B.Tech Artificial Intelligence & Data Science,2024',
-        '545672815364,Vikramaditya Joshi,B.Tech Computer Science & Engineering,2024',
+        'apaar_id,student_roll_id,full_name,program,batch_year,admission_category',
+        '901238471920,INST-2024-CSE-001,Aarav Sharma,B.Tech Computer Science & Engineering,2024,General / Approved Intake',
+        '812349582031,INST-2024-IT-002,Priya Nair,B.Tech Information Technology,2024,Supernumerary (TFW/EWS)',
+        '723450693142,INST-2024-ENTC-003,Rohan Deshmukh,B.Tech Electronics & Telecommunication,2024,NRI',
+        '634561704253,INST-2024-AIDS-004,Ananya Kulkarni,B.Tech Artificial Intelligence & Data Science,2024,OCI',
+        '545672815364,INST-2024-CSE-005,Vikramaditya Joshi,B.Tech Computer Science & Engineering,2024,Foreign National (FN)',
       ].join('\n');
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -419,7 +551,7 @@ const initialBarWidth = Math.min(100, (collegeA.current_enrollment / Math.max(1,
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      (window as any).showToast?.('Sample CSV template (5 records) downloaded.', 'info');
+      (window as any).showToast?.('Sample CSV template (5 records with category & roll ID) downloaded.', 'info');
     });
 
     // Masking helpers for client side
@@ -434,10 +566,27 @@ const initialBarWidth = Math.min(100, (collegeA.current_enrollment / Math.max(1,
       return parts.length > 1 ? `${parts[0]} ${parts[1][0]}.` : val;
     }
 
+    function renderCategoryBadge(cat: string): string {
+      const c = (cat || 'General / Approved Intake').toUpperCase();
+      if (c.includes('SUPERNUMERARY') || c.includes('TFW') || c.includes('EWS')) {
+        return `<span class="bg-blue-50 text-blue-800 px-2 py-0.5 rounded border border-blue-200 font-semibold text-[11px]">Supernumerary (TFW/EWS)</span>`;
+      }
+      if (c.includes('NRI')) {
+        return `<span class="bg-amber-50 text-amber-800 px-2 py-0.5 rounded border border-amber-200 font-semibold text-[11px]">NRI Category</span>`;
+      }
+      if (c.includes('OCI')) {
+        return `<span class="bg-indigo-50 text-indigo-800 px-2 py-0.5 rounded border border-indigo-200 font-semibold text-[11px]">OCI Status</span>`;
+      }
+      if (c.includes('FOREIGN') || c === 'FN') {
+        return `<span class="bg-purple-50 text-purple-800 px-2 py-0.5 rounded border border-purple-200 font-semibold text-[11px]">Foreign National (FN)</span>`;
+      }
+      return `<span class="bg-slate-100 text-slate-800 px-2 py-0.5 rounded border border-slate-200 font-semibold text-[11px]">General / Approved Intake</span>`;
+    }
+
     function renderTriageRows(rows: any[]) {
       currentTriageData = rows;
       if (!rows.length) {
-        tableBody.innerHTML = `<tr><td colspan="5" class="py-10 px-4 text-center text-slate-500">No records found.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="6" class="py-10 px-4 text-center text-slate-500">No records found.</td></tr>`;
         commitBtn.disabled = true;
         return;
       }
@@ -448,6 +597,7 @@ const initialBarWidth = Math.min(100, (collegeA.current_enrollment / Math.max(1,
       rows.forEach((r, idx) => {
         const is12 = /^[0-9]{12}$/.test(r.apaar_id || '');
         const isMissing = !r.apaar_id || r.apaar_id.trim() === '';
+        const rollId = r.student_roll_id || `INST-2024-CSE-${String(idx + 1).padStart(3, '0')}`;
         
         let statusTag = '';
         if (is12) {
@@ -464,9 +614,13 @@ const initialBarWidth = Math.min(100, (collegeA.current_enrollment / Math.max(1,
         html += `
           <tr class="hover:bg-slate-50">
             <td class="py-3 px-4 font-mono text-slate-500">${idx + 1}</td>
-            <td class="py-3 px-4 font-mono font-semibold text-slate-900">${maskApaarClient(r.apaar_id)}</td>
+            <td class="py-3 px-4">
+              <div class="font-mono font-semibold text-slate-900">${maskApaarClient(r.apaar_id)}</div>
+              <div class="font-mono text-[11px] text-slate-500">Roll: ${rollId}</div>
+            </td>
             <td class="py-3 px-4 text-slate-800 font-medium">${maskNameClient(r.name || r.full_name)}</td>
             <td class="py-3 px-4 text-slate-600">${r.program || 'B.Tech Computer Science'}</td>
+            <td class="py-3 px-4">${renderCategoryBadge(r.admission_category)}</td>
             <td class="py-3 px-4">${statusTag}</td>
           </tr>
         `;
@@ -499,9 +653,11 @@ const initialBarWidth = Math.min(100, (collegeA.current_enrollment / Math.max(1,
 
           const headerCols = parseCols(lines[0]).map(h => h.toLowerCase());
           const apaarIdx = headerCols.findIndex(h => h.includes('apaar'));
+          const rollIdx = headerCols.findIndex(h => h.includes('roll') || h.includes('student_id'));
           const nameIdx = headerCols.findIndex(h => h.includes('name'));
           const progIdx = headerCols.findIndex(h => h.includes('prog'));
           const batchIdx = headerCols.findIndex(h => h.includes('batch') || h.includes('year'));
+          const catIdx = headerCols.findIndex(h => h.includes('cat') || h.includes('quota'));
 
           const hasHeader = apaarIdx !== -1 || nameIdx !== -1;
           const startIdx = hasHeader ? 1 : 0;
@@ -512,17 +668,21 @@ const initialBarWidth = Math.min(100, (collegeA.current_enrollment / Math.max(1,
             if (!cols || cols.length === 0 || (cols.length === 1 && !cols[0])) continue;
 
             const apaar = apaarIdx !== -1 ? cols[apaarIdx] : cols[0];
+            const rollId = rollIdx !== -1 ? cols[rollIdx] : `INST-2024-CSE-${String(i).padStart(3, '0')}`;
             const name = nameIdx !== -1 ? cols[nameIdx] : (cols[1] || `Candidate ${i}`);
             const prog = progIdx !== -1 ? cols[progIdx] : (cols[2] || 'B.Tech Computer Science');
             const batchRaw = batchIdx !== -1 ? cols[batchIdx] : cols[3];
             const batchYear = parseInt(batchRaw, 10) || 2024;
+            const admCat = catIdx !== -1 ? cols[catIdx] : 'General / Approved Intake';
 
             parsedRows.push({
               apaar_id: (apaar || '').trim(),
+              student_roll_id: (rollId || `INST-2024-CSE-${String(i).padStart(3, '0')}`).trim(),
               name: (name || 'Candidate').trim(),
               full_name: (name || 'Candidate').trim(),
               program: (prog || 'B.Tech Computer Science').trim(),
               batch_year: batchYear,
+              admission_category: (admCat || 'General / Approved Intake').trim(),
             });
           }
 
@@ -541,15 +701,27 @@ const initialBarWidth = Math.min(100, (collegeA.current_enrollment / Math.max(1,
       reader.readAsText(file);
     });
 
+    const SAMPLE_CATEGORIES = [
+      'General / Approved Intake',
+      'General / Approved Intake',
+      'General / Approved Intake',
+      'Supernumerary (TFW/EWS)',
+      'NRI',
+      'OCI',
+      'Foreign National (FN)',
+    ];
+
     loadOverrunBtn?.addEventListener('click', () => {
       const sampleRows: any[] = [];
       for (let i = 1; i <= 187; i++) {
         const apaarNum = 739284000000 + i;
         sampleRows.push({
           apaar_id: String(apaarNum),
+          student_roll_id: `INST-2024-CSE-${String(i).padStart(3, '0')}`,
           name: `Candidate ${i}`,
           program: 'B.Tech Computer Science & Engineering',
           batch_year: 2024,
+          admission_category: SAMPLE_CATEGORIES[i % SAMPLE_CATEGORIES.length],
         });
       }
       // Inject malformed and missing records
@@ -564,9 +736,11 @@ const initialBarWidth = Math.min(100, (collegeA.current_enrollment / Math.max(1,
         const apaarNum = 849201000000 + i;
         sampleRows.push({
           apaar_id: String(apaarNum),
+          student_roll_id: `INST-2024-IT-${String(i).padStart(3, '0')}`,
           name: `Candidate ${i}`,
           program: 'B.Tech Information Technology',
           batch_year: 2024,
+          admission_category: SAMPLE_CATEGORIES[i % SAMPLE_CATEGORIES.length],
         });
       }
       renderTriageRows(sampleRows);
@@ -582,11 +756,13 @@ const initialBarWidth = Math.min(100, (collegeA.current_enrollment / Math.max(1,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             institutionId: collegeSelect.value || collegeSelect.getAttribute('data-institution-id'),
-            students: currentTriageData.filter(s => /^[0-9]{12}$/.test(s.apaar_id)).map(s => ({
+            students: currentTriageData.filter(s => /^[0-9]{12}$/.test(s.apaar_id)).map((s, idx) => ({
               apaar_id: s.apaar_id,
+              student_roll_id: s.student_roll_id || `INST-2024-CSE-${String(idx + 1).padStart(3, '0')}`,
               full_name: s.name || s.full_name || 'Candidate',
               program: s.program,
               batch_year: s.batch_year,
+              admission_category: s.admission_category || 'APPROVED_INTAKE',
             })),
           }),
         });

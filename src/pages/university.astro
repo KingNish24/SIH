@@ -18,8 +18,12 @@ const students = stuRes.results || [];
 const degrees = rawDegrees.map((d) => {
   const st = students.find((s) => s.apaar_id === d.apaar_id);
   const inst = institutions.find((i) => i.id === d.institution_id);
+  const instCodePrefix = (inst?.code || d.institution_id || 'TCA').split('-')[0];
+  const entryBatch = (Number(d.year_of_passing) || 2024) - 4;
+  const student_roll_id = `STU-${instCodePrefix}-${entryBatch}-${d.apaar_id.slice(-4)}`;
   return {
     ...d,
+    student_roll_id,
     student_name: st?.full_name ? maskName(st.full_name) : 'Candidate ' + d.apaar_id.slice(-4),
     institution_name: inst?.name || d.institution_id,
   };
@@ -165,7 +169,7 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
           <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
             <tr>
               <th class="py-3 px-4">Degree ID</th>
-              <th class="py-3 px-4">Candidate &amp; APAAR (Masked)</th>
+              <th class="py-3 px-4">Candidate, 12-Digit APAAR &amp; Student Roll ID</th>
               <th class="py-3 px-4">Degree &amp; Specialization</th>
               <th class="py-3 px-4">Graduation</th>
               <th class="py-3 px-4">Registry Status</th>
@@ -179,7 +183,10 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
                 <td class="py-3.5 px-4 font-mono font-bold text-slate-900">{d.id}</td>
                 <td class="py-3.5 px-4">
                   <div class="font-semibold text-slate-900">{d.student_name}</div>
-                  <div class="text-xs font-mono text-slate-500">{maskApaar(d.apaar_id)}</div>
+                  <div class="text-xs font-mono text-slate-700 mt-0.5">APAAR: <span class="font-bold text-[#0F2942]">{maskApaar(d.apaar_id)}</span></div>
+                  <div class="text-[11px] font-mono text-blue-800 bg-blue-50 border border-blue-200 inline-block px-1.5 py-0.5 rounded mt-1">
+                    Roll/Univ ID: {d.student_roll_id}
+                  </div>
                 </td>
                 <td class="py-3.5 px-4">
                   <div class="font-semibold text-slate-900">{d.degree_name}</div>

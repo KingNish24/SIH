@@ -268,9 +268,9 @@ const initialOrg = queryInst
           </div>
 
           <div class="p-3.5 bg-slate-50 rounded-md border border-slate-200">
-            <div class="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Masked APAAR ID</div>
+            <div class="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">12-Digit APAAR &amp; Student ID</div>
             <div id="resApaar" class="font-bold font-mono text-slate-900 text-sm mt-1">XXXX-XXXX-{initialApaar.slice(-4)}</div>
-            <div class="text-[11px] text-slate-500 mt-0.5">UIDAI / ABC Linked</div>
+            <div id="resStudentRollId" class="text-[11px] font-mono font-bold text-[#1E40AF] mt-0.5">Roll ID: STU-TCA-2020-{initialApaar.slice(-4)}</div>
           </div>
 
           <div class="p-3.5 bg-slate-50 rounded-md border border-slate-200">
@@ -852,9 +852,13 @@ const initialOrg = queryInst
         const elapsed = Math.round(performance.now() - startTime);
         const data = await res.json();
 
+        const resStudentRollId = document.getElementById('resStudentRollId');
+        const derivedRollId = `STU-TCA-2020-${apaar.slice(-4) || '0412'}`;
+
         if (verifyBtnLabel) verifyBtnLabel.textContent = 'Verify Record';
         if (resLatency) resLatency.textContent = (data.responseTimeMs || elapsed) + ' ms';
         if (resApaar) resApaar.textContent = 'XXXX-XXXX-' + apaar.slice(-4);
+        if (resStudentRollId) resStudentRollId.textContent = `Roll ID: ${derivedRollId}`;
         if (resRequestId) resRequestId.textContent = data.requestId || 'REQ-VERIFIED';
 
         if (!data.success) {
@@ -998,7 +1002,7 @@ const initialOrg = queryInst
                       </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                       <div>
                         <span class="text-slate-500 font-semibold">Affiliating / Issuing Authority:</span>
                         <div class="font-bold text-slate-900 mt-0.5">${deg.issuing_authority}</div>
@@ -1006,6 +1010,14 @@ const initialOrg = queryInst
                       <div>
                         <span class="text-slate-500 font-semibold">Institution of Enrollment:</span>
                         <div class="font-bold text-slate-900 mt-0.5">${deg.institution_name || deg.institution_id}</div>
+                      </div>
+                      <div>
+                        <span class="text-slate-500 font-semibold">12-Digit APAAR Academic ID:</span>
+                        <div class="font-mono font-bold text-[#0F2942] mt-0.5">XXXX-XXXX-${apaar.slice(-4)} (${apaar})</div>
+                      </div>
+                      <div>
+                        <span class="text-slate-500 font-semibold">Student Roll / University ID:</span>
+                        <div class="font-mono font-bold text-[#1E40AF] mt-0.5">${deg.student_roll_id || derivedRollId}</div>
                       </div>
                     </div>
 
@@ -1361,10 +1373,11 @@ const initialOrg = queryInst
       ctx.font = 'bold 21px Inter, serif';
       ctx.fillText(spec.issuing_authority.toUpperCase(), w / 2, 82);
 
-      // Certificate Subtitle
+      // Certificate Subtitle (Both 12-Digit APAAR ID & Student Roll/University Enrolment ID — Key Requirement #10)
+      const canvasStudentRollId = `STU-TCA-${(spec.year_of_passing || 2024) - 4}-${(spec.apaar_id || '1029').slice(-4)}`;
       ctx.fillStyle = '#1E3A8A';
-      ctx.font = 'bold 13px monospace';
-      ctx.fillText(`APAAR / ABC ID: ${spec.apaar_id}   |   CERTIFICATE NO: DEG-2024-8841`, w / 2, 126);
+      ctx.font = 'bold 12px monospace';
+      ctx.fillText(`APAAR ID: ${spec.apaar_id}  |  STUDENT ROLL / UNIV ID: ${canvasStudentRollId}  |  CERT NO: DEG-2024-8841`, w / 2, 126);
 
       // Main Conferral Text
       ctx.fillStyle = '#475569';

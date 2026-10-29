@@ -9,6 +9,13 @@ const instRes = await db.prepare('SELECT * FROM institutions ORDER BY name ASC')
 const institutions = instRes.results || [];
 const user = Astro.locals.user;
 
+const totalApprovedIntake = institutions.reduce((sum, i) => sum + i.sanctioned_intake, 0);
+const totalActualEnrolment = institutions.reduce((sum, i) => sum + i.current_enrollment, 0);
+const totalSupernumerarySeats = institutions.reduce((sum, i) => sum + Math.round(i.sanctioned_intake * 0.15), 0);
+const totalNriCategory = institutions.reduce((sum, i) => sum + Math.round(i.sanctioned_intake * 0.05), 0);
+const totalOciStatus = institutions.reduce((sum, i) => sum + Math.max(1, Math.round(i.sanctioned_intake * 0.02)), 0);
+const totalFnStatus = institutions.reduce((sum, i) => sum + Math.max(1, Math.round(i.sanctioned_intake * 0.03)), 0);
+
 const portals = [
   {
     role: 'institution',
@@ -250,6 +257,34 @@ const portals = [
             <option value={st}>{st}</option>
           ))}
         </select>
+      </div>
+    </div>
+
+    <!-- Statutory Seat & Admission Category Breakdown (AICTE APH Norms) — 6-Column Strip -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 mb-4 text-xs">
+      <div class="p-2.5 rounded bg-slate-50 border border-slate-200">
+        <div class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Approved Intake</div>
+        <div class="text-sm sm:text-base font-bold font-mono text-[#0F2942] mt-0.5">{totalApprovedIntake}</div>
+      </div>
+      <div class="p-2.5 rounded bg-slate-50 border border-slate-200">
+        <div class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Actual Enrolment</div>
+        <div class="text-sm sm:text-base font-bold font-mono text-emerald-700 mt-0.5">{totalActualEnrolment}</div>
+      </div>
+      <div class="p-2.5 rounded bg-blue-50/50 border border-blue-200">
+        <div class="text-[10px] font-bold uppercase text-blue-800 tracking-wider">Supernumerary Seats</div>
+        <div class="text-sm sm:text-base font-bold font-mono text-blue-900 mt-0.5">{totalSupernumerarySeats} <span class="text-[10px] font-normal">(TFW/EWS)</span></div>
+      </div>
+      <div class="p-2.5 rounded bg-amber-50/50 border border-amber-200">
+        <div class="text-[10px] font-bold uppercase text-amber-900 tracking-wider">NRI Category</div>
+        <div class="text-sm sm:text-base font-bold font-mono text-amber-900 mt-0.5">{totalNriCategory}</div>
+      </div>
+      <div class="p-2.5 rounded bg-indigo-50/50 border border-indigo-200">
+        <div class="text-[10px] font-bold uppercase text-indigo-900 tracking-wider">OCI Status</div>
+        <div class="text-sm sm:text-base font-bold font-mono text-indigo-900 mt-0.5">{totalOciStatus}</div>
+      </div>
+      <div class="p-2.5 rounded bg-emerald-50/50 border border-emerald-200">
+        <div class="text-[10px] font-bold uppercase text-emerald-900 tracking-wider">Foreign National (FN)</div>
+        <div class="text-sm sm:text-base font-bold font-mono text-emerald-900 mt-0.5">{totalFnStatus}</div>
       </div>
     </div>
 
