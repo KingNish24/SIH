@@ -12,7 +12,7 @@ const students = stuRes.results || [];
 const admRes = await db.prepare('SELECT * FROM admissions').bind().all<Admission>();
 const admissions = admRes.results || [];
 
-const degRes = await db.prepare('SELECT * FROM degrees').bind().all<Degree>();
+const degRes = await db.prepare('SELECT * FROM degrees').bind().all<Degree & { signing_key_id?: string }>();
 const degrees = degRes.results || [];
 
 const reqRes = await db.prepare('SELECT * FROM verification_requests').bind().all<VerificationRequest>();
@@ -23,30 +23,59 @@ const institutions = instRes.results || [];
 
 const user = Astro.locals.user;
 const studentApaar = user?.role === 'STUDENT' ? user.apaar_id : null;
+
+const activeStudent = (studentApaar ? students.find((s) => s.apaar_id === studentApaar) : students[0]) || students[0];
+const initialMaskedName = activeStudent ? maskName(activeStudent.full_name) : 'Candidate';
+const initialAvatar = initialMaskedName
+  .split(' ')
+  .map((p) => p.replace(/[^A-Za-z]/g, '')[0] || '')
+  .join('')
+  .slice(0, 2)
+  .toUpperCase() || 'CA';
+
+const initialConsent = activeStudent?.dpdp_consent_status || 'PENDING';
+const initialHasPasskey = !!activeStudent?.passkey_credential_id;
+
+const enrichedAdmissions = admissions.map((a) => {
+  const inst = institutions.find((i) => i.id === a.institution_id);
+  return {
+    ...a,
+    institution_name: inst?.name || a.institution_id,
+    institution_code: inst?.code || a.institution_id,
+  };
+});
+
+const enrichedDegrees = degrees.map((d) => {
+  const inst = institutions.find((i) => i.id === d.institution_id);
+  return {
+    ...d,
+    institution_name: inst?.name || d.institution_id,
+  };
+});
 ---
 
 <Layout title="SIH 2026 | Student Consent Authority (DPDP Act 2023)" activeRole="student">
   <div class="space-y-6">
     <!-- Header -->
-    <div class="border-b border-slate-200 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+    <div class="border-b border-slate-200 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
-        <div class="text-xs font-semibold text-[#1E40AF] uppercase tracking-wider mb-1">
+        <div class="text-xs font-bold text-[#1E40AF] uppercase tracking-wider mb-1">
           Candidate Consent Module &bull; Code STU-04
         </div>
         <h1 class="text-xl sm:text-2xl font-bold text-[#0F2942]">
           Digital Personal Data Protection (DPDP) Consent Vault
         </h1>
-        <p class="text-xs text-slate-600 mt-0.5">
+        <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
           Statutory student consent authority under Section 6 of India DPDP Act 2023 via W3C WebAuthn Biometric Passkeys.
         </p>
       </div>
 
       <!-- Candidate Selector with Identity Isolation -->
-      <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded border border-slate-200 shadow-sm text-xs">
-        <label for="studentSelector" class="font-semibold text-slate-700">Candidate:</label>
+      <div class="flex items-center gap-2.5 bg-white px-3.5 py-2 rounded border border-slate-200 shadow-sm text-xs sm:text-sm">
+        <label for="studentSelector" class="font-semibold text-slate-700 whitespace-nowrap">Candidate:</label>
         {user?.role === 'STUDENT' && studentApaar ? (
           <div class="flex items-center gap-2">
-            <select id="studentSelector" class="bg-slate-100 border border-slate-300 rounded px-2.5 py-1 text-slate-800 font-bold focus:outline-none">
+            <select id="studentSelector" class="h-9 bg-slate-100 border border-slate-300 rounded px-2.5 text-slate-800 font-bold focus:outline-none text-xs sm:text-sm">
               {students.filter(s => s.apaar_id === studentApaar).map((s) => (
                 <option
                   value={s.apaar_id}
@@ -61,12 +90,12 @@ const studentApaar = user?.role === 'STUDENT' ? user.apaar_id : null;
                 </option>
               ))}
             </select>
-            <span class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-900 border border-emerald-300 px-2 py-0.5 rounded text-[10px] font-bold">
+            <span class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-900 border border-emerald-300 px-2.5 py-1 rounded text-[11px] font-bold whitespace-nowrap">
               Candidate Authenticated ({user.username})
             </span>
           </div>
         ) : (
-          <select id="studentSelector" class="bg-slate-50 border border-slate-300 rounded px-2.5 py-1 text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-blue-600">
+          <select id="studentSelector" class="h-9 bg-slate-50 border border-slate-300 rounded px-2.5 text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-600 text-xs sm:text-sm">
             {students.map((s) => (
               <option
                 value={s.apaar_id}
@@ -75,6 +104,7 @@ const studentApaar = user?.role === 'STUDENT' ? user.apaar_id : null;
                 data-phone={maskPhone(s.phone)}
                 data-consent={s.dpdp_consent_status}
                 data-haspasskey={s.passkey_credential_id ? 'true' : 'false'}
+                selected={s.apaar_id === activeStudent?.apaar_id}
               >
                 {maskName(s.full_name)} (APAAR: {maskApaar(s.apaar_id)})
               </option>
@@ -88,32 +118,159 @@ const studentApaar = user?.role === 'STUDENT' ? user.apaar_id : null;
     <div class="bg-white border border-slate-200 rounded p-5 shadow-sm">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div class="flex items-center gap-4">
-          <div class="w-12 h-12 rounded bg-[#0F2942] flex items-center justify-center text-white font-bold text-lg shadow-sm">
-            <span id="studentAvatar">RS</span>
+          <div class="w-12 h-12 rounded bg-[#0F2942] flex items-center justify-center text-white font-bold text-lg shadow-sm shrink-0">
+            <span id="studentAvatar">{initialAvatar}</span>
           </div>
           <div>
-            <div class="flex items-center gap-2 mb-0.5">
-              <span class="text-[11px] font-bold uppercase text-slate-500">APAAR VERIFIED PROFILE</span>
-              <span id="consentBadge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
-                DPDP CONSENT ACTIVE
+            <div class="flex flex-wrap items-center gap-2 mb-1">
+              <span class="text-xs font-bold uppercase text-slate-500">APAAR VERIFIED PROFILE</span>
+              <span
+                id="consentBadge"
+                class={`text-[11px] font-bold px-2.5 py-0.5 rounded border ${
+                  initialConsent === 'GRANTED'
+                    ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                    : initialConsent === 'REVOKED'
+                    ? 'bg-red-100 text-red-800 border-red-200'
+                    : 'bg-amber-100 text-amber-800 border-amber-200'
+                }`}
+              >
+                {initialConsent === 'GRANTED'
+                  ? 'DPDP CONSENT ACTIVE'
+                  : initialConsent === 'REVOKED'
+                  ? 'DPDP CONSENT REVOKED'
+                  : 'DPDP CONSENT PENDING'}
               </span>
             </div>
-            <h2 id="studentNameDisplay" class="text-base font-bold text-[#0F2942]">
-              {students[0] ? maskName(students[0].full_name) : 'Candidate'}
+            <h2 id="studentNameDisplay" class="text-base sm:text-lg font-bold text-[#0F2942]">
+              {initialMaskedName}
             </h2>
-            <p class="text-xs text-slate-600 font-mono mt-0.5">
-              Masked APAAR: <span id="studentApaarDisplay" class="font-semibold text-slate-900">{students[0] ? maskApaar(students[0].apaar_id) : 'XXXX-XXXX-9283'}</span> &bull; 
-              Registered Email: <span id="studentEmailDisplay" class="text-slate-600">{students[0] ? maskEmail(students[0].email) : 'r***@***.in'}</span> &bull;
-              Phone: <span id="studentPhoneDisplay" class="text-slate-600">{students[0] ? maskPhone(students[0].phone) : '+91 XXXXX X3210'}</span>
+            <p class="text-xs sm:text-sm text-slate-600 font-mono mt-0.5">
+              Masked APAAR: <span id="studentApaarDisplay" class="font-semibold text-slate-900">{activeStudent ? maskApaar(activeStudent.apaar_id) : 'XXXX-XXXX-9283'}</span> &bull; 
+              Registered Email: <span id="studentEmailDisplay" class="text-slate-600">{activeStudent ? maskEmail(activeStudent.email) : 'r***@***.in'}</span> &bull;
+              Phone: <span id="studentPhoneDisplay" class="text-slate-600">{activeStudent ? maskPhone(activeStudent.phone) : '+91 XXXXX X3210'}</span>
             </p>
           </div>
         </div>
 
-        <!-- Biometric Status -->
-        <div class="bg-slate-50 p-3 rounded border border-slate-200 text-xs font-mono">
-          <div class="text-[10px] font-bold uppercase text-slate-500">Security Standard</div>
-          <div id="passkeyDeviceDisplay" class="font-bold text-slate-900 mt-0.5">FIDO2 / WebAuthn Biometric Passkey</div>
-          <div class="text-[11px] text-emerald-700 font-medium">Hardware Bound (Windows Hello / Touch ID)</div>
+        <!-- Biometric Passkey Binding Status -->
+        <div class="bg-slate-50 p-3.5 rounded border border-slate-200 text-xs font-mono min-w-[260px]">
+          <div class="flex items-center justify-between gap-2 mb-1">
+            <span class="text-[10px] font-bold uppercase text-slate-500">Security Standard</span>
+            <span
+              id="passkeyBindingBadge"
+              class={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                initialHasPasskey
+                  ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                  : 'bg-amber-100 text-amber-800 border-amber-200'
+              }`}
+            >
+              {initialHasPasskey ? 'Passkey Bound ✓' : 'No Passkey Bound — Click Below to Register'}
+            </span>
+          </div>
+          <div id="passkeyDeviceDisplay" class="font-bold text-slate-900 mt-1">FIDO2 / WebAuthn Biometric Passkey</div>
+          <div class="text-[11px] text-emerald-700 font-medium mt-0.5">Hardware Bound (Windows Hello / Touch ID)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Candidate Academic Provenance: Enrolled Institutions & Issued Degrees -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Enrolled Institutions -->
+      <div class="bg-white border border-slate-200 rounded p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h2 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider">
+              Enrolled Institution Roster Record
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">
+              Active AICTE institutional admission records anchored to this APAAR ID.
+            </p>
+          </div>
+          <span class="text-[11px] font-mono font-semibold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded border border-slate-200">
+            AICTE Registry
+          </span>
+        </div>
+
+        <div id="studentAdmissionsList" class="space-y-2.5 text-xs sm:text-sm">
+          {enrichedAdmissions.map((adm) => (
+            <div
+              data-student-apaar={adm.apaar_id}
+              class={`student-admission-item p-3.5 rounded border border-slate-200 bg-slate-50 flex items-center justify-between gap-3 ${
+                adm.apaar_id === activeStudent?.apaar_id ? '' : 'hidden'
+              }`}
+            >
+              <div>
+                <div class="font-bold text-slate-900">{adm.institution_name}</div>
+                <div class="text-xs text-slate-600 mt-0.5">
+                  {adm.program} &bull; Batch {adm.batch_year} &bull; Code: <span class="font-mono font-semibold">{adm.institution_code}</span>
+                </div>
+              </div>
+              <span
+                class={`text-[11px] font-bold px-2.5 py-0.5 rounded border shrink-0 ${
+                  adm.status === 'FLAGGED_DUPLICATE' || adm.is_duplicate
+                    ? 'bg-red-100 text-red-800 border-red-200'
+                    : 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                }`}
+              >
+                {adm.status === 'FLAGGED_DUPLICATE' || adm.is_duplicate ? 'DUAL ENROLLMENT FLAGGED' : adm.status}
+              </span>
+            </div>
+          ))}
+          <div id="noAdmissionsMsg" class="hidden p-4 text-center text-slate-500 text-xs bg-slate-50 rounded border border-slate-200">
+            No active institutional admission records found for this APAAR ID.
+          </div>
+        </div>
+      </div>
+
+      <!-- Issued Degrees -->
+      <div class="bg-white border border-slate-200 rounded p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h2 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider">
+              Issued University Degree Credentials
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">
+              Cryptographically signed degree certificates anchored to this APAAR ID.
+            </p>
+          </div>
+          <span class="text-[11px] font-mono font-semibold bg-indigo-50 text-indigo-800 px-2.5 py-0.5 rounded border border-indigo-200">
+            Ed25519 Signed
+          </span>
+        </div>
+
+        <div id="studentDegreesList" class="space-y-2.5 text-xs sm:text-sm">
+          {enrichedDegrees.map((deg) => (
+            <div
+              data-student-apaar={deg.apaar_id}
+              class={`student-degree-item p-3.5 rounded border border-slate-200 bg-slate-50 flex items-center justify-between gap-3 ${
+                deg.apaar_id === activeStudent?.apaar_id ? '' : 'hidden'
+              }`}
+            >
+              <div>
+                <div class="font-bold text-slate-900">
+                  {deg.degree_name} — <span class="text-[#0F2942]">{deg.specialization}</span>
+                </div>
+                <div class="text-xs text-slate-600 mt-0.5 font-mono">
+                  ID: <strong>{deg.id}</strong> &bull; CGPA: <strong>{deg.cgpa}</strong> &bull; Class of {deg.year_of_passing}
+                </div>
+                <div class="text-[11px] text-slate-500 mt-0.5">
+                  Conferred by: {deg.issuing_authority} ({deg.institution_name})
+                </div>
+              </div>
+              <span
+                class={`text-[11px] font-bold px-2.5 py-0.5 rounded border shrink-0 ${
+                  deg.status === 'ISSUED'
+                    ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                    : 'bg-red-100 text-red-800 border-red-200'
+                }`}
+              >
+                {deg.status === 'ISSUED' ? 'ISSUED (VALID)' : 'REVOKED'}
+              </span>
+            </div>
+          ))}
+          <div id="noDegreesMsg" class="hidden p-4 text-center text-slate-500 text-xs bg-slate-50 rounded border border-slate-200">
+            No university degree credentials issued yet for this candidate profile.
+          </div>
         </div>
       </div>
     </div>
@@ -121,24 +278,28 @@ const studentApaar = user?.role === 'STUDENT' ? user.apaar_id : null;
     <!-- Consent Toggle & Actions -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div class="bg-white border border-slate-200 rounded p-5 shadow-sm space-y-4">
-        <h2 class="text-xs font-bold text-[#0F2942] uppercase tracking-wider">
+        <h2 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider">
           DPDP Statutory Consent Controls
         </h2>
-        <p class="text-xs text-slate-600 leading-relaxed">
-          Under Section 6 of the DPDP Act 2023, employers, recruiters, and third parties cannot view or query your degree transcripts without your explicit consent.
+        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+          Under Section 6 of the DPDP Act 2023, employers, recruiters, and third parties cannot view or query your degree transcripts without your explicit hardware-authenticated consent.
         </p>
 
-        <div class="flex items-center justify-between p-3.5 bg-slate-50 rounded border border-slate-200 text-xs">
+        <div class="flex items-center justify-between p-4 bg-slate-50 rounded border border-slate-200 text-xs sm:text-sm">
           <div>
-            <div class="font-semibold text-slate-900">Third-Party Verification Consent</div>
-            <div class="text-[11px] text-slate-500">Allow employers to confirm verified degrees</div>
+            <div class="font-bold text-slate-900">Third-Party Verification Consent</div>
+            <div class="text-xs text-slate-500 mt-0.5">Allow employers to confirm verified degrees</div>
           </div>
           <button
             type="button"
             id="toggleConsentBtn"
-            class="px-3.5 py-1.5 rounded bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs transition-colors"
+            class={`h-10 px-4 rounded text-white font-semibold text-xs sm:text-sm transition-colors shadow-sm ${
+              initialConsent === 'GRANTED'
+                ? 'bg-emerald-700 hover:bg-emerald-800'
+                : 'bg-red-700 hover:bg-red-800'
+            }`}
           >
-            Consent Active (Revoke)
+            {initialConsent === 'GRANTED' ? 'Consent Active (Revoke)' : 'Consent Revoked (Grant)'}
           </button>
         </div>
 
@@ -146,8 +307,11 @@ const studentApaar = user?.role === 'STUDENT' ? user.apaar_id : null;
           <button
             type="button"
             id="registerPasskeyBtn"
-            class="w-full py-2 px-4 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-semibold text-xs transition-colors flex items-center justify-center gap-2"
+            class="w-full h-10 px-4 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-semibold text-xs sm:text-sm transition-colors flex items-center justify-center gap-2 shadow-sm"
           >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            </svg>
             <span>Bind Hardware Biometric Passkey</span>
           </button>
         </div>
@@ -155,25 +319,44 @@ const studentApaar = user?.role === 'STUDENT' ? user.apaar_id : null;
 
       <!-- Verification Audit Trail -->
       <div class="bg-white border border-slate-200 rounded p-5 shadow-sm">
-        <h2 class="text-xs font-bold text-[#0F2942] uppercase tracking-wider mb-2">
-          Third-Party Access Audit Log
-        </h2>
-        <p class="text-xs text-slate-600 mb-3">
-          Real-time record of all background verification queries received for this APAAR profile.
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider">
+            Third-Party Access Audit Log
+          </h2>
+          <span class="text-[11px] font-mono text-slate-500">Filtered by Candidate APAAR</span>
+        </div>
+        <p class="text-xs sm:text-sm text-slate-600 mb-3.5">
+          Real-time record of background verification queries received for this APAAR profile.
         </p>
 
-        <div class="space-y-2 text-xs">
+        <div id="auditTrailContainer" class="space-y-2.5 text-xs sm:text-sm">
           {verificationRequests.map((vr) => (
-            <div class="p-2.5 bg-slate-50 rounded border border-slate-200 flex items-center justify-between">
+            <div
+              data-student-apaar={vr.apaar_id}
+              class={`student-audit-item p-3 bg-slate-50 rounded border border-slate-200 flex items-center justify-between gap-3 ${
+                vr.apaar_id === activeStudent?.apaar_id ? '' : 'hidden'
+              }`}
+            >
               <div>
-                <div class="font-semibold text-slate-900">{vr.verifier_name}</div>
-                <div class="text-[11px] text-slate-500">{vr.purpose} &bull; {vr.verified_at || 'Pending'}</div>
+                <div class="font-bold text-slate-900">{vr.verifier_name}</div>
+                <div class="text-xs text-slate-500 mt-0.5">
+                  {vr.purpose} &bull; <span class="font-mono">{vr.verified_at || 'Pending Verification'}</span>
+                </div>
               </div>
-              <span class={`text-[10px] font-bold px-2 py-0.5 rounded ${vr.consent_status === 'GRANTED' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+              <span
+                class={`text-[11px] font-bold px-2.5 py-0.5 rounded border shrink-0 ${
+                  vr.consent_status === 'GRANTED'
+                    ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                    : 'bg-amber-100 text-amber-800 border-amber-200'
+                }`}
+              >
                 {vr.consent_status}
               </span>
             </div>
           ))}
+          <div id="noAuditMsg" class="hidden p-4 text-center text-slate-500 text-xs bg-slate-50 rounded border border-slate-200">
+            No third-party background verification queries logged for this candidate yet.
+          </div>
         </div>
       </div>
     </div>
@@ -190,6 +373,7 @@ const studentApaar = user?.role === 'STUDENT' ? user.apaar_id : null;
     const apaarDisplay = document.getElementById('studentApaarDisplay');
     const toggleBtn = document.getElementById('toggleConsentBtn') as HTMLButtonElement | null;
     const registerBtn = document.getElementById('registerPasskeyBtn') as HTMLButtonElement | null;
+    const passkeyBadge = document.getElementById('passkeyBindingBadge');
 
     async function postJSON(url: string, body: unknown) {
       const res = await fetch(url, {
@@ -200,27 +384,70 @@ const studentApaar = user?.role === 'STUDENT' ? user.apaar_id : null;
       return res.json();
     }
 
+    function updatePasskeyBadge(hasPasskey: boolean) {
+      if (!passkeyBadge) return;
+      if (hasPasskey) {
+        passkeyBadge.textContent = 'Passkey Bound ✓';
+        passkeyBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded border bg-emerald-100 text-emerald-800 border-emerald-200';
+      } else {
+        passkeyBadge.textContent = 'No Passkey Bound — Click Below to Register';
+        passkeyBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded border bg-amber-100 text-amber-800 border-amber-200';
+      }
+    }
+
     function updateConsentUI(status: string) {
       const consentBadge = document.getElementById('consentBadge');
       if (status === 'GRANTED') {
         if (toggleBtn) {
           toggleBtn.textContent = 'Consent Active (Revoke)';
-          toggleBtn.className = 'px-3.5 py-1.5 rounded bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs transition-colors shadow-sm';
+          toggleBtn.className = 'h-10 px-4 rounded bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs sm:text-sm transition-colors shadow-sm';
         }
         if (consentBadge) {
           consentBadge.textContent = 'DPDP CONSENT ACTIVE';
-          consentBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200';
+          consentBadge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200';
         }
-      } else {
+      } else if (status === 'REVOKED') {
         if (toggleBtn) {
           toggleBtn.textContent = 'Consent Revoked (Grant)';
-          toggleBtn.className = 'px-3.5 py-1.5 rounded bg-red-700 hover:bg-red-800 text-white font-semibold text-xs transition-colors shadow-sm';
+          toggleBtn.className = 'h-10 px-4 rounded bg-red-700 hover:bg-red-800 text-white font-semibold text-xs sm:text-sm transition-colors shadow-sm';
         }
         if (consentBadge) {
           consentBadge.textContent = 'DPDP CONSENT REVOKED';
-          consentBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded bg-red-100 text-red-800 border border-red-200';
+          consentBadge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded bg-red-100 text-red-800 border border-red-200';
+        }
+      } else {
+        if (toggleBtn) {
+          toggleBtn.textContent = 'Consent Pending (Grant)';
+          toggleBtn.className = 'h-10 px-4 rounded bg-amber-700 hover:bg-amber-800 text-white font-semibold text-xs sm:text-sm transition-colors shadow-sm';
+        }
+        if (consentBadge) {
+          consentBadge.textContent = 'DPDP CONSENT PENDING';
+          consentBadge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200';
         }
       }
+    }
+
+    function filterStudentRecords(apaar: string) {
+      const toggleSection = (itemSelector: string, emptyId: string) => {
+        const items = document.querySelectorAll<HTMLElement>(itemSelector);
+        let visibleCount = 0;
+        items.forEach((el) => {
+          if (el.getAttribute('data-student-apaar') === apaar) {
+            el.classList.remove('hidden');
+            visibleCount++;
+          } else {
+            el.classList.add('hidden');
+          }
+        });
+        const emptyEl = document.getElementById(emptyId);
+        if (emptyEl) {
+          emptyEl.classList.toggle('hidden', visibleCount > 0);
+        }
+      };
+
+      toggleSection('.student-admission-item', 'noAdmissionsMsg');
+      toggleSection('.student-degree-item', 'noDegreesMsg');
+      toggleSection('.student-audit-item', 'noAuditMsg');
     }
 
     selector?.addEventListener('change', () => {
@@ -233,13 +460,18 @@ const studentApaar = user?.role === 'STUDENT' ? user.apaar_id : null;
       const avatar = document.getElementById('studentAvatar');
       if (avatar && opt.dataset.name) {
         const parts = opt.dataset.name.split(' ');
-        avatar.textContent = parts.map((p) => p[0]).join('').slice(0, 2).toUpperCase();
+        avatar.textContent = parts.map((p) => p.replace(/[^A-Za-z]/g, '')[0] || '').join('').slice(0, 2).toUpperCase();
       }
       updateConsentUI(opt.dataset.consent || 'PENDING');
+      updatePasskeyBadge(opt.dataset.haspasskey === 'true');
+      filterStudentRecords(opt.value);
     });
 
     if (selector && selector.selectedOptions[0]) {
-      updateConsentUI(selector.selectedOptions[0].dataset.consent || 'GRANTED');
+      const initialOpt = selector.selectedOptions[0];
+      updateConsentUI(initialOpt.dataset.consent || 'GRANTED');
+      updatePasskeyBadge(initialOpt.dataset.haspasskey === 'true');
+      filterStudentRecords(initialOpt.value);
     }
 
     // Consent grant/revoke requires a successful passkey assertion, verified server-side.
@@ -325,6 +557,7 @@ const studentApaar = user?.role === 'STUDENT' ? user.apaar_id : null;
           opt.dataset.haspasskey = 'true';
         }
         updateConsentUI('GRANTED');
+        updatePasskeyBadge(true);
         const passkeyDisplay = document.getElementById('passkeyDeviceDisplay');
         if (passkeyDisplay) passkeyDisplay.textContent = deviceType;
       } catch (err: any) {

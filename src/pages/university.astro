@@ -9,7 +9,7 @@ const db = getDB(Astro.locals);
 const instRes = await db.prepare('SELECT * FROM institutions').bind().all<Institution>();
 const institutions = instRes.results || [];
 
-const degRes = await db.prepare('SELECT * FROM degrees ORDER BY issued_at DESC').bind().all<Degree>();
+const degRes = await db.prepare('SELECT * FROM degrees ORDER BY issued_at DESC').bind().all<Degree & { signing_key_id?: string }>();
 const rawDegrees = degRes.results || [];
 
 const stuRes = await db.prepare('SELECT * FROM students').bind().all<Student>();
@@ -29,24 +29,27 @@ const degrees = rawDegrees.map((d) => {
 <Layout title="SIH 2026 | Affiliating University Degree Provenance" activeRole="university">
   <div class="space-y-6">
     <!-- Header -->
-    <div class="border-b border-slate-200 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+    <div class="border-b border-slate-200 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
-        <div class="text-xs font-semibold text-[#1E40AF] uppercase tracking-wider mb-1">
+        <div class="text-xs font-bold text-[#1E40AF] uppercase tracking-wider mb-1">
           Affiliating University Module &bull; Code UNIV-03
         </div>
         <h1 class="text-xl sm:text-2xl font-bold text-[#0F2942]">
-          Academic Degree Provenance & Revocation Ledger
+          Academic Degree Provenance &amp; Revocation Ledger
         </h1>
-        <p class="text-xs text-slate-600 mt-0.5">
-          Permanent degree anchoring to student APAAR IDs with instant statutory revocation capabilities.
+        <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
+          Permanent degree anchoring to student APAAR IDs with Ed25519 asymmetric signatures &amp; instant statutory revocation.
         </p>
       </div>
 
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2.5">
         <a
           href="#issueDegreeSection"
-          class="px-3.5 py-1.5 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white text-xs font-semibold transition-colors"
+          class="h-10 px-4 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white text-xs sm:text-sm font-semibold transition-colors inline-flex items-center gap-2 shadow-sm"
         >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
           Issue Degree Record
         </a>
       </div>
@@ -55,17 +58,17 @@ const degrees = rawDegrees.map((d) => {
     <!-- Affiliated Institutions Status -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       {institutions.map((i) => (
-        <div class="bg-white border border-slate-200 rounded p-4 shadow-sm">
-          <div class="flex items-center justify-between mb-1">
+        <div class="bg-white border border-slate-200 rounded p-4 sm:p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-1.5">
             <span class="text-xs font-mono font-bold text-slate-700">{i.code}</span>
-            <span class={`text-[10px] font-bold px-2 py-0.5 rounded ${i.current_enrollment > i.sanctioned_intake ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'}`}>
+            <span class={`text-[11px] font-bold px-2.5 py-0.5 rounded border ${i.current_enrollment > i.sanctioned_intake ? 'bg-red-100 text-red-800 border-red-200' : 'bg-emerald-100 text-emerald-800 border-emerald-200'}`}>
               {i.current_enrollment > i.sanctioned_intake ? 'OVERRUN DETECTED' : 'AFFILIATED'}
             </span>
           </div>
-          <h3 class="text-xs font-bold text-slate-900 truncate">{i.name}</h3>
-          <div class="mt-2 flex items-center justify-between text-[11px] text-slate-500 font-mono">
-            <span>Enrolled: <strong>{i.current_enrollment} / {i.sanctioned_intake}</strong></span>
-            <span>Risk Score: <strong>{i.risk_score}%</strong></span>
+          <h3 class="text-xs sm:text-sm font-bold text-slate-900 truncate">{i.name}</h3>
+          <div class="mt-2.5 flex items-center justify-between text-xs text-slate-500 font-mono">
+            <span>Enrolled: <strong class="text-slate-800">{i.current_enrollment} / {i.sanctioned_intake}</strong></span>
+            <span>Risk Score: <strong class="text-slate-800">{i.risk_score}%</strong></span>
           </div>
         </div>
       ))}
@@ -73,79 +76,91 @@ const degrees = rawDegrees.map((d) => {
 
     <!-- Degrees Ledger Table -->
     <div class="bg-white border border-slate-200 rounded shadow-sm">
-      <div class="p-4 border-b border-slate-200">
-        <h2 class="text-xs font-bold text-[#0F2942] uppercase tracking-wider">
-          University Degree Registry ({degrees.length} Records in Central D1)
-        </h2>
-        <p class="text-[11px] text-slate-500 mt-0.5">
-          Each degree is cryptographically bound to a 12-digit APAAR with SHA-256 digital stamp.
-        </p>
+      <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider">
+            University Degree Registry ({degrees.length} Records in Central D1)
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">
+            Each degree is cryptographically bound to a 12-digit APAAR with an Ed25519 Signature &amp; SHA-256 Stamp.
+          </p>
+        </div>
+        <span class="text-xs font-mono font-semibold bg-blue-50 text-blue-800 border border-blue-200 px-2.5 py-1 rounded">
+          Ed25519 + SHA-256 Anchored
+        </span>
       </div>
 
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs border-collapse">
+        <table class="w-full text-left text-xs sm:text-sm border-collapse">
           <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
             <tr>
-              <th class="p-3">Degree ID</th>
-              <th class="p-3">Candidate & APAAR (Masked)</th>
-              <th class="p-3">Degree & Specialization</th>
-              <th class="p-3">Graduation</th>
-              <th class="p-3">Registry Status</th>
-              <th class="p-3">SHA-256 Hash</th>
-              <th class="p-3 text-right">Administrative Action</th>
+              <th class="py-3 px-4">Degree ID</th>
+              <th class="py-3 px-4">Candidate &amp; APAAR (Masked)</th>
+              <th class="py-3 px-4">Degree &amp; Specialization</th>
+              <th class="py-3 px-4">Graduation</th>
+              <th class="py-3 px-4">Registry Status</th>
+              <th class="py-3 px-4">Ed25519 Signature &amp; SHA-256 Stamp</th>
+              <th class="py-3 px-4 text-right">Administrative Action</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-200 text-slate-800">
             {degrees.map((d) => (
               <tr class="hover:bg-slate-50">
-                <td class="p-3 font-mono font-bold text-slate-900">{d.id}</td>
-                <td class="p-3">
-                  <div class="font-medium text-slate-900">{d.student_name}</div>
-                  <div class="text-[11px] font-mono text-slate-500">{maskApaar(d.apaar_id)}</div>
+                <td class="py-3.5 px-4 font-mono font-bold text-slate-900">{d.id}</td>
+                <td class="py-3.5 px-4">
+                  <div class="font-semibold text-slate-900">{d.student_name}</div>
+                  <div class="text-xs font-mono text-slate-500">{maskApaar(d.apaar_id)}</div>
                 </td>
-                <td class="p-3">
-                  <div class="font-medium text-slate-900">{d.degree_name}</div>
-                  <div class="text-[11px] text-slate-500">{d.specialization}</div>
+                <td class="py-3.5 px-4">
+                  <div class="font-semibold text-slate-900">{d.degree_name}</div>
+                  <div class="text-xs text-slate-500">{d.specialization}</div>
                 </td>
-                <td class="p-3 font-mono">
-                  <div>CGPA: {d.cgpa}</div>
-                  <div class="text-[11px] text-slate-500">Year: {d.year_of_passing}</div>
+                <td class="py-3.5 px-4 font-mono">
+                  <div class="font-semibold text-slate-800">CGPA: {d.cgpa}</div>
+                  <div class="text-xs text-slate-500">Year: {d.year_of_passing}</div>
                 </td>
-                <td class="p-3">
+                <td class="py-3.5 px-4">
                   {d.status === 'ISSUED' ? (
-                    <span class="bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded text-[11px] border border-emerald-200">
+                    <span class="bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded text-xs border border-emerald-200">
                       ISSUED (VALID)
                     </span>
                   ) : (
                     <div>
-                      <span class="bg-red-100 text-red-800 font-semibold px-2 py-0.5 rounded text-[11px] border border-red-200">
+                      <span class="bg-red-100 text-red-800 font-bold px-2.5 py-0.5 rounded text-xs border border-red-200">
                         REVOKED
                       </span>
                       {d.revocation_reason && (
-                        <div class="text-[10px] text-red-700 font-medium mt-1 max-w-xs leading-tight">
+                        <div class="text-[11px] text-red-700 font-medium mt-1 max-w-xs leading-tight">
                           {d.revocation_reason}
                         </div>
                       )}
                     </div>
                   )}
                 </td>
-                <td class="p-3 font-mono text-[10px] text-slate-500 max-w-xs truncate" title={d.digital_signature_hash}>
-                  {d.digital_signature_hash.slice(0, 22)}...
+                <td class="py-3.5 px-4 max-w-xs">
+                  <div class="flex items-center gap-1.5 mb-1">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-indigo-50 text-indigo-800 border border-indigo-200">
+                      {d.signing_key_id || 'Ed25519 Signed'}
+                    </span>
+                  </div>
+                  <div class="font-mono text-[11px] text-slate-500 truncate" title={d.digital_signature_hash}>
+                    {d.digital_signature_hash.slice(0, 24)}...
+                  </div>
                 </td>
-                <td class="p-3 text-right">
+                <td class="py-3.5 px-4 text-right">
                   {d.status === 'ISSUED' ? (
                     <button
                       type="button"
-                      onclick={`revokeDegreePrompt('${d.id}')`}
-                      class="px-2.5 py-1 rounded bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 font-semibold text-[11px] transition-colors"
+                      onclick={`revokeDegreePrompt('${d.id}', '${d.student_name}', '${d.degree_name}')`}
+                      class="px-3 py-1.5 rounded bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 font-semibold text-xs transition-colors"
                     >
                       Revoke Degree
                     </button>
                   ) : (
                     <button
                       type="button"
-                      onclick={`reinstateDegreePrompt('${d.id}')`}
-                      class="px-2.5 py-1 rounded bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-700 font-semibold text-[11px] transition-colors"
+                      onclick={`reinstateDegreePrompt('${d.id}', '${d.student_name}', '${d.degree_name}')`}
+                      class="px-3 py-1.5 rounded bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-700 font-semibold text-xs transition-colors"
                     >
                       Reinstate Degree
                     </button>
@@ -160,29 +175,29 @@ const degrees = rawDegrees.map((d) => {
 
     <!-- Issue Degree Section -->
     <div id="issueDegreeSection" class="bg-white border border-slate-200 rounded p-6 shadow-sm">
-      <h2 class="text-xs font-bold text-[#0F2942] uppercase tracking-wider mb-2">
+      <h2 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider mb-1.5">
         Issue New Degree Record
       </h2>
-      <p class="text-xs text-slate-600 mb-4">
-        Bind academic degree to student 12-digit APAAR ID with cryptographic SHA-256 digital stamp.
+      <p class="text-xs sm:text-sm text-slate-600 mb-5">
+        Bind academic degree to student 12-digit APAAR ID with cryptographic Ed25519 Signature &amp; SHA-256 Stamp.
       </p>
 
-      <form id="issueDegreeForm" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+      <form id="issueDegreeForm" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs sm:text-sm">
         <div>
-          <label class="block font-semibold text-slate-700 mb-1">Candidate APAAR ID (12 Digits):</label>
+          <label for="degApaar" class="block font-semibold text-slate-700 mb-1.5">Candidate APAAR ID (12 Digits):</label>
           <input
             type="text"
             id="degApaar"
             required
             pattern="[0-9]{12}"
             placeholder="e.g. 901238471920"
-            class="w-full bg-slate-50 border border-slate-300 rounded p-2 font-mono text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-600"
+            class="w-full h-10 bg-slate-50 border border-slate-300 rounded px-3 font-mono text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-700 mb-1">Affiliated Institution:</label>
-          <select id="degInst" class="w-full bg-slate-50 border border-slate-300 rounded p-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-600">
+          <label for="degInst" class="block font-semibold text-slate-700 mb-1.5">Affiliated Institution:</label>
+          <select id="degInst" class="w-full h-10 bg-slate-50 border border-slate-300 rounded px-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600">
             {institutions.map((i) => (
               <option value={i.id}>{i.name}</option>
             ))}
@@ -190,27 +205,27 @@ const degrees = rawDegrees.map((d) => {
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-700 mb-1">Degree Title:</label>
+          <label for="degName" class="block font-semibold text-slate-700 mb-1.5">Degree Title:</label>
           <input
             type="text"
             id="degName"
             value="Bachelor of Technology"
-            class="w-full bg-slate-50 border border-slate-300 rounded p-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-600"
+            class="w-full h-10 bg-slate-50 border border-slate-300 rounded px-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-700 mb-1">Specialization Program:</label>
+          <label for="degSpec" class="block font-semibold text-slate-700 mb-1.5">Specialization Program:</label>
           <input
             type="text"
             id="degSpec"
             value="Computer Science & Engineering"
-            class="w-full bg-slate-50 border border-slate-300 rounded p-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-600"
+            class="w-full h-10 bg-slate-50 border border-slate-300 rounded px-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-700 mb-1">Cumulative CGPA (0.00 - 10.00):</label>
+          <label for="degCgpa" class="block font-semibold text-slate-700 mb-1.5">Cumulative CGPA (0.00 - 10.00):</label>
           <input
             type="number"
             id="degCgpa"
@@ -218,17 +233,17 @@ const degrees = rawDegrees.map((d) => {
             min="0"
             max="10"
             value="8.75"
-            class="w-full bg-slate-50 border border-slate-300 rounded p-2 font-mono text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-600"
+            class="w-full h-10 bg-slate-50 border border-slate-300 rounded px-3 font-mono text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-700 mb-1">Year of Passing:</label>
+          <label for="degYear" class="block font-semibold text-slate-700 mb-1.5">Year of Passing:</label>
           <input
             type="number"
             id="degYear"
             value="2024"
-            class="w-full bg-slate-50 border border-slate-300 rounded p-2 font-mono text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-600"
+            class="w-full h-10 bg-slate-50 border border-slate-300 rounded px-3 font-mono text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
         </div>
 
@@ -236,65 +251,274 @@ const degrees = rawDegrees.map((d) => {
           <button
             type="submit"
             id="issueSubmitBtn"
-            class="px-5 py-2 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-semibold text-xs transition-colors"
+            class="h-10 px-5 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-semibold text-xs sm:text-sm transition-colors shadow-sm"
           >
-            Authenticate & Issue Degree to Central D1
+            Authenticate &amp; Issue Degree to Central D1
           </button>
         </div>
       </form>
     </div>
   </div>
 
+  <!-- Accessible In-Page Modal Dialog for Statutory Degree Revocation -->
+  <div
+    id="revokeModal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="revokeModalTitle"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4"
+  >
+    <div class="bg-white border border-slate-200 rounded-md shadow-xl max-w-lg w-full overflow-hidden">
+      <div class="bg-red-50 border-b border-red-200 px-5 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-red-600"></span>
+          <h3 id="revokeModalTitle" class="text-sm sm:text-base font-bold text-red-950">
+            Statutory Degree Revocation Order
+          </h3>
+        </div>
+        <button
+          type="button"
+          id="closeRevokeModalBtn"
+          aria-label="Close modal"
+          class="text-slate-500 hover:text-slate-800 text-lg font-bold px-1"
+        >
+          &times;
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4 text-xs sm:text-sm">
+        <div class="bg-slate-50 border border-slate-200 rounded p-3 font-mono text-xs text-slate-700">
+          <div>Target Degree ID: <strong id="revokeTargetId" class="text-slate-900">DEG-001</strong></div>
+          <div class="mt-0.5">Candidate Record: <strong id="revokeTargetCandidate" class="text-slate-900">Candidate</strong></div>
+        </div>
+
+        <div>
+          <label for="revokeReasonSelect" class="block font-semibold text-slate-700 mb-1.5">
+            Statutory Revocation Category:
+          </label>
+          <select
+            id="revokeReasonSelect"
+            class="w-full h-10 bg-slate-50 border border-slate-300 rounded px-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-600"
+          >
+            <option value="Academic Integrity Violation detected during AICTE quota inspection.">
+              AICTE Quota Overrun / Unapproved Seat Admission
+            </option>
+            <option value="Concurrent dual-institution enrollment violation under UGC/AICTE norms.">
+              Concurrent Dual-Institution Enrollment Anomaly
+            </option>
+            <option value="Fraudulent admission credentials or forged qualifying mark sheets.">
+              Forged Qualifying Credentials / Discrepancy
+            </option>
+            <option value="University Executive Council disciplinary revocation order.">
+              University Executive Council Disciplinary Order
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label for="revokeReasonInput" class="block font-semibold text-slate-700 mb-1.5">
+            Formal Statutory Reason (Recorded on Ledger):
+          </label>
+          <textarea
+            id="revokeReasonInput"
+            rows="3"
+            class="w-full bg-white border border-slate-300 rounded p-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-600"
+          >Academic Integrity Violation detected during AICTE quota inspection.</textarea>
+        </div>
+      </div>
+
+      <div class="bg-slate-50 border-t border-slate-200 px-5 py-3.5 flex items-center justify-end gap-2.5">
+        <button
+          type="button"
+          id="cancelRevokeBtn"
+          class="h-10 px-4 rounded bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-semibold text-xs sm:text-sm transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          id="confirmRevokeBtn"
+          class="h-10 px-4 rounded bg-red-700 hover:bg-red-800 text-white font-semibold text-xs sm:text-sm transition-colors shadow-sm"
+        >
+          Confirm Revocation
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Accessible In-Page Modal Dialog for Degree Reinstatement -->
+  <div
+    id="reinstateModal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="reinstateModalTitle"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4"
+  >
+    <div class="bg-white border border-slate-200 rounded-md shadow-xl max-w-md w-full overflow-hidden">
+      <div class="bg-emerald-50 border-b border-emerald-200 px-5 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+          <h3 id="reinstateModalTitle" class="text-sm sm:text-base font-bold text-emerald-950">
+            Reinstate Academic Degree Record
+          </h3>
+        </div>
+        <button
+          type="button"
+          id="closeReinstateModalBtn"
+          aria-label="Close modal"
+          class="text-slate-500 hover:text-slate-800 text-lg font-bold px-1"
+        >
+          &times;
+        </button>
+      </div>
+
+      <div class="p-5 space-y-3 text-xs sm:text-sm text-slate-700">
+        <p class="leading-relaxed">
+          Are you sure you want to reinstate degree <strong id="reinstateTargetId" class="font-mono text-slate-900">DEG-001</strong> (<span id="reinstateTargetCandidate" class="font-semibold">Candidate</span>) to <strong>ISSUED (VALID)</strong> status in the Central D1 Registry?
+        </p>
+        <p class="text-xs text-slate-500">
+          This action restores employer verification validity immediately and logs an appellate clearance entry.
+        </p>
+      </div>
+
+      <div class="bg-slate-50 border-t border-slate-200 px-5 py-3.5 flex items-center justify-end gap-2.5">
+        <button
+          type="button"
+          id="cancelReinstateBtn"
+          class="h-10 px-4 rounded bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-semibold text-xs sm:text-sm transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          id="confirmReinstateBtn"
+          class="h-10 px-4 rounded bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs sm:text-sm transition-colors shadow-sm"
+        >
+          Confirm Reinstatement
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script is:inline>
-    async function revokeDegreePrompt(degreeId) {
-      const reason = prompt("Enter formal statutory reason for revoking degree " + degreeId + ":", "Academic Integrity Violation detected during AICTE quota inspection.");
-      if (!reason) return;
+    let activeDegreeId = null;
+
+    const revokeModal = document.getElementById('revokeModal');
+    const reinstateModal = document.getElementById('reinstateModal');
+    const revokeReasonSelect = document.getElementById('revokeReasonSelect');
+    const revokeReasonInput = document.getElementById('revokeReasonInput');
+
+    revokeReasonSelect?.addEventListener('change', () => {
+      if (revokeReasonInput) {
+        revokeReasonInput.value = revokeReasonSelect.value;
+      }
+    });
+
+    function revokeDegreePrompt(degreeId, studentName, degreeName) {
+      activeDegreeId = degreeId;
+      const idEl = document.getElementById('revokeTargetId');
+      const candEl = document.getElementById('revokeTargetCandidate');
+      if (idEl) idEl.textContent = degreeId;
+      if (candEl) candEl.textContent = (studentName || 'Candidate') + (degreeName ? ' — ' + degreeName : '');
+      if (revokeReasonInput && revokeReasonSelect) {
+        revokeReasonInput.value = revokeReasonSelect.value;
+      }
+      revokeModal?.classList.remove('hidden');
+      revokeModal?.classList.add('flex');
+      revokeReasonInput?.focus();
+    }
+
+    function closeRevokeModal() {
+      revokeModal?.classList.add('hidden');
+      revokeModal?.classList.remove('flex');
+      activeDegreeId = null;
+    }
+
+    function reinstateDegreePrompt(degreeId, studentName, degreeName) {
+      activeDegreeId = degreeId;
+      const idEl = document.getElementById('reinstateTargetId');
+      const candEl = document.getElementById('reinstateTargetCandidate');
+      if (idEl) idEl.textContent = degreeId;
+      if (candEl) candEl.textContent = (studentName || 'Candidate') + (degreeName ? ' — ' + degreeName : '');
+      reinstateModal?.classList.remove('hidden');
+      reinstateModal?.classList.add('flex');
+    }
+
+    function closeReinstateModal() {
+      reinstateModal?.classList.add('hidden');
+      reinstateModal?.classList.remove('flex');
+      activeDegreeId = null;
+    }
+
+    document.getElementById('closeRevokeModalBtn')?.addEventListener('click', closeRevokeModal);
+    document.getElementById('cancelRevokeBtn')?.addEventListener('click', closeRevokeModal);
+    document.getElementById('closeReinstateModalBtn')?.addEventListener('click', closeReinstateModal);
+    document.getElementById('cancelReinstateBtn')?.addEventListener('click', closeReinstateModal);
+
+    document.getElementById('confirmRevokeBtn')?.addEventListener('click', async () => {
+      if (!activeDegreeId) return;
+      const reason = revokeReasonInput?.value?.trim();
+      if (!reason) {
+        window.showToast('Please provide a formal statutory reason for revocation.', 'warning');
+        return;
+      }
+
+      const btn = document.getElementById('confirmRevokeBtn');
+      if (btn) btn.disabled = true;
 
       try {
         const res = await fetch('/api/university/degree', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            degreeId: degreeId,
+            degreeId: activeDegreeId,
             action: 'REVOKE',
             reason: reason,
           }),
         });
         const data = await res.json();
         if (data.success) {
-          window.showToast("Degree record marked REVOKED in Central D1 Registry.", "success");
+          closeRevokeModal();
+          window.showToast('Degree record marked REVOKED in Central D1 Registry.', 'success');
           setTimeout(() => window.location.reload(), 1200);
         } else {
-          window.showToast("Revocation failed: " + (data.error || 'Server error'), "error");
+          window.showToast('Revocation failed: ' + (data.error || 'Server error'), 'error');
         }
       } catch (err) {
-        window.showToast("Network error processing revocation.", "error");
+        window.showToast('Network error processing revocation.', 'error');
+      } finally {
+        if (btn) btn.disabled = false;
       }
-    }
+    });
 
-    async function reinstateDegreePrompt(degreeId) {
-      if (!confirm("Are you sure you want to reinstate degree " + degreeId + " to VALID status?")) return;
+    document.getElementById('confirmReinstateBtn')?.addEventListener('click', async () => {
+      if (!activeDegreeId) return;
+      const btn = document.getElementById('confirmReinstateBtn');
+      if (btn) btn.disabled = true;
 
       try {
         const res = await fetch('/api/university/degree', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            degreeId: degreeId,
+            degreeId: activeDegreeId,
             action: 'REINSTATE',
           }),
         });
         const data = await res.json();
         if (data.success) {
-          window.showToast("Degree record REINSTATED in Central D1 Registry.", "success");
+          closeReinstateModal();
+          window.showToast('Degree record REINSTATED in Central D1 Registry.', 'success');
           setTimeout(() => window.location.reload(), 1200);
         } else {
-          window.showToast("Reinstatement failed: " + (data.error || 'Server error'), "error");
+          window.showToast('Reinstatement failed: ' + (data.error || 'Server error'), 'error');
         }
       } catch (err) {
-        window.showToast("Network error processing reinstatement.", "error");
+        window.showToast('Network error processing reinstatement.', 'error');
+      } finally {
+        if (btn) btn.disabled = false;
       }
-    }
+    });
 
     document.getElementById('issueDegreeForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -322,13 +546,13 @@ const degrees = rawDegrees.map((d) => {
 
         const data = await res.json();
         if (data.success) {
-          window.showToast("Degree issued successfully to Central D1 Registry with SHA-256 digital stamp.", "success");
+          window.showToast('Degree issued to Central D1 Registry with Ed25519 Signature & SHA-256 Stamp.', 'success');
           setTimeout(() => window.location.reload(), 1200);
         } else {
-          window.showToast("Issuance error: " + (data.error || 'Server error'), "error");
+          window.showToast('Issuance error: ' + (data.error || 'Server error'), 'error');
         }
       } catch (err) {
-        window.showToast("Network error issuing degree.", "error");
+        window.showToast('Network error issuing degree.', 'error');
       }
     });
   </script>

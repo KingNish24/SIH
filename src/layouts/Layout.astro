@@ -1,11 +1,17 @@
 ---
 interface Props {
   title?: string;
-  activeRole?: 'overview' | 'institution' | 'aicte' | 'university' | 'student' | 'verifier' | 'mandate';
+  activeRole?: 'overview' | 'institution' | 'aicte' | 'university' | 'student' | 'verifier' | 'mandate' | 'login' | 'policy' | 'none';
+  breadcrumb?: string;
   lang?: 'en' | 'hi';
 }
 
-const { title = 'SIH 2026 | National Student Data Management & Verification Portal', activeRole = 'overview', lang = 'en' } = Astro.props;
+const {
+  title = 'SIH 2026 | National Student Data Management & Verification Portal',
+  activeRole = 'none',
+  breadcrumb,
+  lang = 'en',
+} = Astro.props;
 const user = Astro.locals.user;
 
 // Language switcher: pages that have a Hindi version under /hi
@@ -18,13 +24,21 @@ const hiHref = hasHindi ? (enPath === '/' ? '/hi' : `/hi${enPath}`) : '/hi';
 const enHref = hasHindi ? enPath : '/';
 const policyBase = isHindi ? '/hi' : '';
 
-const roleLabels: Record<string, string> = {
-  AICTE_ADMIN: 'AICTE Regulatory Council',
-  INSTITUTE_ADMIN: 'Institute Admin',
-  UNIVERSITY_ADMIN: 'Affiliating University',
-  STUDENT: 'Student (DPDP Vault)',
-  VERIFIER: 'Verification Officer',
-};
+const roleLabels: Record<string, string> = isHindi
+  ? {
+      AICTE_ADMIN: 'एआईसीटीई नियामक परिषद',
+      INSTITUTE_ADMIN: 'संस्थान प्रशासक',
+      UNIVERSITY_ADMIN: 'संबद्धता विश्वविद्यालय',
+      STUDENT: 'छात्र (डीपीडीपी वॉल्ट)',
+      VERIFIER: 'सत्यापन अधिकारी',
+    }
+  : {
+      AICTE_ADMIN: 'AICTE Regulatory Council',
+      INSTITUTE_ADMIN: 'Institute Admin',
+      UNIVERSITY_ADMIN: 'Affiliating University',
+      STUDENT: 'Student (DPDP Vault)',
+      VERIFIER: 'Verification Officer',
+    };
 
 interface NavItem {
   id: string;
@@ -32,30 +46,76 @@ interface NavItem {
   path: string;
 }
 
-const rolePortalMap: Record<string, NavItem> = {
-  AICTE_ADMIN: { id: 'aicte', label: 'AICTE Regulatory Council', path: '/aicte' },
-  INSTITUTE_ADMIN: { id: 'institution', label: 'Institution Portal', path: '/institution' },
-  UNIVERSITY_ADMIN: { id: 'university', label: 'Affiliating University', path: '/university' },
-  STUDENT: { id: 'student', label: 'Student Consent (DPDP)', path: '/student' },
-  VERIFIER: { id: 'verifier', label: 'Verification Terminal', path: '/verifier' },
-};
+const rolePortalMap: Record<string, NavItem> = isHindi
+  ? {
+      AICTE_ADMIN: { id: 'aicte', label: 'एआईसीटीई नियामक परिषद', path: '/aicte' },
+      INSTITUTE_ADMIN: { id: 'institution', label: 'संस्थान पोर्टल', path: '/institution' },
+      UNIVERSITY_ADMIN: { id: 'university', label: 'संबद्धता विश्वविद्यालय', path: '/university' },
+      STUDENT: { id: 'student', label: 'छात्र सहमति (डीपीडीपी)', path: '/student' },
+      VERIFIER: { id: 'verifier', label: 'सार्वजनिक सत्यापन', path: '/verifier' },
+    }
+  : {
+      AICTE_ADMIN: { id: 'aicte', label: 'AICTE Regulatory Council', path: '/aicte' },
+      INSTITUTE_ADMIN: { id: 'institution', label: 'Institution Portal', path: '/institution' },
+      UNIVERSITY_ADMIN: { id: 'university', label: 'Affiliating University', path: '/university' },
+      STUDENT: { id: 'student', label: 'Student Consent (DPDP)', path: '/student' },
+      VERIFIER: { id: 'verifier', label: 'Verification Terminal', path: '/verifier' },
+    };
 
 let navItems: NavItem[] = [];
 
 if (!user) {
-  navItems = [
-    { id: 'overview', label: 'Overview', path: '/' },
-    { id: 'verifier', label: 'Public Verification', path: '/verifier' },
-    { id: 'mandate', label: 'About AICTE Mandate', path: '/#aicte-mandate' },
-  ];
+  navItems = isHindi
+    ? [
+        { id: 'overview', label: 'मुख्य पृष्ठ', path: '/hi' },
+        { id: 'verifier', label: 'सार्वजनिक सत्यापन', path: '/verifier' },
+        { id: 'mandate', label: 'एआईसीटीई अधिदेश', path: '/hi#aicte-mandate' },
+      ]
+    : [
+        { id: 'overview', label: 'Overview', path: '/' },
+        { id: 'verifier', label: 'Public Verification', path: '/verifier' },
+        { id: 'mandate', label: 'About AICTE Mandate', path: '/#aicte-mandate' },
+      ];
 } else {
   const userPortal = rolePortalMap[user.role];
   navItems = [
-    { id: 'overview', label: 'Overview', path: '/' },
+    { id: 'overview', label: isHindi ? 'मुख्य पृष्ठ' : 'Overview', path: isHindi ? '/hi' : '/' },
     ...(userPortal ? [userPortal] : []),
-    ...(user.role !== 'VERIFIER' ? [{ id: 'verifier', label: 'Public Verification', path: '/verifier' }] : []),
+    ...(user.role !== 'VERIFIER'
+      ? [{ id: 'verifier', label: isHindi ? 'सार्वजनिक सत्यापन' : 'Public Verification', path: '/verifier' }]
+      : []),
   ];
 }
+
+const defaultBreadcrumbs: Record<string, string> = isHindi
+  ? {
+      overview: 'राष्ट्रीय अवलोकन एवं संस्थान निर्देशिका',
+      institution: 'स्वीकृत संस्थान रोस्टर पोर्टल (INST-01)',
+      aicte: 'एआईसीटीई राष्ट्रीय निगरानी एवं ऑडिट डैशबोर्ड (REG-02)',
+      university: 'संबद्धता विश्वविद्यालय डिग्री लेजर (UNIV-03)',
+      student: 'छात्र सहमति प्राधिकरण एवं डीपीडीपी वॉल्ट (STU-04)',
+      verifier: 'सार्वजनिक प्रमाणपत्र सत्यापन टर्मिनल (VRF-05)',
+      login: 'अधिकारी एकल साइन-ऑन (परिचय गेटवे)',
+      policy: 'वैधानिक नीति एवं दिशानिर्देश',
+      mandate: 'एआईसीटीई अनुमोदन प्रक्रिया पुस्तिका (2024–2027)',
+      none: 'राष्ट्रीय छात्र रजिस्ट्री पोर्टल',
+    }
+  : {
+      overview: 'National Overview & Institution Directory',
+      institution: 'Approved Institution Roster Portal (INST-01)',
+      aicte: 'AICTE National Surveillance & Audit Dashboard (REG-02)',
+      university: 'Affiliating University Degree Ledger (UNIV-03)',
+      student: 'Student Consent Authority & DPDP Vault (STU-04)',
+      verifier: 'Public Credential Verification Terminal (VRF-05)',
+      login: 'Single Sign-On (Parichay Officer Gateway)',
+      policy: 'Statutory Policy & Official Guidelines',
+      mandate: 'AICTE Approval Process Handbook (2024–2027)',
+      none: 'National Student Registry Portal',
+    };
+
+const resolvedBreadcrumb =
+  breadcrumb ||
+  (currentPath === '/login' ? defaultBreadcrumbs.login : defaultBreadcrumbs[activeRole] || defaultBreadcrumbs.none);
 ---
 
 <!doctype html>
@@ -65,13 +125,16 @@ if (!user) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/emblem.svg" />
     <title>{title}</title>
-    <!-- Standard Official Typography -->
+    <!-- Standard Official Typography (Inter + Noto Sans Devanagari for UX4G / GIGW 3.0) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <style>
       body {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        font-family: 'Inter', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       }
       /* High contrast focus ring for GIGW accessibility */
       a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible {
@@ -86,7 +149,7 @@ if (!user) {
       href="#main-content"
       class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:bg-[#0F2942] focus:text-white focus:px-4 focus:py-2.5 focus:rounded focus:shadow-2xl focus:border-2 focus:border-[#FF9933] text-xs font-bold uppercase tracking-wider"
     >
-      Skip to main content
+      {isHindi ? 'मुख्य सामग्री पर जाएँ' : 'Skip to main content'}
     </a>
 
     <!-- 1. Tricolor National Strip -->
@@ -96,37 +159,40 @@ if (!user) {
       <div class="w-1/3 bg-[#138808]"></div>
     </div>
 
-    <!-- 2. Top Ministry & Government Header (White Bar) -->
-    <div class="bg-white border-b border-slate-200 py-2.5 px-4 sm:px-8">
+    <!-- 2. Top GoI Utility Strip (White / #F8FAFC border-b) -->
+    <div class="bg-white border-b border-slate-200 py-2 px-4 sm:px-8">
       <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
-        <!-- Left: Official State Emblem of India & Department -->
+        <!-- Left: Official State Emblem of India & Ministry -->
         <div class="flex items-center gap-3">
           <img
             src="/emblem.svg"
             alt="State Emblem of India (Lion Capital of Ashoka)"
-            class="h-11 w-auto object-contain shrink-0"
-            width="28"
-            height="44"
+            class="h-10 w-auto object-contain shrink-0"
+            width="26"
+            height="40"
           />
           <div>
             <div class="font-bold text-[#0F2942] tracking-tight uppercase text-[11px] sm:text-xs leading-tight">
-              भारत सरकार | Government of India
+              भारत सरकार | GOVERNMENT OF INDIA
             </div>
-            <div class="text-[#334155] text-[10px] sm:text-[11px] font-medium leading-tight">
+            <div class="text-[#334155] text-[11px] font-medium leading-tight mt-0.5">
               शिक्षा मंत्रालय | Ministry of Education &bull; AICTE
             </div>
           </div>
         </div>
 
-        <!-- Right: Official SIH Badges & GIGW Accessibility Controls -->
-        <div class="flex items-center flex-wrap gap-2.5 sm:gap-3 text-[11px] text-slate-600">
-          <span class="hidden md:inline-flex bg-slate-100 text-slate-800 font-semibold px-2.5 py-1 rounded border border-slate-200">
-            SIH 2026 &bull; Problem Statement SIH26263
-          </span>
-          <span class="hidden md:inline-block text-slate-300">|</span>
+        <!-- Right: GIGW Utility Controls (Skip to Main Content, Font Scaler, Language Switcher) -->
+        <div class="flex items-center flex-wrap gap-2.5 sm:gap-3.5 text-xs text-slate-600">
+          <a
+            href="#main-content"
+            class="hidden md:inline-flex items-center gap-1 text-slate-600 hover:text-[#0F2942] font-medium transition-colors"
+          >
+            <span>{isHindi ? 'मुख्य सामग्री पर जाएँ' : 'Skip to Main Content'}</span>
+          </a>
+          <span class="hidden md:inline-block text-slate-300" aria-hidden="true">|</span>
 
           <!-- GIGW Standard Font Size Scaler (A-, A, A+) -->
-          <div class="flex items-center border border-slate-300 rounded overflow-hidden bg-slate-50 font-bold text-slate-700 shadow-sm" role="group" aria-label="Text Size Controls">
+          <div class="flex items-center border border-slate-300 rounded overflow-hidden bg-slate-50 font-bold text-slate-700 shadow-xs" role="group" aria-label="Text Size Controls">
             <button
               type="button"
               id="btn-font-decrease"
@@ -156,12 +222,12 @@ if (!user) {
             </button>
           </div>
 
-          <span class="text-slate-300">|</span>
+          <span class="text-slate-300" aria-hidden="true">|</span>
 
-          <!-- Language Indicator English / हिन्दी -->
-          <nav class="flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded border border-slate-200 font-semibold text-slate-700 text-[11px]" aria-label="Language / भाषा">
+          <!-- Language Switcher English / हिन्दी -->
+          <nav class="flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded border border-slate-200 font-semibold text-slate-700 text-xs" aria-label="Language / भाषा">
             {isHindi ? (
-              <a href={enHref} hreflang="en" lang="en" class="text-slate-500 hover:text-slate-800 underline-offset-2 hover:underline">English</a>
+              <a href={enHref} hreflang="en" lang="en" class="text-slate-600 hover:text-[#0F2942] underline-offset-2 hover:underline">English</a>
             ) : (
               <span class="text-[#0F2942] font-bold" aria-current="true">English</span>
             )}
@@ -169,33 +235,9 @@ if (!user) {
             {isHindi ? (
               <span class="text-[#0F2942] font-bold" aria-current="true">हिन्दी</span>
             ) : (
-              <a href={hiHref} hreflang="hi" lang="hi" class="text-slate-500 hover:text-slate-800 underline-offset-2 hover:underline">हिन्दी</a>
+              <a href={hiHref} hreflang="hi" lang="hi" class="text-slate-600 hover:text-[#0F2942] underline-offset-2 hover:underline">हिन्दी</a>
             )}
           </nav>
-
-          <span class="text-slate-300">|</span>
-
-          <!-- Top Bar Official Session Pill -->
-          {user ? (
-            <div class="flex items-center gap-1.5 bg-emerald-50 text-emerald-900 border border-emerald-300 px-2.5 py-0.5 rounded text-[11px] font-semibold">
-              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span class="font-mono">{user.username}</span>
-              <span class="text-emerald-700 font-medium">[{roleLabels[user.role] || user.role}]</span>
-              {user.institution_id && (
-                <span class="bg-blue-100 text-blue-900 px-1 py-0.2 rounded text-[10px] font-mono border border-blue-200 font-bold">
-                  {user.institution_id}
-                </span>
-              )}
-            </div>
-          ) : (
-            <a
-              href="/login"
-              class="inline-flex items-center gap-1 text-[#0F2942] hover:text-[#1E40AF] font-bold text-[11px]"
-            >
-              <span>Officer Sign In</span>
-              <span>&rarr;</span>
-            </a>
-          )}
         </div>
       </div>
     </div>
@@ -203,101 +245,105 @@ if (!user) {
     <!-- 3. Primary Department Navbar (Deep Navy Blue #0F2942) -->
     <header class="bg-[#0F2942] text-white shadow-md sticky top-0 z-40">
       <div class="max-w-7xl mx-auto px-4 sm:px-8">
-        <div class="flex items-center justify-between h-16">
-          <!-- Main Portal Title with Official AICTE and SIH Logos -->
-          <a href="/" class="flex items-center gap-3 group">
-            <div class="flex items-center gap-2 shrink-0">
+        <div class="flex items-center justify-between min-h-16 py-2 gap-4">
+          <!-- Main Portal Title with Official AICTE Emblem -->
+          <a href={isHindi ? '/hi' : '/'} class="flex items-center gap-3.5 group">
+            <div class="h-11 w-11 rounded-full bg-white p-1 flex items-center justify-center shadow-sm shrink-0 ring-2 ring-white/20 group-hover:ring-[#FF9933] transition-all">
               <img
                 src="/aicte.png"
-                alt="AICTE Official Logo"
-                class="h-10 w-auto bg-white rounded p-0.5 object-contain shadow-sm"
-                width="40"
-                height="40"
-              />
-              <img
-                src="/sih_logo.png"
-                alt="Smart India Hackathon Official Logo"
-                class="h-9 w-auto bg-white/95 rounded px-1.5 py-0.5 object-contain shadow-sm"
-                width="48"
+                alt="AICTE Official Emblem"
+                class="h-9 w-9 object-contain"
+                width="36"
                 height="36"
               />
             </div>
             <div>
+              <div class="text-[11px] sm:text-xs font-semibold text-amber-300 tracking-wide leading-snug">
+                राष्ट्रीय छात्र रजिस्ट्री एवं सत्यापन पोर्टल
+              </div>
               <div class="font-bold text-sm sm:text-base tracking-tight text-white leading-tight">
                 National Student Registry & Verification Portal
               </div>
-              <p class="text-[10px] sm:text-[11px] text-slate-300 leading-tight">
-                All India Council for Technical Education (AICTE) &bull; Ministry of Education
+              <p class="text-[11px] text-slate-300 leading-tight mt-0.5">
+                {isHindi
+                  ? 'अखिल भारतीय तकनीकी शिक्षा परिषद (AICTE) • शिक्षा मंत्रालय'
+                  : 'All India Council for Technical Education (AICTE) • Ministry of Education'}
               </p>
             </div>
           </a>
 
-          <!-- Desktop Navigation Tabs -->
-          <nav class="hidden lg:flex items-center space-x-1" aria-label="Portal Navigation">
-            {navItems.map((p) => {
-              const isActive = activeRole === p.id;
-              return (
-                <a
-                  href={p.path}
-                  class={`px-3 py-2 rounded text-xs font-semibold tracking-wide transition-colors ${
-                    isActive
-                      ? 'bg-white text-[#0F2942] shadow-sm font-bold'
-                      : 'text-slate-200 hover:text-white hover:bg-white/10'
-                  }`}
-                  aria-current={isActive ? 'page' : undefined}
-                >
-                  {p.label}
-                </a>
-              );
-            })}
-          </nav>
+          <!-- Right: Desktop Navigation Links + ONE Clean CTA Button -->
+          <div class="hidden lg:flex items-center gap-4 shrink-0">
+            <nav class="flex items-center space-x-1" aria-label="Portal Navigation">
+              {navItems.map((p) => {
+                const isActive = activeRole === p.id;
+                return (
+                  <a
+                    href={p.path}
+                    class={`px-3.5 py-2 rounded text-xs font-semibold tracking-wide transition-colors ${
+                      isActive
+                        ? 'bg-white text-[#0F2942] shadow-xs font-bold'
+                        : 'text-slate-200 hover:text-white hover:bg-white/10'
+                    }`}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    {p.label}
+                  </a>
+                );
+              })}
+            </nav>
 
-          <!-- User Authentication Section in Primary Navbar -->
-          <div class="hidden lg:flex items-center gap-3 shrink-0">
+            <div class="h-5 w-px bg-slate-700" aria-hidden="true"></div>
+
             {user ? (
-              <div class="flex items-center gap-2 bg-slate-800/90 border border-slate-700/80 px-3 py-1.5 rounded shadow-sm text-xs">
+              <div class="flex items-center gap-2.5 bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded shadow-xs text-xs">
                 <div class="flex flex-col text-right leading-tight">
                   <div class="flex items-center justify-end gap-1.5">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span class="font-bold text-white font-mono text-[11px]">{user.username}</span>
-                    <span class="bg-blue-900 text-blue-200 border border-blue-700 px-1 py-0.2 rounded text-[10px] font-semibold">
-                      [{roleLabels[user.role] || user.role}]
+                    <span class="font-bold text-white font-mono text-xs">{user.username}</span>
+                    <span class="bg-blue-900 text-blue-200 border border-blue-700 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                      {roleLabels[user.role] || user.role}
                     </span>
                   </div>
                   {user.role === 'INSTITUTE_ADMIN' && user.institution_id && (
-                    <span class="text-[10px] text-amber-300 font-mono font-medium">
-                      Institution: {user.institution_id}
+                    <span class="text-[10px] text-amber-300 font-mono font-medium mt-0.5">
+                      {isHindi ? 'संस्थान:' : 'Institution:'} {user.institution_id}
                     </span>
                   )}
                 </div>
                 <a
                   href="/api/auth/logout"
-                  class="ml-1 px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-[11px] font-bold shadow-sm transition-colors flex items-center gap-1"
-                  title="Sign Out of Gateway"
+                  class="ml-1 px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-bold shadow-xs transition-colors flex items-center gap-1"
+                  title={isHindi ? 'लॉग आउट करें' : 'Sign Out of Gateway'}
                 >
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                   </svg>
-                  <span>Sign Out</span>
+                  <span>{isHindi ? 'लॉग आउट' : 'Sign Out'}</span>
                 </a>
               </div>
             ) : (
               <a
                 href="/login"
-                class="px-4 py-2 bg-[#FF9933] hover:bg-[#F28500] text-black font-bold rounded text-xs transition-colors shadow-sm flex items-center gap-2"
+                class={`px-4 py-2 font-bold rounded text-xs transition-colors shadow-xs flex items-center gap-2 ${
+                  activeRole === 'login'
+                    ? 'bg-white text-[#0F2942] ring-2 ring-[#FF9933]'
+                    : 'bg-[#FF9933] hover:bg-[#F28500] text-slate-950'
+                }`}
               >
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                 </svg>
-                <span>Officer Sign In</span>
-                <span>&rarr;</span>
+                <span>{isHindi ? 'अधिकारी लॉगिन' : 'Officer Sign In'}</span>
               </a>
             )}
           </div>
 
-          <!-- Mobile / Tablet Navigation Select & Sign Out -->
+          <!-- Mobile / Tablet Navigation Select & Sign In/Out -->
           <div class="lg:hidden flex items-center gap-2">
-            <label for="mobile-portal-select" class="sr-only">Select Portal</label>
+            <label for="mobile-portal-select" class="sr-only">
+              {isHindi ? 'पोर्टल चुनें' : 'Select Portal'}
+            </label>
             <select
               id="mobile-portal-select"
               class="bg-slate-800 text-white text-xs rounded border border-slate-600 px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#FF9933]"
@@ -312,44 +358,52 @@ if (!user) {
             {user ? (
               <a
                 href="/api/auth/logout"
-                class="px-2 py-1 bg-red-600 text-white rounded text-[11px] font-bold"
-                title="Sign Out"
+                class="px-2.5 py-1.5 bg-red-600 text-white rounded text-xs font-bold"
+                title={isHindi ? 'लॉग आउट' : 'Sign Out'}
               >
-                Exit
+                {isHindi ? 'लॉग आउट' : 'Sign Out'}
               </a>
             ) : (
               <a
                 href="/login"
-                class="px-2.5 py-1.5 bg-[#FF9933] text-black font-bold rounded text-[11px]"
+                class="px-3 py-1.5 bg-[#FF9933] text-slate-950 font-bold rounded text-xs"
               >
-                Sign In
+                {isHindi ? 'अधिकारी लॉगिन' : 'Officer Sign In'}
               </a>
             )}
           </div>
         </div>
       </div>
 
-      <!-- Secondary Sub-Navigation Strip (Breadcrumb / Status) -->
-      <div class="bg-[#0B1E32] border-t border-slate-700/60 px-4 sm:px-8 py-1.5 text-[11px] text-slate-300">
+      <!-- Secondary Sub-Bar: UX4G Official Breadcrumb & Statutory Status Bar -->
+      <div class="bg-[#0B1E32] border-t border-slate-700/70 px-4 sm:px-8 py-2 text-xs text-slate-300">
         <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
-          <div class="flex items-center gap-2">
-            <span class="text-slate-400">Current Node:</span>
-            <span class="font-semibold text-white uppercase tracking-wider">{activeRole.toUpperCase()}</span>
-            {user && (
-              <span class="hidden sm:inline-flex items-center gap-1 text-slate-300 border-l border-slate-700 pl-2">
-                User: <strong class="text-white font-mono">{user.username}</strong>
-                <span class="text-emerald-400 font-semibold">[{roleLabels[user.role] || user.role}]</span>
-                {user.role === 'INSTITUTE_ADMIN' && user.institution_id && (
-                  <span class="text-amber-300 font-mono font-bold bg-amber-950/60 border border-amber-800 px-1.5 py-0.2 rounded ml-1">
-                    Tenant: {user.institution_id}
-                  </span>
-                )}
-              </span>
-            )}
-          </div>
-          <div class="flex items-center gap-4 text-slate-400">
-            <span class="hidden sm:inline">Regulatory Norms: <strong class="text-emerald-400 font-medium">AICTE Intake Cap Locks Active</strong></span>
-            <span>Security: <strong class="text-emerald-400 font-medium">FIDO2 / WebAuthn</strong></span>
+          <!-- Left: Official Breadcrumb Trail -->
+          <nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs">
+            <a href={isHindi ? '/hi' : '/'} class="text-slate-300 hover:text-white font-medium flex items-center gap-1 transition-colors">
+              <svg class="w-3.5 h-3.5 text-[#FF9933]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+              <span>{isHindi ? 'मुख्य पृष्ठ' : 'Home'}</span>
+            </a>
+            <span class="text-slate-500" aria-hidden="true">/</span>
+            <span class="font-semibold text-white" aria-current="page">{resolvedBreadcrumb}</span>
+          </nav>
+
+          <!-- Right: Official Statutory Pills -->
+          <div class="hidden md:flex items-center gap-2 text-[11px] font-medium text-slate-300">
+            <span class="inline-flex items-center gap-1.5 bg-slate-800/90 border border-slate-700 px-2.5 py-0.5 rounded text-emerald-300">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              <span>{isHindi ? 'APAAR • ABC एकीकृत' : 'APAAR • ABC Integrated'}</span>
+            </span>
+            <span class="text-slate-600" aria-hidden="true">|</span>
+            <span class="inline-flex items-center gap-1.5 bg-slate-800/90 border border-slate-700 px-2.5 py-0.5 rounded text-blue-200">
+              <span>{isHindi ? 'DPDP अधिनियम 2023 अनुपालित' : 'DPDP Act 2023 Compliant'}</span>
+            </span>
+            <span class="text-slate-600" aria-hidden="true">|</span>
+            <span class="inline-flex items-center gap-1.5 bg-slate-800/90 border border-slate-700 px-2.5 py-0.5 rounded text-amber-200">
+              <span>{isHindi ? 'Ed25519 हस्ताक्षरित लेजर' : 'Ed25519 Signed Ledger'}</span>
+            </span>
           </div>
         </div>
       </div>
@@ -360,114 +414,152 @@ if (!user) {
       <slot />
     </main>
 
-    <!-- 5. Standard Government of India Footer -->
-    <footer class="bg-[#0F172A] text-slate-400 text-xs border-t border-slate-800 mt-auto">
-      <div class="max-w-7xl mx-auto px-4 sm:px-8 py-8">
+    <!-- 5. Standard Government of India UX4G Footer -->
+    <footer class="bg-[#0F172A] text-slate-300 text-xs sm:text-sm border-t border-slate-800 mt-auto">
+      <div class="max-w-7xl mx-auto px-4 sm:px-8 py-10">
         <!-- Partner & Standards Row (Digital India, AICTE, GIGW 3.0, DPDP Act 2023) -->
-        <div class="flex flex-wrap items-center justify-between gap-6 pb-6 mb-8 border-b border-slate-800">
+        <div class="flex flex-wrap items-center justify-between gap-6 pb-8 mb-8 border-b border-slate-800">
           <div class="flex items-center flex-wrap gap-4">
-            <img
-              src="/digital_india.svg"
-              alt="Digital India - Power to Empower"
-              class="h-9 w-auto object-contain bg-white/10 rounded px-2.5 py-1 border border-slate-700/60"
-              width="110"
-              height="36"
-            />
-            <img
-              src="/aicte.png"
-              alt="All India Council for Technical Education"
-              class="h-9 w-auto object-contain bg-white rounded p-0.5"
-              width="36"
-              height="36"
-            />
-            <div class="border-l border-slate-700 pl-4 text-[11px] text-slate-300">
-              <div class="font-bold text-white uppercase tracking-wider">National Digital Education Architecture</div>
-              <div class="text-slate-400">Integrated with APAAR &bull; Academic Bank of Credits (ABC) &bull; DigiLocker</div>
+            <div class="bg-white rounded px-2.5 py-1 shadow-xs flex items-center">
+              <img
+                src="/digital_india.svg"
+                alt="Digital India - Power to Empower"
+                class="h-8 sm:h-9 w-auto object-contain"
+                width="110"
+                height="36"
+              />
+            </div>
+            <div class="bg-white rounded p-1 shadow-xs flex items-center">
+              <img
+                src="/aicte.png"
+                alt="All India Council for Technical Education"
+                class="h-8 sm:h-9 w-auto object-contain"
+                width="36"
+                height="36"
+              />
+            </div>
+            <div class="border-l border-slate-700 pl-4 text-xs">
+              <div class="font-bold text-white uppercase tracking-wider">
+                {isHindi ? 'राष्ट्रीय डिजिटल शिक्षा वास्तुकला (NDEAR)' : 'National Digital Education Architecture (NDEAR)'}
+              </div>
+              <div class="text-slate-400 mt-0.5">
+                {isHindi
+                  ? 'APAAR • अकादमिक बैंक ऑफ़ क्रेडिट्स (ABC) • डिजिलॉकर के साथ एकीकृत'
+                  : 'Integrated with APAAR • Academic Bank of Credits (ABC) • DigiLocker'}
+              </div>
             </div>
           </div>
 
           <div class="flex items-center flex-wrap gap-3">
             <!-- GIGW 3.0 Compliance Badge -->
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-slate-800/90 text-slate-200 border border-slate-700 text-[11px] font-medium shadow-sm">
-              <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-slate-800 text-slate-200 border border-slate-700 text-xs font-medium shadow-xs">
+              <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
-              Designed to GIGW 3.0
+              <span>{isHindi ? 'GIGW 3.0 एवं UX4G मानक' : 'Designed to GIGW 3.0 & UX4G'}</span>
             </span>
 
             <!-- DPDP Act 2023 Statutory Badge -->
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-[#07271A] text-emerald-300 border border-emerald-700/70 text-[11px] font-semibold shadow-sm">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#07271A] text-emerald-300 border border-emerald-700/70 text-xs font-semibold shadow-xs">
               <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              DPDP Act 2023 Statutory Protected
+              <span>{isHindi ? 'DPDP अधिनियम 2023 द्वारा संरक्षित' : 'DPDP Act 2023 Statutory Protected'}</span>
             </span>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 pb-8 border-b border-slate-800 text-[11px]">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 pb-8 border-b border-slate-800 text-xs leading-relaxed">
           <div>
-            <div class="font-bold text-white text-xs mb-3 uppercase tracking-wider">
-              Regulatory Oversight
+            <div class="font-bold text-white text-xs sm:text-sm mb-3 uppercase tracking-wider">
+              {isHindi ? 'नियामक निगरानी' : 'Regulatory Oversight'}
             </div>
-            <p class="leading-relaxed mb-2">
-              All India Council for Technical Education (AICTE), Nelson Mandela Marg, Vasant Kunj, New Delhi-110070.
+            <p class="text-slate-300 leading-relaxed mb-2">
+              {isHindi
+                ? 'अखिल भारतीय तकनीकी शिक्षा परिषद (AICTE), नेल्सन मंडेला मार्ग, वसंत कुंज, नई दिल्ली-110070।'
+                : 'All India Council for Technical Education (AICTE), Nelson Mandela Marg, Vasant Kunj, New Delhi-110070.'}
             </p>
-            <p class="text-slate-500">
-              Approval Process Handbook 2024–2027 Norms Compliant.
+            <p class="text-slate-400">
+              {isHindi
+                ? 'अनुमोदन प्रक्रिया पुस्तिका 2024–2027 मानदंडों के अनुरूप।'
+                : 'Approval Process Handbook 2024–2027 Norms Compliant.'}
             </p>
           </div>
 
           <div>
-            <div class="font-bold text-white text-xs mb-3 uppercase tracking-wider">
-              Statutory Frameworks
+            <div class="font-bold text-white text-xs sm:text-sm mb-3 uppercase tracking-wider">
+              {isHindi ? 'वैधानिक ढाँचा' : 'Statutory Frameworks'}
             </div>
-            <ul class="space-y-1.5">
-              <li>&bull; Digital Personal Data Protection (DPDP) Act, 2023</li>
-              <li>&bull; National Education Policy (NEP 2020) & APAAR Registry</li>
-              <li>&bull; Academic Bank of Credits (ABC) Guidelines</li>
-              <li>&bull; W3C Web Authentication (FIDO2) Specifications</li>
+            <ul class="space-y-2 text-slate-300">
+              <li>&bull; {isHindi ? 'डिजिटल व्यक्तिगत डेटा संरक्षण (DPDP) अधिनियम, 2023' : 'Digital Personal Data Protection (DPDP) Act, 2023'}</li>
+              <li>&bull; {isHindi ? 'राष्ट्रीय शिक्षा नीति (NEP 2020) एवं अपार रजिस्ट्री' : 'National Education Policy (NEP 2020) & APAAR Registry'}</li>
+              <li>&bull; {isHindi ? 'अकादमिक बैंक ऑफ़ क्रेडिट्स (ABC) दिशानिर्देश' : 'Academic Bank of Credits (ABC) Guidelines'}</li>
+              <li>&bull; {isHindi ? 'W3C वेब ऑथेंटिकेशन (FIDO2) विनिर्देश' : 'W3C Web Authentication (FIDO2) Specifications'}</li>
             </ul>
           </div>
 
           <div>
-            <div class="font-bold text-white text-xs mb-3 uppercase tracking-wider">
-              Portal Ecosystem
+            <div class="font-bold text-white text-xs sm:text-sm mb-3 uppercase tracking-wider">
+              {isHindi ? 'पोर्टल पारिस्थितिकी तंत्र' : 'Portal Ecosystem'}
             </div>
-            <ul class="space-y-1.5">
-              <li><a href="/verifier" class="text-emerald-400 font-semibold hover:underline">&bull; Public Verification Gateway (Open)</a></li>
-              <li><a href="/login?redirect=%2Finstitution" class="hover:text-white transition-colors">&bull; AICTE Approved Institutions</a></li>
-              <li><a href="/login?redirect=%2Faicte" class="hover:text-white transition-colors">&bull; Regulatory Audit Dashboard</a></li>
-              <li><a href="/login?redirect=%2Funiversity" class="hover:text-white transition-colors">&bull; Affiliating Universities</a></li>
-              <li><a href="/login?redirect=%2Fstudent" class="hover:text-white transition-colors">&bull; Student Consent Management</a></li>
+            <ul class="space-y-2 text-slate-300">
+              <li>
+                <a href="/verifier" class="text-emerald-400 font-semibold hover:underline">
+                  &bull; {isHindi ? 'सार्वजनिक सत्यापन गेटवे (खुला)' : 'Public Verification Gateway (Open)'}
+                </a>
+              </li>
+              <li>
+                <a href="/login?redirect=%2Finstitution" class="hover:text-white transition-colors">
+                  &bull; {isHindi ? 'एआईसीटीई अनुमोदित संस्थान' : 'AICTE Approved Institutions'}
+                </a>
+              </li>
+              <li>
+                <a href="/login?redirect=%2Faicte" class="hover:text-white transition-colors">
+                  &bull; {isHindi ? 'नियामक ऑडिट डैशबोर्ड' : 'Regulatory Audit Dashboard'}
+                </a>
+              </li>
+              <li>
+                <a href="/login?redirect=%2Funiversity" class="hover:text-white transition-colors">
+                  &bull; {isHindi ? 'संबद्धता विश्वविद्यालय' : 'Affiliating Universities'}
+                </a>
+              </li>
+              <li>
+                <a href="/login?redirect=%2Fstudent" class="hover:text-white transition-colors">
+                  &bull; {isHindi ? 'छात्र सहमति प्रबंधन' : 'Student Consent Management'}
+                </a>
+              </li>
             </ul>
           </div>
 
           <div>
-            <div class="font-bold text-white text-xs mb-3 uppercase tracking-wider">
-              Technical Infrastructure
+            <div class="font-bold text-white text-xs sm:text-sm mb-3 uppercase tracking-wider">
+              {isHindi ? 'तकनीकी अवसंरचना' : 'Technical Infrastructure'}
             </div>
-            <p class="leading-relaxed mb-2">
-              Runs on Cloudflare Workers with a Cloudflare D1 database. Roster files are checked in your browser before upload.
+            <p class="text-slate-300 leading-relaxed mb-3">
+              {isHindi
+                ? 'क्लाउडफ्लेयर वर्कर्स और D1 डेटाबेस पर संचालित। अपलोड से पहले रोस्टर फ़ाइलें आपके ब्राउज़र में जाँची जाती हैं।'
+                : 'Powered by Cloudflare Workers edge runtime and D1 relational ledger. Client-side memory triage validates rosters prior to transmission.'}
             </p>
-            <div class="inline-block bg-slate-800 text-slate-300 px-2.5 py-1 rounded text-[10px] font-mono border border-slate-700">
-              System ID: SIH-AICTE-PROD-2026
+            <div class="inline-block bg-slate-800 text-slate-300 px-2.5 py-1 rounded text-xs font-mono border border-slate-700">
+              {isHindi ? 'संदर्भ: SIH 2026 • PS SIH26263' : 'Ref: SIH 2026 • PS SIH26263'}
             </div>
           </div>
         </div>
 
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-500 text-[11px]">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-400 text-xs">
           <div>
-            &copy; 2026 Government of India &bull; All India Council for Technical Education (AICTE). All Rights Reserved.
+            {isHindi
+              ? '© 2026 भारत सरकार • अखिल भारतीय तकनीकी शिक्षा परिषद (AICTE)। सर्वाधिकार सुरक्षित।'
+              : '© 2026 Government of India • All India Council for Technical Education (AICTE). All Rights Reserved.'}
           </div>
-          <div class="flex items-center gap-4">
-            <a href={`${policyBase}/privacy`} class="hover:text-slate-300 hover:underline">{isHindi ? 'गोपनीयता नीति' : 'Privacy Policy'}</a>
+          <div class="flex flex-wrap items-center gap-4">
+            <a href={`${policyBase}/privacy`} class="hover:text-white hover:underline">{isHindi ? 'गोपनीयता नीति' : 'Privacy Policy'}</a>
             <span aria-hidden="true">&bull;</span>
-            <a href={`${policyBase}/terms`} class="hover:text-slate-300 hover:underline">{isHindi ? 'उपयोग की शर्तें' : 'Terms of Use'}</a>
+            <a href={`${policyBase}/terms`} class="hover:text-white hover:underline">{isHindi ? 'उपयोग की शर्तें' : 'Terms of Use'}</a>
             <span aria-hidden="true">&bull;</span>
-            <a href={`${policyBase}/hyperlinking-policy`} class="hover:text-slate-300 hover:underline">{isHindi ? 'हाइपरलिंकिंग नीति' : 'Hyperlinking Policy'}</a>
+            <a href={`${policyBase}/hyperlinking-policy`} class="hover:text-white hover:underline">{isHindi ? 'हाइपरलिंकिंग नीति' : 'Hyperlinking Policy'}</a>
             <span aria-hidden="true">&bull;</span>
-            <a href={`${policyBase}/accessibility`} class="hover:text-slate-300 hover:underline">{isHindi ? 'सुगम्यता विवरण' : 'Accessibility Statement'}</a>
+            <a href={`${policyBase}/accessibility`} class="hover:text-white hover:underline">{isHindi ? 'सुगम्यता विवरण' : 'Accessibility Statement'}</a>
             <span aria-hidden="true">&bull;</span>
-            <a href="/sitemap.xml" class="hover:text-slate-300 hover:underline">{isHindi ? 'साइटमैप' : 'Sitemap'}</a>
+            <a href="/sitemap.xml" class="hover:text-white hover:underline">{isHindi ? 'साइटमैप' : 'Sitemap'}</a>
           </div>
         </div>
       </div>

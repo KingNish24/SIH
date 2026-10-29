@@ -13,173 +13,209 @@ const portals = [
     role: 'institution',
     title: '1. Approved Institution Portal',
     code: 'INST-01',
-    description: 'Statutory student roster submission channel. Features In-Browser Client-Side Memory Triage (Zero PII Cloud Leakage) to isolate valid, missing, and malformed 12-digit APAAR IDs in-browser. Complies with AICTE Approval Process Handbook (2024–2027) Dynamic Intake Caps (60/120/180/240 divisions).',
+    description:
+      'Statutory student roster submission channel. Features in-browser client-side memory triage (zero PII cloud leakage) to isolate valid, missing, and malformed 12-digit APAAR IDs before transmission. Enforces AICTE Approval Process Handbook (2024–2027) dynamic intake caps (60 / 120 / 180 / 240 seats).',
     path: '/institution',
-    stats: 'Dynamic Intake Cap Compliance',
-    statsType: 'neutral',
+    stats: 'Dynamic Intake Cap Enforcement',
     isPublic: false,
   },
   {
     role: 'aicte',
     title: '2. AICTE Regulatory Oversight',
     code: 'REG-02',
-    description: 'National surveillance and audit dashboard. Automatically flags institutions exceeding approved program intake limits under AICTE Approval Process Handbook (2024–2027) Dynamic Intake Caps (60/120/180/240 divisions) and identifies concurrent cross-campus duplicate enrollments.',
+    description:
+      'National regulatory surveillance and audit dashboard. Automatically flags technical institutions exceeding approved program intake limits under AICTE APH 2024–2027 norms and identifies concurrent cross-campus duplicate enrollments across states.',
     path: '/aicte',
-    stats: 'National Surveillance Engine',
-    statsType: 'warning',
+    stats: 'National Quota & Duplicate Audit',
     isPublic: false,
   },
   {
     role: 'university',
     title: '3. Affiliating University Ledger',
     code: 'UNIV-03',
-    description: 'State and central affiliating universities verify affiliated college rosters, issue tamper-evident academic degrees anchored to student APAAR IDs, and maintain an immutable ledger for disciplinary or fraudulent credential revocations.',
+    description:
+      'State and central affiliating universities verify affiliated college rosters, issue tamper-evident Ed25519 cryptographically signed academic degrees anchored to student APAAR IDs, and maintain an immutable revocation ledger.',
     path: '/university',
-    stats: 'Cryptographic Degree Ledger',
-    statsType: 'neutral',
+    stats: 'Ed25519 Signed Degree Ledger',
     isPublic: false,
   },
   {
     role: 'student',
     title: '4. Student Consent Authority (DPDP)',
     code: 'STU-04',
-    description: 'Statutory student portal compliant with Section 6 of the Digital Personal Data Protection (DPDP) Act, 2023. Enables students to manage explicit digital consent and authorize employer background checks using W3C WebAuthn biometric Passkeys.',
+    description:
+      'Statutory student consent vault compliant with Section 6 of the Digital Personal Data Protection (DPDP) Act, 2023. Enables students to grant, audit, or revoke time-bound digital consent using W3C WebAuthn hardware passkeys.',
     path: '/student',
-    stats: 'Hardware Biometric Binding',
-    statsType: 'success',
+    stats: 'Section 6 DPDP & FIDO2 Passkey',
     isPublic: false,
   },
   {
     role: 'verifier',
-    title: '5. Credential Verification Terminal',
+    title: '5. Public Credential Verification Terminal',
     code: 'VRF-05',
-    description: 'Authorized verification gateway for public sector recruiters, corporate employers, and higher education admissions. Enables instantaneous 12-digit APAAR credential checks with sub-5-second verified response times upon student authorization.',
+    description:
+      'Open public verification gateway for government recruiters, employers, and higher education admissions. Enables instant 12-digit APAAR credential verification and cryptographic signature checks with zero login barrier.',
     path: '/verifier',
-    stats: '< 50ms Edge Response Time',
-    statsType: 'highlight',
+    stats: '< 50 ms Edge Verification',
     isPublic: true,
   },
 ];
 ---
 
-<Layout title="SIH 2026 | National Student Data Management & Verification Portal" activeRole="overview">
-  <!-- Official Notice / Banner -->
-  <div class="bg-blue-50 border-l-4 border-[#1E40AF] p-4 mb-6 rounded-r shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-    <div>
-      <div class="font-bold text-[#1E3A8A] text-sm">
-        Statutory Compliance Notice: AICTE Approval Process Handbook (2024–2027)
-      </div>
-      <p class="text-slate-700 mt-0.5">
-        Mandatory APAAR ID integration and sanctioned dynamic intake cap enforcement for all technical and professional institutions across India.
-      </p>
-    </div>
-    <div class="shrink-0 bg-white border border-blue-200 px-3 py-1.5 rounded font-mono text-blue-900 font-bold">
-      PS ID: SIH26263
-    </div>
-  </div>
+<Layout
+  title="National Student Registry & Verification Portal | AICTE • Ministry of Education"
+  activeRole="overview"
+  breadcrumb="National Overview & Institution Directory"
+>
+  <!-- 1. Authoritative UX4G Hero / Statutory Header Card -->
+  <section class="bg-gradient-to-br from-[#0F2942] via-[#133251] to-[#0B1E32] text-white rounded-lg border-t-4 border-[#FF9933] shadow-md p-6 sm:p-8 mb-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+      <!-- Left Column: Statutory Mandate & Primary CTAs -->
+      <div class="lg:col-span-7 space-y-4">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="bg-[#FF9933] text-slate-950 font-bold text-xs uppercase px-2.5 py-0.5 rounded tracking-wide">
+            AICTE APH 2024–2027 Mandate
+          </span>
+          <span class="bg-white/10 border border-white/20 text-slate-100 text-xs font-medium px-2.5 py-0.5 rounded">
+            NEP 2020 • APAAR & ABC Registry
+          </span>
+        </div>
 
-  <!-- Evaluator Quick Access & RBAC Gateway Alert -->
-  <div class="bg-gradient-to-r from-[#0F2942] to-slate-800 text-white p-4 mb-6 rounded-lg shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs">
-    <div class="flex items-start gap-3">
-      <div class="bg-[#FF9933] text-black font-black text-[10px] uppercase px-2 py-1 rounded shrink-0 tracking-wider">
-        RBAC Active
-      </div>
-      <div>
-        <div class="font-bold text-sm text-white">Production Role-Based Access Control & Tenant Isolation</div>
-        <p class="text-slate-300 mt-0.5">
-          Portal nodes are strictly protected by Web Crypto PBKDF2 authentication, Cloudflare D1 sessions, and tenant isolation. Public verification remains open to all verifiers.
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white leading-tight">
+          National Student Registry &amp; Cryptographic Credential Verification Portal
+        </h1>
+
+        <p class="text-sm text-slate-200 leading-relaxed">
+          Official statutory gateway establishing a single source of truth across AICTE-approved technical institutions, affiliating universities, and public verifiers. Enforces sanctioned dynamic intake caps (<strong class="text-white">60 / 120 / 180 / 240 seats</strong>), 12-digit APAAR identity binding, and student-controlled consent under the <strong class="text-white">DPDP Act, 2023</strong>.
         </p>
+
+        <div class="flex flex-wrap items-center gap-3 pt-1">
+          <a
+            href="/verifier"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-[#138808] hover:bg-[#0E6506] text-white text-xs sm:text-sm font-bold shadow-xs transition-colors"
+          >
+            <svg class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <span>Verify Credential</span>
+          </a>
+          <a
+            href="/login"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-[#FF9933] hover:bg-[#F28500] text-slate-950 text-xs sm:text-sm font-bold shadow-xs transition-colors"
+          >
+            <span>Officer Sign In</span>
+            <span aria-hidden="true">&rarr;</span>
+          </a>
+          <a
+            href="#institution-search"
+            class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs sm:text-sm font-semibold transition-colors"
+          >
+            <span>Browse Approved Institutions</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Right Column: Quick Inline 12-Digit APAAR Verification Card -->
+      <div class="lg:col-span-5">
+        <div class="bg-white text-slate-900 rounded-lg p-5 shadow-lg border border-slate-200">
+          <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+            <div>
+              <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700 block">
+                Instant Public Gateway
+              </span>
+              <h2 class="text-base font-bold text-[#0F2942]">
+                Quick 12-Digit APAAR Verification
+              </h2>
+            </div>
+            <span class="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-bold px-2.5 py-0.5 rounded">
+              Open Access
+            </span>
+          </div>
+
+          <form action="/verifier" method="GET" class="space-y-3">
+            <div>
+              <label for="quickApaarInput" class="block text-xs font-bold text-slate-700 mb-1.5">
+                Student APAAR / ABC Identifier (12 Digits)
+              </label>
+              <input
+                type="text"
+                id="quickApaarInput"
+                name="apaar"
+                pattern="[0-9]{12}"
+                maxlength="12"
+                placeholder="e.g. 412398471029"
+                class="w-full bg-slate-50 border border-slate-300 rounded px-3.5 py-2.5 font-mono text-sm text-slate-900 tracking-wider focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F2942]"
+              />
+            </div>
+            <button
+              type="submit"
+              class="w-full py-2.5 px-4 bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold rounded text-xs sm:text-sm transition-colors shadow-xs flex items-center justify-center gap-2"
+            >
+              <span>Verify Academic Record</span>
+              <span aria-hidden="true">&rarr;</span>
+            </button>
+          </form>
+
+          <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <span>Sample ID: <code class="font-mono font-bold text-slate-700">102938475610</code></span>
+            <a href="/verifier" class="text-blue-700 hover:underline font-semibold">Advanced Search &rarr;</a>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="flex items-center gap-2 self-start md:self-auto shrink-0">
-      <a
-        href="/login"
-        class="bg-[#FF9933] hover:bg-[#F28500] text-black font-bold px-3.5 py-2 rounded transition-colors flex items-center gap-1.5 shadow-sm text-xs"
-      >
-        <span>Officer Sign In & Evaluator 1-Click Switcher</span>
-        <span>&rarr;</span>
-      </a>
-    </div>
-  </div>
+  </section>
 
-  <!-- Key Metrics Header Card: National Regulatory Benchmarks -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-    <div class="bg-white p-5 rounded border border-slate-200 shadow-sm">
+  <!-- 2. 4 KPI Benchmark Cards (All 4 with Bold Numerical Metrics) -->
+  <section aria-label="National Regulatory Benchmarks" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white p-5 rounded-lg border border-slate-200 border-l-4 border-l-[#0F2942] shadow-xs">
       <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Approved Technical Institutions</div>
-      <div class="text-2xl font-bold text-[#0F2942] mt-1">8,500+ Nationally Monitored</div>
-      <div class="text-[11px] text-slate-500 mt-1">AICTE approved institutions across India</div>
+      <div class="text-2xl sm:text-3xl font-bold text-[#0F2942] mt-1.5">8,500+</div>
+      <div class="text-xs text-slate-600 mt-1">Nationally monitored under AICTE</div>
     </div>
 
-    <div class="bg-white p-5 rounded border border-slate-200 shadow-sm">
-      <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Sanctioned Capacity</div>
-      <div class="text-2xl font-bold text-[#0F2942] mt-1">3.2M+ Annual Technical Intake</div>
-      <div class="text-[11px] text-slate-500 mt-1">Dynamic intake caps (60/120/180/240 divisions)</div>
+    <div class="bg-white p-5 rounded-lg border border-slate-200 border-l-4 border-l-[#FF9933] shadow-xs">
+      <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Sanctioned Annual Intake</div>
+      <div class="text-2xl sm:text-3xl font-bold text-[#0F2942] mt-1.5">3.2M+</div>
+      <div class="text-xs text-slate-600 mt-1">Dynamic caps: 60 / 120 / 180 / 240 seats</div>
     </div>
 
-    <div class="bg-white p-5 rounded border border-slate-200 shadow-sm">
-      <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">APAAR Integration</div>
-      <div class="text-2xl font-bold text-[#0F2942] mt-1">100% NEP 2020 Compliance Mandate</div>
-      <div class="text-[11px] text-slate-500 mt-1">Automated 12-digit registry & biometric binding</div>
+    <div class="bg-white p-5 rounded-lg border border-slate-200 border-l-4 border-l-[#138808] shadow-xs">
+      <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">APAAR &amp; DPDP Act Compliance</div>
+      <div class="text-2xl sm:text-3xl font-bold text-[#0F2942] mt-1.5">100%</div>
+      <div class="text-xs text-slate-600 mt-1">12-digit ID &amp; WebAuthn passkey consent</div>
     </div>
 
-    <div class="bg-white p-5 rounded border border-slate-200 shadow-sm">
-      <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Regulatory Surveillance</div>
-      <div class="text-2xl font-bold text-[#0F2942] mt-1">Automated Quota & Duplicate Engine</div>
-      <div class="text-[11px] text-slate-500 mt-1">Dynamic overrun & cross-campus detection</div>
+    <div class="bg-white p-5 rounded-lg border border-slate-200 border-l-4 border-l-blue-600 shadow-xs">
+      <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Cryptographic Degree Verification</div>
+      <div class="text-2xl sm:text-3xl font-bold text-[#0F2942] mt-1.5">&lt; 50 ms</div>
+      <div class="text-xs text-slate-600 mt-1">Ed25519 signed ledger at edge</div>
     </div>
-  </div>
+  </section>
 
-  <!-- Quick Public Institution Search & Verification Section -->
-  <section class="bg-white rounded-lg border border-slate-200 shadow-sm p-5 sm:p-6 mb-8" id="institution-search">
+  <!-- 3. Public Institution Directory & Regulatory Compliance Table -->
+  <section class="bg-white rounded-lg border border-slate-200 shadow-xs p-5 sm:p-6 mb-8" id="institution-search">
     <div class="border-b border-slate-200 pb-4 mb-5 flex flex-col md:flex-row md:items-center justify-between gap-3">
       <div>
         <div class="flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-          <span class="text-xs font-bold text-emerald-700 uppercase tracking-wider">Public Directory & Verification Gateway</span>
+          <span class="text-xs font-bold text-emerald-700 uppercase tracking-wider">Public Directory &amp; Intake Surveillance</span>
         </div>
-        <h2 class="text-lg font-bold text-[#0F2942] mt-0.5">Approved Technical Institutions & Credential Verification</h2>
-        <p class="text-xs text-slate-600">Search technical institutions across India by name, code, or state, or directly verify student academic credentials.</p>
+        <h2 class="text-lg sm:text-xl font-bold text-[#0F2942] mt-0.5">
+          AICTE Approved Technical Institutions &amp; Live Intake Status
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
+          Filter institutions by name, AICTE code, district, or state to inspect sanctioned intake limits and verify student records.
+        </p>
       </div>
       <div class="flex items-center gap-2 shrink-0">
         <a
           href="/verifier"
-          class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded bg-[#138808] hover:bg-[#0E6506] text-white text-xs font-bold shadow-sm transition-colors"
+          class="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white text-xs font-bold shadow-xs transition-colors"
         >
-          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-          </svg>
-          <span>Open Public Verifier Terminal &rarr;</span>
+          <span>Open Verification Terminal</span>
+          <span aria-hidden="true">&rarr;</span>
         </a>
       </div>
-    </div>
-
-    <!-- Quick APAAR Verification Bar -->
-    <div class="bg-slate-50 border border-slate-200 rounded p-4 mb-5">
-      <form action="/verifier" method="GET" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 text-xs">
-        <div class="flex-1">
-          <label for="quickApaarInput" class="block font-bold text-slate-800 uppercase tracking-wider mb-1">
-            Quick Student Credential Verification (12-Digit APAAR ID):
-          </label>
-          <div class="relative">
-            <input
-              type="text"
-              id="quickApaarInput"
-              name="apaar"
-              pattern="[0-9]{12}"
-              placeholder="Enter 12-digit APAAR ID (e.g. 412398471029)"
-              class="w-full bg-white border border-slate-300 rounded px-3 py-2 font-mono text-slate-900 text-xs tracking-wider focus:outline-none focus:ring-1 focus:ring-blue-600"
-            />
-          </div>
-        </div>
-        <div class="sm:self-end">
-          <button
-            type="submit"
-            class="w-full sm:w-auto px-4 py-2 bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold rounded text-xs transition-colors shadow-sm"
-          >
-            Verify Credential &rarr;
-          </button>
-        </div>
-      </form>
     </div>
 
     <!-- Search & Filter Controls for Directory -->
@@ -194,8 +230,8 @@ const portals = [
         <input
           type="text"
           id="instSearchInput"
-          placeholder="Filter institutions by name, code, district, or state..."
-          class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-600"
+          placeholder="Filter institutions by name, AICTE code, district, or state..."
+          class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded text-xs sm:text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
         />
       </div>
 
@@ -203,10 +239,10 @@ const portals = [
         <label for="stateFilterSelect" class="sr-only">Filter by State</label>
         <select
           id="stateFilterSelect"
-          class="w-full py-2 px-3 bg-slate-50 border border-slate-300 rounded text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-600"
+          class="w-full py-2 px-3 bg-slate-50 border border-slate-300 rounded text-xs sm:text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
         >
-          <option value="">All States / UTs</option>
-          {Array.from(new Set(institutions.map(i => i.state).filter(Boolean))).sort().map(st => (
+          <option value="">All States / Union Territories</option>
+          {Array.from(new Set(institutions.map((i) => i.state).filter(Boolean))).sort().map((st) => (
             <option value={st}>{st}</option>
           ))}
         </select>
@@ -214,137 +250,165 @@ const portals = [
     </div>
 
     <!-- Interactive Directory Table -->
-    <div class="overflow-x-auto border border-slate-200 rounded">
-      <table class="w-full text-left text-xs" id="institutionsTable">
-        <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200 uppercase tracking-wider text-[11px]">
+    <div class="overflow-x-auto border border-slate-200 rounded-lg">
+      <table class="w-full text-left text-xs sm:text-sm" id="institutionsTable">
+        <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider text-xs">
           <tr>
-            <th class="py-2.5 px-3">Institution Code & Name</th>
-            <th class="py-2.5 px-3">State / District</th>
-            <th class="py-2.5 px-3">Sanctioned Intake</th>
-            <th class="py-2.5 px-3">Current Active</th>
-            <th class="py-2.5 px-3">Regulatory Status</th>
-            <th class="py-2.5 px-3 text-right">Verification</th>
+            <th class="py-3 px-4">Institution Code &amp; Name</th>
+            <th class="py-3 px-4">State / District</th>
+            <th class="py-3 px-4">Sanctioned Intake</th>
+            <th class="py-3 px-4">Active Enrollment</th>
+            <th class="py-3 px-4">Regulatory Status</th>
+            <th class="py-3 px-4 text-right">Action</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-200 font-medium text-slate-700" id="instTableBody">
-          {institutions.map(inst => (
-            <tr
-              class="hover:bg-slate-50 transition-colors inst-row"
-              data-name={inst.name.toLowerCase()}
-              data-code={inst.code.toLowerCase()}
-              data-id={inst.id.toLowerCase()}
-              data-state={inst.state.toLowerCase()}
-              data-district={inst.district.toLowerCase()}
-            >
-              <td class="py-3 px-3">
-                <div class="font-bold text-[#0F2942]">{inst.name}</div>
-                <div class="text-[11px] font-mono text-slate-500 mt-0.5">Code: {inst.code} &bull; ID: {inst.id}</div>
-              </td>
-              <td class="py-3 px-3">
-                <div>{inst.district}</div>
-                <div class="text-[11px] text-slate-500">{inst.state}</div>
-              </td>
-              <td class="py-3 px-3">
-                <span class="font-bold text-slate-900">{inst.sanctioned_intake}</span>
-                <span class="text-[10px] text-slate-500 ml-1">Dynamic Seats</span>
-              </td>
-              <td class="py-3 px-3">
-                <span class="font-mono font-semibold">{inst.current_enrollment} Verified</span>
-              </td>
-              <td class="py-3 px-3">
-                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                  AICTE Approved
-                </span>
-              </td>
-              <td class="py-3 px-3 text-right">
-                <a
-                  href="/verifier"
-                  class="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 hover:text-blue-900 hover:underline"
-                >
-                  <span>Verify Student</span>
-                  <span>&rarr;</span>
-                </a>
-              </td>
-            </tr>
-          ))}
+          {institutions.map((inst) => {
+            const isOverrun = inst.current_enrollment > inst.sanctioned_intake;
+            const excessSeats = inst.current_enrollment - inst.sanctioned_intake;
+
+            return (
+              <tr
+                class={`transition-colors inst-row ${isOverrun ? 'bg-red-50/30 hover:bg-red-50/60' : 'hover:bg-slate-50'}`}
+                data-name={inst.name.toLowerCase()}
+                data-code={inst.code.toLowerCase()}
+                data-id={inst.id.toLowerCase()}
+                data-state={inst.state.toLowerCase()}
+                data-district={inst.district.toLowerCase()}
+              >
+                <td class="py-3.5 px-4">
+                  <div class="font-bold text-[#0F2942] text-sm">{inst.name}</div>
+                  <div class="text-xs font-mono text-slate-500 mt-0.5">
+                    Code: {inst.code} &bull; ID: {inst.id}
+                  </div>
+                </td>
+                <td class="py-3.5 px-4">
+                  <div class="font-semibold text-slate-800">{inst.district}</div>
+                  <div class="text-xs text-slate-500">{inst.state}</div>
+                </td>
+                <td class="py-3.5 px-4">
+                  <span class="font-bold text-slate-900 font-mono">{inst.sanctioned_intake}</span>
+                  <span class="text-xs text-slate-500 ml-1">Sanctioned Seats</span>
+                </td>
+                <td class="py-3.5 px-4">
+                  {isOverrun ? (
+                    <span class="font-mono font-bold text-red-700">
+                      {inst.current_enrollment} / {inst.sanctioned_intake}
+                    </span>
+                  ) : (
+                    <span class="font-mono font-semibold text-slate-800">
+                      {inst.current_enrollment} / {inst.sanctioned_intake}
+                    </span>
+                  )}
+                </td>
+                <td class="py-3.5 px-4">
+                  {isOverrun ? (
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-bold bg-red-50 text-red-800 border border-red-200">
+                      <span class="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
+                      <span>Quota Overrun (+{excessSeats} Excess)</span>
+                    </span>
+                  ) : (
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                      <span>Compliant (AICTE Approved)</span>
+                    </span>
+                  )}
+                </td>
+                <td class="py-3.5 px-4 text-right">
+                  <a
+                    href={`/verifier?institution=${encodeURIComponent(inst.id)}&code=${encodeURIComponent(inst.code)}`}
+                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-slate-100 hover:bg-[#0F2942] text-[#0F2942] hover:text-white border border-slate-300 text-xs font-bold transition-colors"
+                  >
+                    <span>Verify Records</span>
+                    <span aria-hidden="true">&rarr;</span>
+                  </a>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
-      <div id="noResultsMsg" class="hidden p-6 text-center text-xs text-slate-500">
-        No institutions found matching the search criteria.
+      <div id="noResultsMsg" class="hidden p-6 text-center text-sm text-slate-500">
+        No technical institutions found matching the selected filter criteria.
       </div>
     </div>
   </section>
 
-  <!-- 5 Stakeholder Portals Grid -->
-  <div class="mb-8">
-    <div class="border-b border-slate-200 pb-3 mb-5 flex items-center justify-between">
+  <!-- 4. 5 Stakeholder Portals Grid (Balanced 6-Col Layout: 3 Top Row, 2 Bottom Row) -->
+  <section class="mb-8" aria-labelledby="stakeholder-portals-heading">
+    <div class="border-b border-slate-200 pb-3 mb-5 flex flex-wrap items-center justify-between gap-2">
       <div>
-        <h2 class="text-lg font-bold text-[#0F2942]">Stakeholder Portals & Operational Modules</h2>
-        <p class="text-xs text-slate-600">Select an operational authority to access specialized data management functions or public verification.</p>
+        <h2 id="stakeholder-portals-heading" class="text-lg sm:text-xl font-bold text-[#0F2942]">
+          Stakeholder Portals &amp; Operational Modules
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
+          Select an operational authority to access role-isolated data management functions or open public verification.
+        </p>
       </div>
-      <span class="text-xs font-mono bg-slate-100 text-slate-700 px-2.5 py-1 rounded border border-slate-300">
-        5 Integrated Nodes
+      <span class="text-xs font-mono font-semibold bg-slate-100 text-slate-700 px-3 py-1 rounded border border-slate-300">
+        5 Statutory Modules
       </span>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-      {portals.map((p) => {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-5">
+      {portals.map((p, index) => {
         const isPublic = p.isPublic;
-        const targetUrl = user 
-          ? p.path 
-          : (isPublic ? '/verifier' : `/login?redirect=${encodeURIComponent(p.path)}`);
-        const actionText = user 
-          ? 'Enter Portal →' 
-          : (isPublic ? 'Launch Verification Terminal →' : 'Officer Login →');
+        const targetUrl = user
+          ? p.path
+          : isPublic
+          ? '/verifier'
+          : `/login?redirect=${encodeURIComponent(p.path)}`;
+        const actionText = user
+          ? 'Enter Portal →'
+          : isPublic
+          ? 'Launch Verification Terminal →'
+          : 'Officer Sign In →';
+
+        // Top 3 cards take 2 cols each (3x2=6), bottom 2 cards take 3 cols each (2x3=6) on lg screens
+        const colSpanClass = index < 3 ? 'lg:col-span-2' : 'lg:col-span-3';
 
         return (
-          <div class={`bg-white rounded border shadow-sm flex flex-col justify-between transition-all ${
-            isPublic
-              ? 'border-emerald-500 ring-2 ring-emerald-500/20 hover:border-emerald-600 shadow-md'
-              : 'border-slate-200 hover:border-blue-400'
-          }`}>
-            <div class="p-5">
+          <div
+            class={`${colSpanClass} bg-white rounded-lg border shadow-xs flex flex-col justify-between transition-all ${
+              isPublic
+                ? 'border-emerald-600 ring-1 ring-emerald-500/30 hover:border-emerald-700'
+                : 'border-slate-200 hover:border-[#0F2942]'
+            }`}
+          >
+            <div class="p-5 sm:p-6">
               <div class="flex items-center justify-between gap-2 mb-3">
-                <span class="text-[11px] font-mono font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">
+                <span class="text-xs font-mono font-bold bg-slate-100 text-[#0F2942] px-2.5 py-0.5 rounded border border-slate-300">
                   {p.code}
                 </span>
                 {isPublic ? (
-                  <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300 uppercase tracking-wide">
-                    PUBLIC VERIFICATION GATEWAY
+                  <span class="text-xs font-bold px-2.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    Public Open Access
                   </span>
                 ) : (
-                  <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 uppercase tracking-wide">
-                    OFFICER AUTHENTICATION REQUIRED
+                  <span class="text-xs font-bold px-2.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200">
+                    Officer Auth Required
                   </span>
                 )}
               </div>
 
-              {isPublic && (
-                <div class="mb-3 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded text-[11px] text-emerald-900 font-bold flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span>PUBLIC VERIFICATION GATEWAY - OPEN TO ALL VERIFIERS</span>
-                </div>
-              )}
-
-              <h3 class="text-sm font-bold text-[#0F2942] mb-2 leading-tight">
+              <h3 class="text-base font-bold text-[#0F2942] mb-2 leading-snug">
                 {p.title}
               </h3>
 
-              <p class="text-xs text-slate-600 leading-relaxed mb-4">
+              <p class="text-sm text-slate-600 leading-relaxed mb-4">
                 {p.description}
               </p>
 
-              <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                <span class="text-slate-500 font-medium">Compliance Node:</span>
-                <span class="font-semibold text-slate-700">{p.stats}</span>
+              <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                <span class="text-slate-500 font-medium">Statutory Capability:</span>
+                <span class="font-bold text-slate-800">{p.stats}</span>
               </div>
             </div>
 
             <div class={`p-4 border-t mt-auto ${isPublic ? 'bg-emerald-50/50 border-emerald-100' : 'bg-slate-50 border-slate-100'}`}>
               <a
                 href={targetUrl}
-                class={`block w-full text-center text-xs font-bold py-2.5 px-4 rounded transition-colors shadow-sm ${
+                class={`block w-full text-center text-xs sm:text-sm font-bold py-2.5 px-4 rounded transition-colors shadow-xs ${
                   isPublic
                     ? 'bg-[#138808] hover:bg-[#0E6506] text-white'
                     : 'bg-[#0F2942] hover:bg-[#1E3A8A] text-white'
@@ -357,60 +421,62 @@ const portals = [
         );
       })}
     </div>
-  </div>
+  </section>
 
-  <!-- Statutory Architecture & Audit Baseline -->
-  <div class="bg-white rounded border border-slate-200 p-6 shadow-sm" id="aicte-mandate">
-    <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+  <!-- 5. Statutory Architecture & Audit Baseline -->
+  <section class="bg-white rounded-lg border border-slate-200 p-6 shadow-xs" id="aicte-mandate">
+    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-4 mb-5">
       <div>
-        <h3 class="text-sm font-bold text-[#0F2942]">AICTE Approval Process Handbook (2024–2027) Regulatory Framework</h3>
-        <p class="text-xs text-slate-600 mt-0.5">
-          Statutory mandate establishing an automated student verification bridge between institutional rosters, affiliating university degree ledgers, and third-party credential verifiers.
+        <h2 class="text-base sm:text-lg font-bold text-[#0F2942]">
+          AICTE Approval Process Handbook (2024–2027) Regulatory Framework
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
+          Statutory architecture connecting institutional rosters, affiliating university degree ledgers, and public credential verifiers.
         </p>
       </div>
-      <span class="hidden sm:inline-block text-[11px] font-mono bg-blue-50 text-blue-900 border border-blue-200 px-2.5 py-1 rounded font-bold">
+      <span class="text-xs font-mono bg-blue-50 text-blue-900 border border-blue-200 px-3 py-1 rounded font-bold">
         Mandate Ref: APH-2024-27
       </span>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-      <div class="p-4 bg-slate-50 rounded border border-slate-200">
-        <div class="font-bold text-[#0F2942] mb-1.5 flex items-center gap-1.5">
-          <svg class="w-4 h-4 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 text-sm">
+      <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+        <div class="font-bold text-[#0F2942] mb-1.5 flex items-center gap-2">
+          <svg class="w-4 h-4 text-blue-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
           <span>1. In-Browser Memory Triage</span>
         </div>
-        <div class="text-slate-600 text-[11px] leading-relaxed">
-          In-Browser Client-Side Memory Triage (Zero PII Cloud Leakage) executes Parquet and CSV roster validation directly within client browser memory, preventing unverified student records from reaching external cloud infrastructure.
-        </div>
+        <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
+          Client-side memory triage executes CSV and Parquet roster validation directly in the browser, isolating missing or malformed 12-digit APAAR IDs before upload.
+        </p>
       </div>
 
-      <div class="p-4 bg-slate-50 rounded border border-slate-200">
-        <div class="font-bold text-[#0F2942] mb-1.5 flex items-center gap-1.5">
-          <svg class="w-4 h-4 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+        <div class="font-bold text-[#0F2942] mb-1.5 flex items-center gap-2">
+          <svg class="w-4 h-4 text-amber-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
           </svg>
           <span>2. Dynamic Intake Cap Locks</span>
         </div>
-        <div class="text-slate-600 text-[11px] leading-relaxed">
-          Cloudflare D1 enforces strict relational row-level constraints conforming to AICTE Approval Process Handbook (2024–2027) Dynamic Intake Caps (60/120/180/240 divisions), immediately detecting and flagging quota overruns.
-        </div>
+        <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
+          Relational constraints enforce AICTE Approval Process Handbook (2024–2027) dynamic intake caps (60 / 120 / 180 / 240 seats) and flag cross-campus duplicate enrollments.
+        </p>
       </div>
 
-      <div class="p-4 bg-slate-50 rounded border border-slate-200">
-        <div class="font-bold text-[#0F2942] mb-1.5 flex items-center gap-1.5">
-          <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+        <div class="font-bold text-[#0F2942] mb-1.5 flex items-center gap-2">
+          <svg class="w-4 h-4 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
           <span>3. Biometric Passkey Consent</span>
         </div>
-        <div class="text-slate-600 text-[11px] leading-relaxed">
-          W3C WebAuthn hardware-bound passkeys implement mandatory explicit consent under Section 6 of the DPDP Act 2023 before any academic credential record release to prospective employers.
-        </div>
+        <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
+          W3C WebAuthn hardware-bound passkeys enforce explicit student consent under Section 6 of the DPDP Act 2023 prior to full academic record disclosure.
+        </p>
       </div>
     </div>
-  </div>
+  </section>
 
   <script is:inline>
     // Client-side instant filter for institutions directory
@@ -424,14 +490,15 @@ const portals = [
       const state = (stateFilter?.value || '').toLowerCase().trim();
       let visibleCount = 0;
 
-      rows.forEach(row => {
+      rows.forEach((row) => {
         const name = row.getAttribute('data-name') || '';
         const code = row.getAttribute('data-code') || '';
         const id = row.getAttribute('data-id') || '';
         const rowState = row.getAttribute('data-state') || '';
         const district = row.getAttribute('data-district') || '';
 
-        const matchesQuery = !q || name.includes(q) || code.includes(q) || id.includes(q) || district.includes(q);
+        const matchesQuery =
+          !q || name.includes(q) || code.includes(q) || id.includes(q) || district.includes(q);
         const matchesState = !state || rowState === state;
 
         if (matchesQuery && matchesState) {

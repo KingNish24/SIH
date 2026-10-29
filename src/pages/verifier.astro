@@ -1,155 +1,359 @@
 ---
 import Layout from '../layouts/Layout.astro';
+
+const url = Astro.url;
+const queryApaar = url.searchParams.get('apaar')?.trim() || '';
+const queryInst = url.searchParams.get('institution')?.trim() || '';
+const initialApaar = /^\d{12}$/.test(queryApaar) ? queryApaar : '412398471029';
+const initialOrg = queryInst
+  ? `Institutional Audit (${queryInst}) — National Recruitment / Admissions`
+  : 'Union Public Service Commission (UPSC) / Corporate Verification Gateway';
 ---
 
-<Layout title="SIH 2026 | Credential Verification Authority" activeRole="verifier">
+<Layout
+  title="National Academic Depository & DigiLocker Credential Verification | VIDYA Portal"
+  activeRole="verifier"
+  breadcrumb="Public Credential Verification"
+>
   <div class="space-y-6">
-    <!-- Header -->
-    <div class="border-b border-slate-200 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
-      <div>
-        <div class="text-xs font-semibold text-[#1E40AF] uppercase tracking-wider mb-1">
-          Verification Authority Module &bull; Code VRF-05
+    <!-- Official Portal Header -->
+    <div class="bg-white border border-slate-200 rounded-lg p-5 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="flex items-start gap-3.5">
+        <div class="w-11 h-11 rounded-lg bg-[#0F2942] text-white flex items-center justify-center shrink-0 shadow-sm border border-slate-700">
+          <svg class="w-6 h-6 text-[#FF9933]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
         </div>
-        <h1 class="text-xl sm:text-2xl font-bold text-[#0F2942]">
-          Instant Academic Credential Verification
-        </h1>
-        <p class="text-xs text-slate-600 mt-0.5">
-          Authorized verification gateway for public recruitment commissions, corporate employers, and higher education admissions.
-        </p>
+        <div>
+          <div class="flex flex-wrap items-center gap-2 text-xs font-bold text-[#1E40AF] uppercase tracking-wider">
+            <span>National Academic Depository (NAD) &bull; DigiLocker Verified</span>
+            {queryInst && (
+              <span class="bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded font-mono text-[11px]">
+                Institution Filter: {queryInst}
+              </span>
+            )}
+          </div>
+          <h1 class="text-xl sm:text-2xl font-bold text-[#0F2942] mt-0.5">
+            Instant Academic Credential &amp; Admission Verification
+          </h1>
+          <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
+            Authorized public verification gateway for recruitment commissions (UPSC/SSC), corporate background verifiers, and higher education admissions.
+          </p>
+        </div>
       </div>
 
-      <div class="flex items-center gap-2 font-mono text-xs">
-        <span class="bg-blue-50 text-blue-900 border border-blue-200 px-3 py-1 rounded font-semibold">
-          Edge Latency Benchmark: &lt; 5000ms
+      <div class="flex items-center gap-2 shrink-0 self-start md:self-center">
+        <span class="inline-flex items-center gap-2 bg-emerald-50 text-emerald-900 border border-emerald-300 px-3.5 py-1.5 rounded-md font-semibold text-xs shadow-xs">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Ed25519 Cryptographic Verification &bull; DPDP Act 2023 Compliant</span>
         </span>
       </div>
     </div>
 
-    <!-- Query Form -->
-    <div class="bg-white border border-slate-200 rounded p-6 shadow-sm">
-      <form id="verifierQueryForm" class="flex flex-col md:flex-row items-stretch md:items-end gap-4 text-xs">
-        <div class="flex-1">
-          <label class="block font-bold text-slate-800 uppercase tracking-wider mb-1.5">
-            Enter Candidate 12-Digit APAAR ID:
+    <!-- Verification Query Form Card -->
+    <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+      <form id="verifierQueryForm" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+        <div class="md:col-span-5">
+          <label for="queryApaar" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            Candidate 12-Digit APAAR ID *
           </label>
           <input
             type="text"
             id="queryApaar"
             required
             pattern="[0-9]{12}"
+            maxlength="12"
             placeholder="e.g. 412398471029"
-            value="412398471029"
-            class="w-full bg-slate-50 border border-slate-300 rounded p-2.5 font-mono text-slate-900 text-sm tracking-wider focus:outline-none focus:ring-1 focus:ring-blue-600"
+            value={initialApaar}
+            class="w-full h-11 bg-slate-50 border border-slate-300 rounded py-2.5 px-3.5 font-mono text-slate-900 text-sm tracking-wider focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F2942] transition-all"
           />
         </div>
 
-        <div class="w-full md:w-72">
-          <label class="block font-semibold text-slate-700 mb-1.5">Verifying Organization Identity:</label>
+        <div class="md:col-span-5">
+          <label for="verifierOrg" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            Verifying Organization / Purpose *
+          </label>
           <input
             type="text"
             id="verifierOrg"
-            value="National Recruitment Authority / Employer"
-            class="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-600"
+            required
+            value={initialOrg}
+            placeholder="e.g. UPSC / TCS Background Verification"
+            class="w-full h-11 bg-slate-50 border border-slate-300 rounded py-2.5 px-3.5 text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F2942] transition-all"
           />
         </div>
 
-        <button
-          type="submit"
-          id="verifySubmitBtn"
-          class="px-5 py-2.5 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-semibold text-xs transition-colors shrink-0"
-        >
-          Verify Credential Record
-        </button>
+        <div class="md:col-span-2">
+          <button
+            type="submit"
+            id="verifySubmitBtn"
+            class="w-full h-11 py-2.5 px-3.5 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold text-sm transition-colors shadow-sm flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
+          >
+            <svg class="w-4 h-4 text-[#FF9933] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <span id="verifyBtnLabel">Verify Record</span>
+          </button>
+        </div>
       </form>
 
-      <!-- Pre-Set Test Scenarios -->
+      <!-- Pre-Set Interactive Quick-Test Scenario Pills -->
       <div class="mt-4 pt-4 border-t border-slate-200 flex flex-wrap items-center gap-2 text-xs">
-        <span class="text-slate-500 font-semibold text-[11px]">Test Profiles:</span>
+        <span class="text-slate-600 font-bold uppercase tracking-wider text-[11px] mr-1">
+          Quick-Test Registry Scenarios:
+        </span>
         <button
           type="button"
-          class="demoApaarBtn px-3 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-mono text-[11px] border border-slate-300"
+          class="demoApaarBtn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-medium text-xs border border-emerald-300 transition-colors cursor-pointer"
           data-apaar="412398471029"
         >
-          412398471029 (Valid Degree Issued)
+          <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+          <span class="font-mono font-bold">412398471029</span>
+          <span>&mdash; Valid Degree (Ed25519 Signed)</span>
         </button>
         <button
           type="button"
-          class="demoApaarBtn px-3 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-mono text-[11px] border border-slate-300"
+          class="demoApaarBtn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 hover:bg-red-100 text-red-900 font-medium text-xs border border-red-300 transition-colors cursor-pointer"
           data-apaar="601928374819"
         >
-          601928374819 (Revoked Credential)
+          <span class="w-2 h-2 rounded-full bg-red-600"></span>
+          <span class="font-mono font-bold">601928374819</span>
+          <span>&mdash; Revoked Credential</span>
         </button>
         <button
           type="button"
-          class="demoApaarBtn px-3 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-mono text-[11px] border border-slate-300"
+          class="demoApaarBtn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-900 font-medium text-xs border border-amber-300 transition-colors cursor-pointer"
           data-apaar="739284019283"
         >
-          739284019283 (Cross-Campus Duplicate)
+          <span class="w-2 h-2 rounded-full bg-amber-600"></span>
+          <span class="font-mono font-bold">739284019283</span>
+          <span>&mdash; Cross-Campus Duplicate</span>
         </button>
       </div>
     </div>
 
-    <!-- Verification Output Result Console -->
-    <div id="resultContainer" class="hidden bg-white border border-slate-200 rounded p-6 shadow-sm">
-      <div class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-200 gap-3">
+    <!-- Official Digital Credential Verification Certificate Card -->
+    <div id="resultContainer" class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+      <!-- Top Certificate Banner -->
+      <div id="resBanner" class="bg-[#0F2942] text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-[#FF9933]">
+        <div class="flex items-center gap-3">
+          <div class="bg-white rounded p-1.5 shrink-0">
+            <img src="/emblem.svg" alt="State Emblem of India" class="h-7 w-auto object-contain" width="22" height="28" />
+          </div>
+          <div>
+            <div class="text-[10px] font-bold uppercase tracking-widest text-[#FF9933]">
+              Official Digital Credential Verification Certificate &bull; NAD / DigiLocker Standard
+            </div>
+            <h2 id="resTitle" class="text-base sm:text-lg font-bold text-white mt-0.5">
+              Verifying Academic Record against Cloudflare D1 Registry...
+            </h2>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 self-start sm:self-center">
+          <span id="resBadge" class="text-xs font-extrabold uppercase tracking-wider px-3 py-1.5 rounded bg-emerald-500/20 text-emerald-200 border border-emerald-400/40">
+            QUERYING LEDGER...
+          </span>
+        </div>
+      </div>
+
+      <!-- Certificate Metadata Telemetry Strip -->
+      <div class="p-6 space-y-5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 text-xs">
+          <div class="p-3.5 bg-slate-50 rounded-md border border-slate-200">
+            <div class="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Candidate Name</div>
+            <div id="resName" class="font-bold text-slate-900 text-sm mt-1 truncate">Ananya S.</div>
+            <div id="resConsentPill" class="text-[11px] text-emerald-700 font-medium mt-0.5">DPDP Consent: Granted</div>
+          </div>
+
+          <div class="p-3.5 bg-slate-50 rounded-md border border-slate-200">
+            <div class="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Masked APAAR ID</div>
+            <div id="resApaar" class="font-bold font-mono text-slate-900 text-sm mt-1">XXXX-XXXX-{initialApaar.slice(-4)}</div>
+            <div class="text-[11px] text-slate-500 mt-0.5">UIDAI / ABC Linked</div>
+          </div>
+
+          <div class="p-3.5 bg-slate-50 rounded-md border border-slate-200">
+            <div class="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Cryptographic Proof</div>
+            <div id="resCryptoStatus" class="font-bold text-emerald-700 text-sm mt-1 flex items-center gap-1">
+              <span>Ed25519 Signature Verified ✓</span>
+            </div>
+            <div id="resKeyId" class="text-[11px] font-mono text-slate-500 mt-0.5 truncate">Key ID: aicte-nad-2026</div>
+          </div>
+
+          <div class="p-3.5 bg-slate-50 rounded-md border border-slate-200">
+            <div class="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Audit Request ID</div>
+            <div id="resRequestId" class="font-bold font-mono text-slate-900 text-xs mt-1 truncate">REQ-INITIALIZING</div>
+            <div class="text-[11px] text-slate-500 mt-0.5">Logged in D1 Audit Trail</div>
+          </div>
+
+          <div class="p-3.5 bg-slate-50 rounded-md border border-slate-200">
+            <div class="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Edge Response Time</div>
+            <div id="resLatency" class="font-bold font-mono text-emerald-700 text-sm mt-1">-- ms</div>
+            <div class="text-[11px] text-slate-500 mt-0.5">Cloudflare Worker Edge</div>
+          </div>
+        </div>
+
+        <!-- Degree & Enrollment Certificate Body -->
+        <div id="resDegrees" class="space-y-4">
+          <div class="p-5 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-600 flex items-center gap-3">
+            <span class="animate-spin inline-block w-4 h-4 border-2 border-[#0F2942] border-t-transparent rounded-full"></span>
+            <span>Performing Ed25519 cryptographic signature verification and D1 revocation check...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3-Column How Cryptographic Verification Works (DPDP & Ed25519 Standard) -->
+    <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 mb-5 border-b border-slate-200">
         <div>
-          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Official Verification Result</div>
-          <h2 id="resTitle" class="text-base font-bold text-[#0F2942] mt-0.5">Verification Output</h2>
+          <div class="text-xs font-bold uppercase tracking-wider text-[#1E40AF]">
+            Zero-Trust Verification Architecture
+          </div>
+          <h2 class="text-base sm:text-lg font-bold text-[#0F2942] mt-0.5">
+            How Cryptographic Verification Works (DPDP &amp; Ed25519 Standard)
+          </h2>
         </div>
-        <div id="resBadge" class="text-xs font-bold px-3 py-1 rounded"></div>
+        <a
+          href="/api/keys/degree"
+          target="_blank"
+          rel="noopener"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-slate-100 hover:bg-slate-200 text-[#0F2942] border border-slate-300 font-mono text-xs font-semibold transition-colors self-start sm:self-auto"
+        >
+          <span>Inspect Public JWK (/api/keys/degree)</span>
+          <span>&nearr;</span>
+        </a>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 my-4 text-xs">
-        <div class="p-3 bg-slate-50 rounded border border-slate-200">
-          <div class="text-slate-500 text-[11px]">Candidate (Masked)</div>
-          <div id="resName" class="font-bold text-slate-900 mt-0.5">-</div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs">
+        <!-- Step 1 -->
+        <div class="p-4 rounded-lg bg-slate-50 border border-slate-200 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2.5">
+              <span class="px-2.5 py-0.5 rounded bg-blue-100 text-blue-900 font-bold text-[11px] uppercase tracking-wider">
+                Step 1 &bull; Privacy Gate
+              </span>
+              <span class="font-mono text-slate-400 font-bold">DPDP Sec. 6</span>
+            </div>
+            <h3 class="font-bold text-slate-900 text-sm mb-1.5">
+              1. Student Biometric Consent Check
+            </h3>
+            <p class="text-slate-600 leading-relaxed">
+              Before disclosing full academic PII, the gateway checks the candidate's explicit consent state under Section 6 of the Digital Personal Data Protection Act, 2023. If consent is pending, sensitive attributes are masked while still reporting revocation/duplicate alerts.
+            </p>
+          </div>
+          <div class="mt-3 pt-2.5 border-t border-slate-200/80 text-[11px] text-slate-500 font-medium">
+            FIDO2 / WebAuthn Passkey Hardware Backed
+          </div>
         </div>
-        <div class="p-3 bg-slate-50 rounded border border-slate-200">
-          <div class="text-slate-500 text-[11px]">Masked APAAR ID</div>
-          <div id="resApaar" class="font-bold font-mono text-slate-900 mt-0.5">-</div>
+
+        <!-- Step 2 -->
+        <div class="p-4 rounded-lg bg-slate-50 border border-slate-200 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2.5">
+              <span class="px-2.5 py-0.5 rounded bg-amber-100 text-amber-900 font-bold text-[11px] uppercase tracking-wider">
+                Step 2 &bull; Ledger Audit
+              </span>
+              <span class="font-mono text-slate-400 font-bold">Cloudflare D1</span>
+            </div>
+            <h3 class="font-bold text-slate-900 text-sm mb-1.5">
+              2. Central D1 Registry &amp; Revocation Check
+            </h3>
+            <p class="text-slate-600 leading-relaxed">
+              Queries the national D1 database in real time to verify that the degree has not been revoked by the affiliating university and checks cross-campus admission records for simultaneous duplicate APAAR enrollments.
+            </p>
+          </div>
+          <div class="mt-3 pt-2.5 border-t border-slate-200/80 text-[11px] text-slate-500 font-medium">
+            Every lookup writes an immutable <code class="font-mono">REQ-*</code> audit row
+          </div>
         </div>
-        <div class="p-3 bg-slate-50 rounded border border-slate-200">
-          <div class="text-slate-500 text-[11px]">Edge Latency</div>
-          <div id="resLatency" class="font-bold font-mono text-emerald-700 mt-0.5">-</div>
+
+        <!-- Step 3 -->
+        <div class="p-4 rounded-lg bg-slate-50 border border-slate-200 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2.5">
+              <span class="px-2.5 py-0.5 rounded bg-emerald-100 text-emerald-900 font-bold text-[11px] uppercase tracking-wider">
+                Step 3 &bull; Math Proof
+              </span>
+              <span class="font-mono text-slate-400 font-bold">RFC 8032</span>
+            </div>
+            <h3 class="font-bold text-slate-900 text-sm mb-1.5">
+              3. Ed25519 Asymmetric Signature Proof
+            </h3>
+            <p class="text-slate-600 leading-relaxed">
+              Canonical degree fields (<code class="font-mono text-[11px]">apaar_id, cgpa, degree_name, institution_id, year_of_passing</code>) are verified using Web Crypto <code class="font-mono text-[11px]">Ed25519</code> against the National Academic Depository public key.
+            </p>
+          </div>
+          <div class="mt-3 pt-2.5 border-t border-slate-200/80 flex items-center justify-between text-[11px]">
+            <span class="text-slate-500 font-medium">Public Key Endpoint:</span>
+            <a href="/api/keys/degree" target="_blank" rel="noopener" class="font-mono font-bold text-[#1E40AF] hover:underline">
+              /api/keys/degree &rarr;
+            </a>
+          </div>
         </div>
       </div>
-
-      <div id="resDegrees" class="mt-4 space-y-3"></div>
     </div>
   </div>
 
   <script is:inline>
     const form = document.getElementById('verifierQueryForm');
-    const resultBox = document.getElementById('resultContainer');
+    const resBanner = document.getElementById('resBanner');
     const resTitle = document.getElementById('resTitle');
     const resBadge = document.getElementById('resBadge');
     const resName = document.getElementById('resName');
+    const resConsentPill = document.getElementById('resConsentPill');
     const resApaar = document.getElementById('resApaar');
+    const resCryptoStatus = document.getElementById('resCryptoStatus');
+    const resKeyId = document.getElementById('resKeyId');
+    const resRequestId = document.getElementById('resRequestId');
     const resLatency = document.getElementById('resLatency');
     const resDegrees = document.getElementById('resDegrees');
+    const verifyBtnLabel = document.getElementById('verifyBtnLabel');
+
+    let isInitialAutoLoad = true;
+
+    function maskNameClient(val) {
+      if (!val) return 'Candidate';
+      const parts = String(val).trim().split(/\s+/);
+      return parts.length > 1 ? `${parts[0]} ${parts[1][0]}.` : val;
+    }
 
     document.querySelectorAll('.demoApaarBtn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        document.getElementById('queryApaar').value = btn.dataset.apaar || '';
-        form.dispatchEvent(new Event('submit'));
+        isInitialAutoLoad = false;
+        const input = document.getElementById('queryApaar');
+        if (input) {
+          input.value = btn.dataset.apaar || '';
+          form.dispatchEvent(new Event('submit'));
+        }
       });
     });
 
-    // Check if APAAR ID passed in query string (?apaar=...)
+    // Support ?apaar= and ?institution= query params and auto-run on page load after 100ms
     const urlParams = new URLSearchParams(window.location.search);
     const queryApaarParam = urlParams.get('apaar');
+    const queryInstParam = urlParams.get('institution');
+
     if (queryApaarParam && /^\d{12}$/.test(queryApaarParam.trim())) {
       const input = document.getElementById('queryApaar');
-      if (input) {
-        input.value = queryApaarParam.trim();
-        setTimeout(() => form?.dispatchEvent(new Event('submit')), 150);
+      if (input) input.value = queryApaarParam.trim();
+    }
+    if (queryInstParam && queryInstParam.trim()) {
+      const orgInput = document.getElementById('verifierOrg');
+      if (orgInput) {
+        orgInput.value = `Institutional Audit (${queryInstParam.trim()}) — National Recruitment / Admissions`;
       }
     }
+
+    setTimeout(() => {
+      form?.dispatchEvent(new Event('submit'));
+    }, 100);
 
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const apaar = document.getElementById('queryApaar').value.trim();
       const org = document.getElementById('verifierOrg').value.trim();
+
+      if (verifyBtnLabel) verifyBtnLabel.textContent = 'Verifying...';
 
       const startTime = performance.now();
       try {
@@ -161,61 +365,167 @@ import Layout from '../layouts/Layout.astro';
         const elapsed = Math.round(performance.now() - startTime);
         const data = await res.json();
 
-        resultBox.classList.remove('hidden');
-        resLatency.textContent = elapsed + ' ms';
+        if (verifyBtnLabel) verifyBtnLabel.textContent = 'Verify Record';
+        resLatency.textContent = (data.responseTimeMs || elapsed) + ' ms';
         resApaar.textContent = 'XXXX-XXXX-' + apaar.slice(-4);
+        resRequestId.textContent = data.requestId || 'REQ-VERIFIED';
 
         if (!data.success) {
-          resTitle.textContent = 'Verification Request Blocked';
-          resBadge.textContent = 'CONSENT WITHHELD';
-          resBadge.className = 'text-xs font-bold px-3 py-1 rounded bg-amber-100 text-amber-800 border border-amber-200';
-          resName.textContent = 'Student Consent Pending';
-          resDegrees.innerHTML = `<div class="p-3.5 bg-amber-50 rounded border border-amber-200 text-xs text-amber-900 leading-relaxed">${data.error || 'Student has not authorized third-party record release under DPDP Act 2023.'}</div>`;
+          resBanner.className = 'bg-amber-900 text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-amber-400';
+          resTitle.textContent = 'Verification Request Blocked / Record Not Found';
+          resBadge.textContent = 'VERIFICATION HALTED';
+          resBadge.className = 'text-xs font-extrabold uppercase tracking-wider px-3 py-1.5 rounded bg-amber-100 text-amber-900 border border-amber-300';
+          resName.textContent = 'Unverified Candidate';
+          resConsentPill.textContent = 'Status: Unavailable';
+          resConsentPill.className = 'text-[11px] text-amber-700 font-medium mt-0.5';
+          resCryptoStatus.innerHTML = '<span class="text-amber-700">No Signature Evaluated</span>';
+          resKeyId.textContent = 'Key ID: N/A';
+          resDegrees.innerHTML = `<div class="p-4 bg-amber-50 rounded-lg border border-amber-200 text-xs text-amber-900 font-medium leading-relaxed">${data.error || 'Student has not authorized third-party record release under DPDP Act 2023.'}</div>`;
           return;
-        }
-
-        function maskNameClient(val) {
-          if (!val) return 'Candidate';
-          const parts = val.split(' ');
-          return parts.length > 1 ? `${parts[0]} ${parts[1][0]}.` : val;
         }
 
         const info = data.data || data;
         resName.textContent = maskNameClient(info.student?.fullName || info.student?.full_name || 'Candidate ' + apaar.slice(-4));
 
-        if (info.degrees && info.degrees.length > 0) {
-          const deg = info.degrees[0];
-          if (deg.status === 'ISSUED') {
-            resTitle.textContent = 'Official Academic Credential Verified';
-            resBadge.textContent = 'DEGREE AUTHENTIC';
-            resBadge.className = 'text-xs font-bold px-3 py-1 rounded bg-emerald-100 text-emerald-800 border border-emerald-200';
+        if (info.consentGranted) {
+          resConsentPill.textContent = 'DPDP Consent: GRANTED ✓';
+          resConsentPill.className = 'text-[11px] text-emerald-700 font-semibold mt-0.5';
+        } else {
+          resConsentPill.textContent = `DPDP Consent: ${info.consentStatus || 'PII MASKED'}`;
+          resConsentPill.className = 'text-[11px] text-amber-700 font-semibold mt-0.5';
+        }
+
+        const degrees = info.degrees || [];
+        const enrollments = info.enrollments || [];
+        const hasDuplicate = info.integrityAudit?.hasDuplicateEnrollment || enrollments.some((a) => a.is_duplicate === 1);
+
+        if (degrees.length > 0) {
+          const deg = degrees[0];
+          const sigValid = Boolean(deg.signatureValid);
+          const kid = deg.signing_key_id || 'nad-ed25519-2026';
+
+          resKeyId.textContent = 'Key ID: ' + kid;
+          if (sigValid) {
+            resCryptoStatus.innerHTML = '<span class="text-emerald-700">Ed25519 Signature Verified ✓</span>';
           } else {
-            resTitle.textContent = 'Credential Flagged / Revoked';
-            resBadge.textContent = 'DEGREE REVOKED';
-            resBadge.className = 'text-xs font-bold px-3 py-1 rounded bg-red-100 text-red-800 border border-red-200';
+            resCryptoStatus.innerHTML = '<span class="text-red-700">Signature Unverified / Legacy</span>';
+          }
+
+          if (deg.status === 'ISSUED') {
+            resBanner.className = 'bg-[#0F2942] text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-emerald-400';
+            resTitle.textContent = 'Official Academic Credential Verified (NAD / DigiLocker Authentic)';
+            resBadge.textContent = '✓ DEGREE AUTHENTIC';
+            resBadge.className = 'text-xs font-extrabold uppercase tracking-wider px-3 py-1.5 rounded bg-emerald-100 text-emerald-900 border border-emerald-300';
+          } else {
+            resBanner.className = 'bg-red-950 text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-red-500';
+            resTitle.textContent = 'Statutory Alert: Academic Credential Revoked by Issuing University';
+            resBadge.textContent = '✕ DEGREE REVOKED';
+            resBadge.className = 'text-xs font-extrabold uppercase tracking-wider px-3 py-1.5 rounded bg-red-100 text-red-900 border border-red-300';
           }
 
           resDegrees.innerHTML = `
-            <div class="p-4 bg-slate-50 rounded border border-slate-200 text-xs space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="font-bold text-slate-900">${deg.degree_name} &bull; ${deg.specialization}</span>
-                <span class="font-mono text-slate-600">Graduation: ${deg.year_of_passing} (CGPA: ${deg.cgpa})</span>
+            <div class="p-5 ${deg.status === 'ISSUED' ? 'bg-emerald-50/40 border-emerald-200' : 'bg-red-50/50 border-red-200'} rounded-lg border text-xs space-y-3">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200">
+                <div>
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Conferred Qualification</span>
+                  <div class="text-sm sm:text-base font-bold text-[#0F2942] mt-0.5">
+                    ${deg.degree_name} &mdash; ${deg.specialization}
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="px-2.5 py-1 rounded bg-white border border-slate-200 font-mono font-bold text-slate-800">
+                    Class of ${deg.year_of_passing} &bull; CGPA: ${deg.cgpa}
+                  </span>
+                  <span class="px-2.5 py-1 rounded font-bold uppercase ${sigValid ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-amber-100 text-amber-900 border border-amber-300'}">
+                    ${sigValid ? 'Ed25519 Verified ✓' : 'Unsigned Record'}
+                  </span>
+                </div>
               </div>
-              <div class="text-slate-600">Authority: ${deg.issuing_authority}</div>
-              <div class="text-[11px] font-mono text-slate-500">SHA-256 Hash: ${deg.digital_signature_hash}</div>
-              ${deg.revocation_reason ? `<div class="p-2 bg-red-50 text-red-800 border border-red-200 rounded font-semibold text-[11px]">Revocation Reason: ${deg.revocation_reason}</div>` : ''}
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <span class="text-slate-500 font-semibold">Affiliating / Issuing Authority:</span>
+                  <div class="font-bold text-slate-900 mt-0.5">${deg.issuing_authority}</div>
+                </div>
+                <div>
+                  <span class="text-slate-500 font-semibold">Institution of Enrollment:</span>
+                  <div class="font-bold text-slate-900 mt-0.5">${deg.institution_name || deg.institution_id}</div>
+                </div>
+              </div>
+
+              <div class="p-3 bg-white rounded border border-slate-200 font-mono text-[11px] text-slate-600 space-y-1">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <span><strong class="text-slate-800">SHA-256 Content Digest:</strong> ${deg.digital_signature_hash}</span>
+                  <span class="text-emerald-700 font-bold">kid: ${kid}</span>
+                </div>
+                ${deg.signature ? `<div class="truncate text-slate-500"><strong class="text-slate-700">Ed25519 Signature (Base64URL):</strong> ${deg.signature}</div>` : ''}
+              </div>
+
+              ${deg.revocation_reason ? `
+                <div class="p-3.5 bg-red-100/90 text-red-950 border-l-4 border-red-600 rounded text-xs font-semibold flex items-start gap-2.5">
+                  <svg class="w-4 h-4 text-red-700 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div>
+                    <div class="uppercase tracking-wider text-[10px] font-extrabold text-red-800">Statutory Revocation Notice</div>
+                    <div class="mt-0.5">${deg.revocation_reason}</div>
+                  </div>
+                </div>
+              ` : ''}
             </div>
           `;
         } else {
-          resTitle.textContent = 'Candidate Enrollment Record Found';
-          resBadge.textContent = 'ENROLLED (NO DEGREE YET)';
-          resBadge.className = 'text-xs font-bold px-3 py-1 rounded bg-blue-100 text-blue-800 border border-blue-200';
-          resDegrees.innerHTML = `<div class="p-3 bg-slate-50 rounded border border-slate-200 text-xs text-slate-700">Student is currently enrolled; degree record has not yet been issued by affiliating university.</div>`;
+          resKeyId.textContent = 'Key ID: Pending Conferral';
+          resCryptoStatus.innerHTML = hasDuplicate
+            ? '<span class="text-amber-700 font-bold">Duplicate Enrollment Flagged !</span>'
+            : '<span class="text-blue-700">Active Enrollment Verified</span>';
+
+          if (hasDuplicate) {
+            resBanner.className = 'bg-amber-950 text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-amber-400';
+            resTitle.textContent = 'Compliance Anomaly: Cross-Campus Duplicate Enrollment Detected';
+            resBadge.textContent = '⚠ DUPLICATE ENROLLMENT';
+            resBadge.className = 'text-xs font-extrabold uppercase tracking-wider px-3 py-1.5 rounded bg-amber-100 text-amber-900 border border-amber-300';
+          } else {
+            resBanner.className = 'bg-[#0F2942] text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-blue-400';
+            resTitle.textContent = 'Candidate Active Enrollment Record Verified';
+            resBadge.textContent = 'ENROLLED (IN PROGRESS)';
+            resBadge.className = 'text-xs font-extrabold uppercase tracking-wider px-3 py-1.5 rounded bg-blue-100 text-blue-900 border border-blue-300';
+          }
+
+          const enrollmentRows = enrollments.map((enr) => `
+            <div class="p-3.5 bg-white rounded border ${enr.is_duplicate ? 'border-amber-300' : 'border-slate-200'} flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <div class="font-bold text-slate-900">${enr.institution_name} <span class="font-mono text-[11px] text-slate-500">(${enr.institution_id})</span></div>
+                <div class="text-slate-600 mt-0.5">${enr.department} &bull; Roll No: <span class="font-mono font-semibold">${enr.roll_number}</span> &bull; Academic Year: ${enr.academic_year}</div>
+              </div>
+              <span class="px-2.5 py-1 rounded text-[11px] font-bold uppercase ${enr.is_duplicate ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-emerald-100 text-emerald-900 border border-emerald-300'}">
+                ${enr.status}
+              </span>
+            </div>
+          `).join('');
+
+          resDegrees.innerHTML = `
+            <div class="p-5 ${hasDuplicate ? 'bg-amber-50/60 border-amber-200' : 'bg-slate-50 border-slate-200'} rounded-lg border text-xs space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-slate-900 uppercase tracking-wider">AICTE Central Admission Ledger (${enrollments.length} Record${enrollments.length === 1 ? '' : 's'})</span>
+                <span class="text-slate-500">Degree Not Yet Conferred</span>
+              </div>
+              <div class="space-y-2">${enrollmentRows || '<div class="text-slate-600">Student is enrolled; degree record has not yet been issued by affiliating university.</div>'}</div>
+              ${info.student?.notice ? `<div class="p-3 bg-blue-50 border border-blue-200 rounded text-blue-900 text-[11px] font-medium">${info.student.notice}</div>` : ''}
+            </div>
+          `;
         }
 
-        window.showToast(`Candidate verified successfully (${elapsed} ms edge response).`, 'success');
+        if (!isInitialAutoLoad && window.showToast) {
+          window.showToast(`Candidate verified against D1 registry (${data.responseTimeMs || elapsed} ms).`, 'success');
+        }
+        isInitialAutoLoad = false;
       } catch (err) {
-        window.showToast('Verification endpoint error. Please check network connection.', 'error');
+        if (verifyBtnLabel) verifyBtnLabel.textContent = 'Verify Record';
+        if (!isInitialAutoLoad && window.showToast) {
+          window.showToast('Verification endpoint error. Please check network connection.', 'error');
+        }
+        isInitialAutoLoad = false;
       }
     });
   </script>
