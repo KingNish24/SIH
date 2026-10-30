@@ -13,7 +13,6 @@ import {
 const resolvedLang: LangCode = isSupportedLang(Astro.locals.lang) ? Astro.locals.lang : 'en';
 const langInfo = getLanguageInfo(resolvedLang);
 const t = getUIDictionary(resolvedLang);
-const isIndic = resolvedLang !== 'en';
 const langPrefix = resolvedLang === 'en' ? '' : `/${resolvedLang}`;
 
 const db = getDB(Astro.locals);
@@ -27,6 +26,8 @@ const compliantCount = totalMonitored - overrunCount;
 const totalSanctioned = institutions.reduce((sum, i) => sum + (i.sanctioned_intake || 0), 0);
 const totalEnrollment = institutions.reduce((sum, i) => sum + (i.current_enrollment || 0), 0);
 const compliancePct = totalMonitored > 0 ? ((compliantCount / totalMonitored) * 100).toFixed(1) : '100.0';
+const verifiedDegreesRow = await db.prepare('SELECT COUNT(*) as cnt FROM degrees WHERE revoked = 0').bind().first<{ cnt: number }>();
+const verifiedDegreesCount = verifiedDegreesRow?.cnt ?? 0;
 
 const portals = [
   {
@@ -35,9 +36,7 @@ const portals = [
     code: 'INST-01',
     description: t.portal1Desc,
     path: `${langPrefix}/institution`,
-    badge: isIndic ? 'संस्थान प्रशासन' : 'Institution Portal',
-    accent: 'border-t-[#0F766E]',
-    btnClass: 'bg-[#0F2942] hover:bg-[#1E3A8A] text-white',
+    stats: '60 / 120 / 180 / 240 Cap',
     isPublic: false,
   },
   {
@@ -46,9 +45,7 @@ const portals = [
     code: 'REG-02',
     description: t.portal2Desc,
     path: `${langPrefix}/aicte`,
-    badge: isIndic ? 'नियामक निगरानी' : 'AICTE Surveillance',
-    accent: 'border-t-[#D97706]',
-    btnClass: 'bg-[#0F2942] hover:bg-[#1E3A8A] text-white',
+    stats: 'AICTE APH 2024–2027 Audit',
     isPublic: false,
   },
   {
@@ -57,9 +54,7 @@ const portals = [
     code: 'UNIV-03',
     description: t.portal3Desc,
     path: `${langPrefix}/university`,
-    badge: isIndic ? 'विश्वविद्यालय लेजर' : 'University Ledger',
-    accent: 'border-t-[#1D4ED8]',
-    btnClass: 'bg-[#0F2942] hover:bg-[#1E3A8A] text-white',
+    stats: 'Ed25519 Signed Ledger',
     isPublic: false,
   },
   {
@@ -68,9 +63,7 @@ const portals = [
     code: 'STU-04',
     description: t.portal4Desc,
     path: `${langPrefix}/student`,
-    badge: isIndic ? 'छात्र DPDP तिजोरी' : 'Student DPDP Vault',
-    accent: 'border-t-[#7C3AED]',
-    btnClass: 'bg-[#0F2942] hover:bg-[#1E3A8A] text-white',
+    stats: 'DPDP Act Sec. 6 & Passkey',
     isPublic: false,
   },
   {
@@ -79,9 +72,7 @@ const portals = [
     code: 'VRF-05',
     description: t.portal5Desc,
     path: `${langPrefix}/verifier`,
-    badge: isIndic ? 'सार्वजनिक सत्यापन' : 'Public Verifier',
-    accent: 'border-t-[#15803D]',
-    btnClass: 'bg-[#15803D] hover:bg-[#166534] text-white',
+    stats: '< 50 ms Edge Verification',
     isPublic: true,
   },
 ];
@@ -93,112 +84,78 @@ const portals = [
   breadcrumb={t.portalTitle}
   lang={resolvedLang}
 >
-  <!-- 1. Authentic APAAR.education.gov.in Style Hero Banner -->
-  <section class="relative rounded-2xl bg-gradient-to-br from-[#E6F7F2] via-[#F0FDF9] to-[#FEF9EC] border border-emerald-200/80 p-6 sm:p-10 mb-6 overflow-hidden shadow-xs">
-    <!-- Floating National Registration Counter Pill (Like apaar.education.gov.in '33.74 cr APAAR ID Registered') -->
-    <div class="hidden xl:flex items-center gap-3 bg-white/95 backdrop-blur border border-emerald-200 shadow-md rounded-xl px-4 py-2.5 absolute top-5 right-6 z-10">
-      <div class="text-right">
-        <div class="inline-block bg-[#6366F1] text-white font-extrabold text-xs px-2.5 py-0.5 rounded-full">
-          {totalEnrollment} / {totalSanctioned} Seats
-        </div>
-        <div class="text-[11px] font-bold text-slate-700 mt-0.5">
-          {isIndic ? 'सत्यापित छात्र नामांकन' : 'APAAR Verified Admissions'}
-        </div>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-      <!-- Left Column (7 cols): Headline + Official APAAR Digital Card Specimen -->
-      <div class="lg:col-span-7 space-y-5">
-        <div class="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#0F766E]">
-          <span class="w-2 h-2 rounded-full bg-[#0F766E]"></span>
-          <span data-i18n="heroBadge">AUTOMATED PERMANENT ACADEMIC ACCOUNT REGISTRY &bull; {t.heroBadge}</span>
+  <!-- 1. Authoritative UX4G Hero / Statutory Header Card (Localized in 22 Eighth Schedule Languages) -->
+  <section class="bg-gradient-to-br from-[#0F2942] via-[#133251] to-[#0B1E32] text-white rounded-lg border-t-4 border-[#FF9933] shadow-md p-6 sm:p-8 mb-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+      <!-- Left Column: Statutory Mandate & Primary CTAs -->
+      <div class="lg:col-span-7 space-y-4">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="bg-[#FF9933] text-slate-950 font-bold text-xs uppercase px-2.5 py-0.5 rounded tracking-wide" data-i18n="heroBadge">
+            {t.heroBadge}
+          </span>
+          <span class="bg-white/10 border border-white/20 text-slate-100 text-xs font-medium px-2.5 py-0.5 rounded">
+            NEP 2020 | APAAR &amp; ABC Registry
+          </span>
+          <span class="bg-emerald-900/60 border border-emerald-500/40 text-emerald-200 text-xs font-semibold px-2.5 py-0.5 rounded inline-flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-emerald-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+            </svg>
+            <span>{langInfo.nativeName}</span>
+          </span>
         </div>
 
-        <h1 class="text-2xl sm:text-4xl font-black text-[#0F2942] tracking-tight leading-[1.15]" data-i18n="heroTitle">
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white leading-tight" data-i18n="heroTitle">
           {t.heroTitle}
         </h1>
 
-        <p class="text-sm sm:text-base text-slate-700 leading-relaxed max-w-2xl" data-i18n="heroSubtitle">
+        <p class="text-sm text-slate-200 leading-relaxed" data-i18n="heroSubtitle">
           {t.heroSubtitle}
         </p>
 
-        <!-- Visual APAAR Credential Card Specimen (Inspired directly by apaar.education.gov.in) -->
-        <div class="pt-1">
-          <div class="bg-white rounded-xl border border-slate-200/90 shadow-md p-4 sm:p-5 max-w-xl relative overflow-hidden">
-            <!-- Tricolor Top Accent inside Card -->
-            <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3.5">
-              <div class="flex items-center gap-2">
-                <img src="/emblem.svg" alt="Emblem" class="h-7 w-auto" width="18" height="28" />
-                <div class="leading-none">
-                  <div class="text-[9px] font-bold text-slate-600">शिक्षा मंत्रालय</div>
-                  <div class="text-[10px] font-black text-slate-900">MINISTRY OF EDUCATION</div>
-                </div>
-              </div>
-              <div class="text-center">
-                <div class="w-20 h-1.5 rounded-full bg-gradient-to-r from-[#FF9933] via-slate-200 to-[#138808] mx-auto mb-0.5"></div>
-                <span class="text-[9px] font-extrabold uppercase tracking-widest text-slate-700">भारत सरकार &bull; Govt. of India</span>
-              </div>
-              <div class="text-right">
-                <span class="font-black text-sm text-[#0F766E] tracking-tight block leading-none">APAAR</span>
-                <span class="text-[8px] font-bold text-slate-500 uppercase">Ed25519 Signed</span>
-              </div>
-            </div>
-
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div class="flex items-center gap-3.5">
-                <!-- Student Avatar Illustration -->
-                <div class="w-14 h-14 rounded-full bg-gradient-to-br from-teal-600 to-emerald-800 text-white flex items-center justify-center font-black text-lg shrink-0 ring-2 ring-emerald-200">
-                  SD
-                </div>
-                <div class="space-y-0.5 text-xs">
-                  <div class="font-bold text-slate-900 text-sm">Sneha Deshmukh</div>
-                  <div class="text-slate-600 text-[11px]">B.Tech Computer Engineering &bull; Batch 2026</div>
-                  <div class="text-emerald-700 font-semibold text-[11px] flex items-center gap-1">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                    <span>DPDP Sec. 6 Consent Active &bull; CGPA 9.14</span>
-                  </div>
-                  <div class="font-mono font-black text-sm text-[#0F2942] tracking-widest pt-1">
-                    4123 9847 1029
-                  </div>
-                </div>
-              </div>
-
-              <!-- Stylistic QR Code & Quick Action -->
-              <div class="flex sm:flex-col items-center justify-between sm:justify-center gap-2 border-t sm:border-t-0 sm:border-l border-slate-100 pt-2.5 sm:pt-0 sm:pl-4">
-                <svg class="w-14 h-14 text-slate-900 shrink-0" viewBox="0 0 36 36" fill="currentColor" aria-label="Sample Verifiable Credential QR">
-                  <path d="M2 2h10v10H2V2zm2 2v6h6V4H4zm2 2h2v2H6V6zm18-4h10v10H24V2zm2 2v6h6V4h-6zm2 2h2v2h-2V6zM2 24h10v10H2V24zm2 2v6h6v-6H4zm2 2h2v2H6v-2zm10-24h4v4h-4V4zm4 4h2v4h-2V8zm-4 4h4v2h-4v-2zm-2 4h6v2h-6v-2zm8-2h4v4h-4v-4zm6 4h4v2h-4v-2zm-10 4h4v4h-4v-4zm6 2h4v6h-4v-6zm4 4h4v4h-4v-4zm-12 2h4v4h-4v-4z" />
-                </svg>
-                <a
-                  href={`${langPrefix}/verifier?apaar=412398471029`}
-                  class="text-[11px] font-bold text-[#0F766E] hover:underline whitespace-nowrap"
-                >
-                  {isIndic ? 'यह कार्ड सत्यापित करें →' : 'Verify Specimen →'}
-                </a>
-              </div>
-            </div>
-          </div>
+        <div class="flex flex-wrap items-center gap-3 pt-1">
+          <a
+            href={`${langPrefix}/verifier`}
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-[#138808] hover:bg-[#0E6506] text-white text-xs sm:text-sm font-bold shadow-xs transition-colors"
+          >
+            <svg class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <span data-i18n="verifyCta">{t.verifyCta}</span>
+          </a>
+          <a
+            href={`${langPrefix}/login`}
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-[#FF9933] hover:bg-[#F28500] text-slate-950 text-xs sm:text-sm font-bold shadow-xs transition-colors"
+          >
+            <span data-i18n="signIn">{t.signIn}</span>
+            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+          </a>
+          <a
+            href="#institution-search"
+            class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs sm:text-sm font-semibold transition-colors"
+          >
+            <span>{t.dirHeading}</span>
+          </a>
         </div>
       </div>
 
-      <!-- Right Column (5 cols): Clean Citizen Verification Card -->
+      <!-- Right Column: Quick Inline 12-Digit APAAR Verification Card -->
       <div class="lg:col-span-5">
-        <div class="bg-white rounded-xl border border-slate-200/90 shadow-lg p-6">
-          <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-slate-100">
+        <div class="bg-white text-slate-900 rounded-lg p-5 shadow-lg border border-slate-200">
+          <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
             <div>
-              <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#0F766E] block">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700 block">
                 {t.navVerifier}
               </span>
-              <h2 class="text-lg font-extrabold text-[#0F2942] mt-0.5" data-i18n="quickVerifyTitle">
+              <h2 class="text-base font-bold text-[#0F2942]" data-i18n="quickVerifyTitle">
                 {t.quickVerifyTitle}
               </h2>
             </div>
-            <span class="bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold px-2.5 py-1 rounded-full">
-              Instant Check
+            <span class="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-bold px-2.5 py-0.5 rounded">
+              {t.navVerifier}
             </span>
           </div>
 
-          <form action={`${langPrefix}/verifier`} method="GET" class="space-y-4" id="quickVerifyForm">
+          <form action={`${langPrefix}/verifier`} method="GET" class="space-y-3" id="quickVerifyForm">
             <div>
               <label for="quickApaarInputLang" class="block text-xs font-bold text-slate-700 mb-1.5" data-i18n="quickVerifyLabel">
                 {t.quickVerifyLabel}
@@ -212,187 +169,117 @@ const portals = [
                 maxlength="12"
                 required
                 placeholder="412398471029"
-                class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 font-mono text-base font-bold text-slate-900 tracking-widest focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F766E]"
+                class="w-full bg-slate-50 border border-slate-300 rounded px-3.5 py-2.5 font-mono text-sm text-slate-900 tracking-wider focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F2942]"
               />
             </div>
-
             <button
               type="submit"
-              class="w-full py-3 px-5 bg-[#0F766E] hover:bg-[#115E59] text-white font-bold rounded-lg text-sm transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+              class="w-full py-2.5 px-4 bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold rounded text-xs sm:text-sm transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer"
             >
-              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
               <span data-i18n="quickVerifyBtn">{t.quickVerifyBtn}</span>
+              <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
             </button>
           </form>
 
-          <!-- One-Click Sample Chips -->
-          <div class="mt-4 pt-4 border-t border-slate-100">
-            <div class="text-xs font-semibold text-slate-500 mb-2 flex items-center justify-between">
-              <span>{isIndic ? 'नमूना अपार आईडी (क्लिक करें):' : 'Try Sample APAAR Records:'}</span>
-              <a href={`${langPrefix}/verifier`} class="text-[#0F766E] hover:underline font-bold">
-                {isIndic ? 'क्यूआर स्कैनर' : 'QR Scanner'} &rarr;
-              </a>
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                data-sample-apaar="412398471029"
-                class="text-left p-2.5 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-400 rounded-lg transition-colors cursor-pointer"
-              >
-                <div class="font-mono font-bold text-xs text-[#0F2942]">412398471029</div>
-                <div class="text-[11px] text-emerald-700 font-medium truncate">Sneha Deshmukh</div>
-              </button>
+          <div class="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span>APAAR:</span>
               <button
                 type="button"
                 data-sample-apaar="102938475610"
-                class="text-left p-2.5 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-400 rounded-lg transition-colors cursor-pointer"
+                class="font-mono font-bold text-[#0F2942] bg-slate-100 hover:bg-blue-50 hover:text-blue-800 border border-slate-300 px-2 py-0.5 rounded transition-colors cursor-pointer"
+                title="Click to populate sample APAAR ID"
               >
-                <div class="font-mono font-bold text-xs text-[#0F2942]">102938475610</div>
-                <div class="text-[11px] text-slate-600 font-medium truncate">Aarav Kulkarni</div>
+                102938475610
+              </button>
+              <button
+                type="button"
+                data-sample-apaar="412398471029"
+                class="font-mono font-bold text-[#0F2942] bg-slate-100 hover:bg-blue-50 hover:text-blue-800 border border-slate-300 px-2 py-0.5 rounded transition-colors cursor-pointer"
+                title="Click to populate Sneha Deshmukh APAAR ID"
+              >
+                412398471029
               </button>
             </div>
+            <a href={`${langPrefix}/verifier`} class="text-blue-700 hover:underline font-semibold inline-flex items-center gap-1">
+              <span>{t.navVerifier}</span>
+              <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+            </a>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- 2. Floating National Ecosystem & Live Telemetry Strip (Inspired by abc.gov.in partner pill) -->
-  <section aria-label={t.portalTitle} class="bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-5 mb-8">
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
-      <div class="pt-2 sm:pt-0 sm:px-4 first:pl-0">
-        <div class="text-xs font-semibold text-slate-500" data-i18n="kpi1Label">{t.kpi1Label}</div>
-        <div class="flex items-baseline gap-2 mt-1">
-          <span class="text-2xl sm:text-3xl font-black text-[#0F2942]">{totalMonitored}</span>
-          <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-            {compliantCount} {isIndic ? 'अनुपालित' : 'Compliant'}
-          </span>
-        </div>
+  <!-- 2. 4 KPI Benchmark Cards (With Live D1 Registry Telemetry) -->
+  <section aria-label={t.portalTitle} class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white p-5 rounded-lg border border-slate-200 border-l-4 border-l-[#0F2942] shadow-xs">
+      <div class="text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="kpi1Label">{t.kpi1Label}</div>
+      <div class="text-2xl sm:text-3xl font-bold text-[#0F2942] mt-1.5 font-mono">{totalMonitored}</div>
+      <div class="text-xs text-slate-600 mt-1 flex items-center justify-between">
+        <span>{t.aicte_kpi_total_colleges}:</span>
+        <span class="font-mono font-bold text-[#0F2942] bg-slate-100 px-1.5 py-0.5 rounded">{compliantCount} Compliant</span>
       </div>
+    </div>
 
-      <div class="pt-2 sm:pt-0 sm:px-4">
-        <div class="text-xs font-semibold text-slate-500" data-i18n="kpi2Label">{t.kpi2Label}</div>
-        <div class="flex items-baseline gap-2 mt-1">
-          <span class="text-2xl sm:text-3xl font-black text-[#0F2942]">{totalEnrollment}</span>
-          <span class="text-xs font-semibold text-slate-500">/ {totalSanctioned} Seats</span>
-        </div>
+    <div class="bg-white p-5 rounded-lg border border-slate-200 border-l-4 border-l-[#FF9933] shadow-xs">
+      <div class="text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="kpi2Label">{t.kpi2Label}</div>
+      <div class="text-2xl sm:text-3xl font-bold text-[#0F2942] mt-1.5 font-mono">{totalEnrollment} <span class="text-base font-normal text-slate-500">/ {totalSanctioned}</span></div>
+      <div class="text-xs text-slate-600 mt-1 flex items-center justify-between">
+        <span>{t.aicte_col_actual} / {t.aicte_col_sanctioned}:</span>
+        <span class="font-mono font-bold text-[#0F2942] bg-amber-50 px-1.5 py-0.5 rounded">{((totalEnrollment / Math.max(1, totalSanctioned)) * 100).toFixed(1)}%</span>
       </div>
+    </div>
 
-      <div class="pt-2 sm:pt-0 sm:px-4">
-        <div class="text-xs font-semibold text-slate-500" data-i18n="kpi3Label">{t.kpi3Label}</div>
-        <div class="flex items-baseline gap-2 mt-1">
-          <span class="text-2xl sm:text-3xl font-black text-[#0F766E]">{compliancePct}%</span>
-          <span class="text-xs font-semibold text-slate-600">DPDP Sec. 6</span>
-        </div>
+    <div class="bg-white p-5 rounded-lg border border-slate-200 border-l-4 border-l-[#138808] shadow-xs">
+      <div class="text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="kpi3Label">{t.kpi3Label}</div>
+      <div class="text-2xl sm:text-3xl font-bold text-[#0F2942] mt-1.5 font-mono">{compliancePct}%</div>
+      <div class="text-xs text-slate-600 mt-1 flex items-center justify-between">
+        <span>{t.statusCompliant}:</span>
+        <span class="font-mono font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded">{compliantCount} / {totalMonitored}</span>
       </div>
+    </div>
 
-      <div class="pt-2 sm:pt-0 sm:px-4">
-        <div class="text-xs font-semibold text-slate-500" data-i18n="kpi4Label">{t.kpi4Label}</div>
-        <div class="flex items-baseline gap-2 mt-1">
-          <span class="text-2xl sm:text-3xl font-black text-[#0F2942]">Ed25519</span>
-          <span class="text-xs font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded-full">W3C + ZKP</span>
-        </div>
+    <div class="bg-white p-5 rounded-lg border border-slate-200 border-l-4 border-l-blue-600 shadow-xs">
+      <div class="text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="kpi4Label">{t.kpi4Label}</div>
+      <div class="text-2xl sm:text-3xl font-bold text-[#0F2942] mt-1.5 font-mono">{verifiedDegreesCount}</div>
+      <div class="text-xs text-slate-600 mt-1 flex items-center justify-between">
+        <span>Ed25519 + WebAuthn</span>
+        <span class="font-mono font-bold text-blue-800 bg-blue-50 px-1.5 py-0.5 rounded">Signed Ledger</span>
       </div>
     </div>
   </section>
 
-  <!-- 3. What's New / Stakeholder Operational Portals (Clean Card Grid like abc.gov.in) -->
-  <section class="mb-10" aria-labelledby="portals-heading">
-    <div class="flex flex-wrap items-end justify-between gap-2 mb-5">
+  <!-- 3. Public Institution Directory & Regulatory Compliance Table -->
+  <section class="bg-white rounded-lg border border-slate-200 shadow-xs p-5 sm:p-6 mb-8" id="institution-search">
+    <div class="border-b border-slate-200 pb-4 mb-5 flex flex-col md:flex-row md:items-center justify-between gap-3">
       <div>
-        <span class="text-xs font-extrabold uppercase tracking-wider text-[#0F766E]">
-          {isIndic ? 'राष्ट्रीय शैक्षणिक सेवाएँ' : 'National Digital Education Services'}
-        </span>
-        <h2 id="portals-heading" class="text-xl sm:text-2xl font-black text-[#0F2942] mt-0.5" data-i18n="portalsHeading">
-          {t.portalsHeading}
-        </h2>
-        <p class="text-xs sm:text-sm text-slate-600 mt-0.5" data-i18n="portalsSub">
-          {t.portalsSub}
-        </p>
-      </div>
-      <a
-        href={`${langPrefix}/login`}
-        class="text-xs sm:text-sm font-bold text-[#0F766E] hover:underline inline-flex items-center gap-1"
-      >
-        <span>{t.signIn} (Parichay SSO)</span>
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-      </a>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-5">
-      {portals.map((p, index) => {
-        const isPublic = p.isPublic;
-        const targetUrl = user
-          ? p.path
-          : isPublic
-          ? `${langPrefix}/verifier`
-          : `${langPrefix}/login?redirect=${encodeURIComponent(p.path)}`;
-        const actionText = user
-          ? `${t.navOverview}`
-          : isPublic
-          ? `${t.verifyCta}`
-          : `${t.signIn}`;
-        const colSpanClass = index < 3 ? 'lg:col-span-2' : 'lg:col-span-3';
-
-        return (
-          <div class={`${colSpanClass} bg-white rounded-xl border border-slate-200 border-t-4 ${p.accent} shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between p-5 sm:p-6`}>
-            <div>
-              <div class="flex items-center justify-between gap-2 mb-3">
-                <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800">
-                  {p.badge}
-                </span>
-                <span class="text-[11px] font-mono font-semibold text-slate-400">
-                  {p.code}
-                </span>
-              </div>
-              <h3 class="text-base sm:text-lg font-extrabold text-[#0F2942] mb-2">
-                {p.title}
-              </h3>
-              <p class="text-xs sm:text-sm text-slate-600 leading-relaxed mb-5">
-                {p.description}
-              </p>
-            </div>
-
-            <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
-              <span class="text-xs font-medium text-slate-500">
-                {isPublic ? (isIndic ? 'नागरिकों के लिए खुला' : 'Open Public Access') : 'Parichay SSO'}
-              </span>
-              <a
-                href={targetUrl}
-                class={`inline-flex items-center gap-1.5 text-xs font-bold py-2 px-4 rounded-lg transition-colors ${p.btnClass}`}
-              >
-                <span>{actionText}</span>
-                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-              </a>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  </section>
-
-  <!-- 4. Public Institution Directory & Live Intake Table -->
-  <section class="bg-white rounded-xl border border-slate-200 shadow-xs p-5 sm:p-6 mb-8" id="institution-search">
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 mb-5 border-b border-slate-200">
-      <div>
-        <span class="text-xs font-extrabold text-[#0F766E] uppercase tracking-wider">{t.heroBadge}</span>
-        <h2 class="text-lg sm:text-xl font-black text-[#0F2942] mt-0.5" data-i18n="dirHeading">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span class="text-xs font-bold text-emerald-700 uppercase tracking-wider">{t.heroBadge}</span>
+        </div>
+        <h2 class="text-lg sm:text-xl font-bold text-[#0F2942] mt-0.5" data-i18n="dirHeading">
           {t.dirHeading}
         </h2>
         <p class="text-xs sm:text-sm text-slate-600 mt-0.5" data-i18n="dirSub">
           {t.dirSub}
         </p>
       </div>
-      <div class="flex items-center gap-2.5 shrink-0">
-        <span id="dirCountBadge" class="text-xs font-mono font-bold bg-slate-100 text-[#0F2942] border border-slate-300 px-3 py-1.5 rounded-lg">
+      <div class="flex items-center gap-2 shrink-0">
+        <span id="dirCountBadge" class="text-xs font-mono font-bold bg-slate-100 text-slate-700 border border-slate-300 px-2.5 py-1.5 rounded">
           {totalMonitored} / {totalMonitored}
         </span>
+        <a
+          href={`${langPrefix}/verifier`}
+          class="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white text-xs font-bold shadow-xs transition-colors"
+        >
+          <span>{t.navVerifier}</span>
+          <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+        </a>
       </div>
     </div>
 
-    <!-- Search & Filter Controls -->
+    <!-- Search & Filter Controls for Directory -->
     <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-4">
       <div class="md:col-span-6 relative">
         <label for="instSearchInput" class="sr-only">{t.dirHeading}</label>
@@ -405,7 +292,7 @@ const portals = [
           type="text"
           id="instSearchInput"
           placeholder={t.aicte_search_placeholder || t.dirSub}
-          class="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs sm:text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F766E]"
+          class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded text-xs sm:text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
         />
       </div>
 
@@ -413,7 +300,7 @@ const portals = [
         <label for="stateFilterSelect" class="sr-only">{t.aicte_col_state}</label>
         <select
           id="stateFilterSelect"
-          class="w-full py-2.5 px-3 bg-slate-50 border border-slate-300 rounded-lg text-xs sm:text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F766E]"
+          class="w-full py-2 px-3 bg-slate-50 border border-slate-300 rounded text-xs sm:text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
         >
           <option value="">{t.aicte_all_states}</option>
           {Array.from(new Set(institutions.map((i) => i.state).filter(Boolean))).sort().map((st) => (
@@ -426,7 +313,7 @@ const portals = [
         <label for="statusFilterSelect" class="sr-only">{t.aicte_col_status}</label>
         <select
           id="statusFilterSelect"
-          class="w-full py-2.5 px-3 bg-slate-50 border border-slate-300 rounded-lg text-xs sm:text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F766E]"
+          class="w-full py-2 px-3 bg-slate-50 border border-slate-300 rounded text-xs sm:text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
         >
           <option value="">{t.aicte_all_statuses}</option>
           <option value="compliant">{t.statusCompliant} ({compliantCount})</option>
@@ -438,7 +325,7 @@ const portals = [
     <!-- Interactive Directory Table -->
     <div class="overflow-x-auto border border-slate-200 rounded-lg">
       <table class="w-full text-left text-xs sm:text-sm" id="institutionsTable">
-        <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider text-xs">
+        <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider text-xs">
           <tr>
             <th class="py-3 px-4">{t.aicte_col_inst}</th>
             <th class="py-3 px-4">{t.aicte_col_state}</th>
@@ -448,7 +335,7 @@ const portals = [
             <th class="py-3 px-4 text-right">{t.verifyRecordsBtn}</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-200 font-medium text-slate-800" id="instTableBody">
+        <tbody class="divide-y divide-slate-200 font-medium text-slate-700" id="instTableBody">
           {institutions.map((inst) => {
             const isOverrun = inst.current_enrollment > inst.sanctioned_intake;
             const excessSeats = inst.current_enrollment - inst.sanctioned_intake;
@@ -470,7 +357,7 @@ const portals = [
                   </div>
                 </td>
                 <td class="py-3.5 px-4">
-                  <div class="font-semibold text-slate-900">{inst.district}</div>
+                  <div class="font-semibold text-slate-800">{inst.district}</div>
                   <div class="text-xs text-slate-500">{inst.state}</div>
                 </td>
                 <td class="py-3.5 px-4">
@@ -489,13 +376,13 @@ const portals = [
                 </td>
                 <td class="py-3.5 px-4">
                   {isOverrun ? (
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-red-50 text-red-800 border border-red-200">
-                      <span class="w-2 h-2 rounded-full bg-red-600"></span>
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-bold bg-red-50 text-red-800 border border-red-200">
+                      <span class="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
                       <span data-i18n="statusOverrun">{t.statusOverrun} (+{excessSeats})</span>
                     </span>
                   ) : (
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                      <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                       <span data-i18n="statusCompliant">{t.statusCompliant}</span>
                     </span>
                   )}
@@ -503,7 +390,7 @@ const portals = [
                 <td class="py-3.5 px-4 text-right">
                   <a
                     href={`${langPrefix}/verifier?institution=${encodeURIComponent(inst.id)}&code=${encodeURIComponent(inst.code)}`}
-                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-[#0F766E] text-[#0F2942] hover:text-white border border-slate-300 text-xs font-bold transition-colors"
+                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-slate-100 hover:bg-[#0F2942] text-[#0F2942] hover:text-white border border-slate-300 text-xs font-bold transition-colors"
                   >
                     <span data-i18n="verifyRecordsBtn">{t.verifyRecordsBtn}</span>
                     <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
@@ -520,28 +407,163 @@ const portals = [
     </div>
   </section>
 
-  <!-- 5. 22 Eighth Schedule Languages Strip -->
-  <section class="bg-white rounded-xl border border-slate-200 p-5 sm:p-6 shadow-xs" id="aicte-mandate">
-    <div class="text-xs font-bold text-[#0F2942] uppercase tracking-wider mb-3 flex items-center gap-1.5">
-      <svg class="w-4 h-4 text-[#0F766E] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-      </svg>
-      <span>संविधान की 8वीं अनुसूची की सभी 22 भारतीय भाषाएँ + अंग्रेज़ी (22 Official Indian Languages):</span>
+  <!-- 4. 5 Stakeholder Portals Grid -->
+  <section class="mb-8" aria-labelledby="portals-heading">
+    <div class="border-b border-slate-200 pb-3 mb-5 flex flex-wrap items-center justify-between gap-2">
+      <div>
+        <h2 id="portals-heading" class="text-lg sm:text-xl font-bold text-[#0F2942]" data-i18n="portalsHeading">
+          {t.portalsHeading}
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-600 mt-0.5" data-i18n="portalsSub">
+          {t.portalsSub}
+        </p>
+      </div>
+      <span class="text-xs font-mono font-semibold bg-slate-100 text-slate-700 px-3 py-1 rounded border border-slate-300">
+        INST-01 &bull; REG-02 &bull; UNIV-03 &bull; STU-04 &bull; VRF-05
+      </span>
     </div>
-    <div class="flex flex-wrap gap-1.5">
-      {EIGHTH_SCHEDULE_LANGUAGES.map((l) => (
-        <a
-          href={l.code === 'en' ? '/' : `/${l.code}`}
-          hreflang={l.code}
-          class={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors border ${
-            l.code === resolvedLang
-              ? 'bg-[#0F766E] text-white border-[#0F766E] font-bold'
-              : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-[#0F766E] hover:text-[#0F766E]'
-          }`}
-        >
-          {l.nativeName}
-        </a>
-      ))}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-5">
+      {portals.map((p, index) => {
+        const isPublic = p.isPublic;
+        const targetUrl = user
+          ? p.path
+          : isPublic
+          ? `${langPrefix}/verifier`
+          : `${langPrefix}/login?redirect=${encodeURIComponent(p.path)}`;
+        const actionText = user
+          ? `${t.navOverview}`
+          : isPublic
+          ? `${t.verifyCta}`
+          : `${t.signIn}`;
+
+        const colSpanClass = index < 3 ? 'lg:col-span-2' : 'lg:col-span-3';
+
+        return (
+          <div
+            class={`${colSpanClass} bg-white rounded-lg border shadow-xs flex flex-col justify-between transition-all ${
+              isPublic
+                ? 'border-emerald-600 ring-1 ring-emerald-500/30 hover:border-emerald-700'
+                : 'border-slate-200 hover:border-[#0F2942]'
+            }`}
+          >
+            <div class="p-5 sm:p-6">
+              <div class="flex items-center justify-between gap-2 mb-3">
+                <span class="text-xs font-mono font-bold bg-slate-100 text-[#0F2942] px-2.5 py-0.5 rounded border border-slate-300">
+                  {p.code}
+                </span>
+                {isPublic ? (
+                  <span class="text-xs font-bold px-2.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    {t.navVerifier}
+                  </span>
+                ) : (
+                  <span class="text-xs font-bold px-2.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200">
+                    {t.signIn}
+                  </span>
+                )}
+              </div>
+
+              <h3 class="text-base font-bold text-[#0F2942] mb-2 leading-snug">
+                {p.title}
+              </h3>
+
+              <p class="text-sm text-slate-600 leading-relaxed mb-4">
+                {p.description}
+              </p>
+
+              <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                <span class="text-slate-500 font-medium">{t.heroBadge}:</span>
+                <span class="font-bold text-slate-800">{p.stats}</span>
+              </div>
+            </div>
+
+            <div class={`p-4 border-t mt-auto ${isPublic ? 'bg-emerald-50/50 border-emerald-100' : 'bg-slate-50 border-slate-100'}`}>
+              <a
+                href={targetUrl}
+                class={`inline-flex items-center justify-center gap-2 w-full text-center text-xs sm:text-sm font-bold py-2.5 px-4 rounded transition-colors shadow-xs ${
+                  isPublic
+                    ? 'bg-[#138808] hover:bg-[#0E6506] text-white'
+                    : 'bg-[#0F2942] hover:bg-[#1E3A8A] text-white'
+                }`}
+              >
+                <span>{actionText}</span>
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+              </a>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </section>
+
+  <!-- 5. Statutory Architecture, 22 Scheduled Languages & Sovereign GovCloud Baseline -->
+  <section class="bg-white rounded-lg border border-slate-200 p-6 shadow-xs" id="aicte-mandate">
+    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-4 mb-5">
+      <div>
+        <h2 class="text-base sm:text-lg font-bold text-[#0F2942]">
+          {t.heroBadge} | 22 Scheduled Indian Languages &amp; Sovereign GovCloud Architecture
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
+          NIC MeghRaj / Sovereign Government Cloud Portable (&lt;15 MB Runtime, Zero Vendor Lock-in) | Eighth Schedule Multilingual Support
+        </p>
+      </div>
+      <span class="text-xs font-mono bg-blue-50 text-blue-900 border border-blue-200 px-3 py-1 rounded font-bold">
+        Mandate Ref: APH-2024-27
+      </span>
+    </div>
+
+    <!-- All 22 Eighth Schedule Languages Quick Switcher Bar -->
+    <div class="mb-5 p-3.5 bg-slate-50 rounded-lg border border-slate-200">
+      <div class="text-xs font-bold text-[#0F2942] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+        <svg class="w-4 h-4 text-[#0F2942] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+        </svg>
+        <span>संविधान की 8वीं अनुसूची की सभी 22 भारतीय भाषाएँ + अंग्रेज़ी (22 Eighth Schedule Official Indian Languages):</span>
+      </div>
+      <div class="flex flex-wrap gap-1.5">
+        {EIGHTH_SCHEDULE_LANGUAGES.map((l) => (
+          <a
+            href={l.code === 'en' ? '/' : `/${l.code}`}
+            hreflang={l.code}
+            class={`px-2.5 py-1 rounded text-xs font-medium transition-colors border ${
+              l.code === resolvedLang
+                ? 'bg-[#0F2942] text-white border-[#0F2942] font-bold'
+                : 'bg-white text-slate-700 border-slate-300 hover:border-[#0F2942] hover:text-[#0F2942]'
+            }`}
+          >
+            {l.nativeName}
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 text-sm">
+      <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+        <div class="font-bold text-[#0F2942] mb-1.5 flex items-center gap-2">
+          <span>{t.portal1Title}</span>
+        </div>
+        <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
+          {t.portal1Desc}
+        </p>
+      </div>
+
+      <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+        <div class="font-bold text-[#0F2942] mb-1.5 flex items-center gap-2">
+          <span>{t.portal3Title}</span>
+        </div>
+        <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
+          {t.portal3Desc}
+        </p>
+      </div>
+
+      <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+        <div class="font-bold text-[#0F2942] mb-1.5 flex items-center gap-2">
+          <span>{t.portal4Title}</span>
+        </div>
+        <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
+          {t.portal4Desc}
+        </p>
+      </div>
     </div>
   </section>
 
@@ -593,6 +615,7 @@ const portals = [
     stateFilter?.addEventListener('change', filterInstitutions);
     statusFilter?.addEventListener('change', filterInstitutions);
 
+    // Quick Verify sample APAAR buttons & numeric sanitization
     quickApaarInput?.addEventListener('input', () => {
       quickApaarInput.value = quickApaarInput.value.replace(/\D/g, '').slice(0, 12);
     });
