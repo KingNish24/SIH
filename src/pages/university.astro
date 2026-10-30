@@ -102,6 +102,37 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
     verification_status: 'FRAUD_REVOKED',
   },
 ];
+
+// Example candidate presets (Form inputs stay empty until clicked)
+const candidateExamples = [
+  {
+    apaar: '901238471920',
+    label: 'Aaditya P. (901238471920)',
+    inst: institutions[0]?.id || 'INST-001',
+    degree: 'Bachelor of Technology',
+    spec: 'Mechanical Engineering',
+    cgpa: '8.85',
+    year: '2026',
+  },
+  {
+    apaar: '582910384729',
+    label: 'Priya V. (582910384729)',
+    inst: institutions[1]?.id || institutions[0]?.id || 'INST-001',
+    degree: 'Bachelor of Technology',
+    spec: 'Electronics & Telecommunication',
+    cgpa: '9.12',
+    year: '2026',
+  },
+  {
+    apaar: '412398471029',
+    label: 'Sneha D. (412398471029)',
+    inst: institutions[0]?.id || 'INST-001',
+    degree: 'Bachelor of Technology (Honours)',
+    spec: 'Computer Science & Engineering',
+    cgpa: '9.40',
+    year: '2026',
+  },
+];
 ---
 
 <Layout title={`SIH 2026 | ${t.univ_page_title}`} activeRole="university" lang={lang} breadcrumb={t.crumb_university}>
@@ -110,7 +141,7 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
     <div class="border-b border-slate-200 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
         <div class="text-xs font-bold text-[#1E40AF] uppercase tracking-wider mb-1">
-          Affiliating University Module &bull; Code UNIV-03
+          {t.crumb_university}
         </div>
         <h1 class="text-xl sm:text-2xl font-bold text-[#0F2942]">
           {t.univ_page_title}
@@ -125,10 +156,10 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
           href="#issueDegreeSection"
           class="h-10 px-4 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white text-xs sm:text-sm font-semibold transition-colors inline-flex items-center gap-2 shadow-sm"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
-          Issue Degree Record
+          <span>{t.univ_issue_heading}</span>
         </a>
       </div>
     </div>
@@ -140,13 +171,13 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
           <div class="flex items-center justify-between mb-1.5">
             <span class="text-xs font-mono font-bold text-slate-700">{i.code}</span>
             <span class={`text-[11px] font-bold px-2.5 py-0.5 rounded border ${i.current_enrollment > i.sanctioned_intake ? 'bg-red-100 text-red-800 border-red-200' : 'bg-emerald-100 text-emerald-800 border-emerald-200'}`}>
-              {i.current_enrollment > i.sanctioned_intake ? 'OVERRUN DETECTED' : 'AFFILIATED'}
+              {i.current_enrollment > i.sanctioned_intake ? t.statusOverrun : t.statusCompliant}
             </span>
           </div>
           <h3 class="text-xs sm:text-sm font-bold text-slate-900 truncate">{i.name}</h3>
           <div class="mt-2.5 flex items-center justify-between text-xs text-slate-500 font-mono">
-            <span>Enrolled: <strong class="text-slate-800">{i.current_enrollment} / {i.sanctioned_intake}</strong></span>
-            <span>Risk Score: <strong class="text-slate-800">{i.risk_score}%</strong></span>
+            <span>{t.aicte_col_actual}: <strong class="text-slate-800">{i.current_enrollment} / {i.sanctioned_intake}</strong></span>
+            <span>Risk: <strong class="text-slate-800">{i.risk_score}%</strong></span>
           </div>
         </div>
       ))}
@@ -157,28 +188,29 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
       <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider">
-            1. {t.univ_ledger_heading} ({degrees.length} Records in Central D1)
+            1. {t.univ_ledger_heading} ({degrees.length})
           </h2>
           <p class="text-xs text-slate-500 mt-0.5">
-            Each degree is cryptographically bound to a 12-digit APAAR with an Ed25519 Signature &amp; SHA-256 Stamp.
+            {t.univ_issue_sub}
           </p>
         </div>
         <span class="text-xs font-mono font-semibold bg-blue-50 text-blue-800 border border-blue-200 px-2.5 py-1 rounded">
-          Ed25519 + SHA-256 Anchored
+          Ed25519 + SHA-256
         </span>
       </div>
 
-      <div class="overflow-x-auto">
+      <div class="overflow-x-auto" role="region" aria-label={t.univ_ledger_heading} tabindex="0">
         <table class="w-full text-left text-xs sm:text-sm border-collapse">
+          <caption class="sr-only">{t.univ_ledger_heading}</caption>
           <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
             <tr>
-              <th class="py-3 px-4">Degree ID</th>
-              <th class="py-3 px-4">{t.univ_student_name}, 12-Digit APAAR &amp; Student Roll ID</th>
-              <th class="py-3 px-4">{t.univ_degree_name} &amp; {t.univ_specialization}</th>
-              <th class="py-3 px-4">Graduation</th>
-              <th class="py-3 px-4">Registry Status</th>
-              <th class="py-3 px-4">Ed25519 Signature &amp; SHA-256 Stamp</th>
-              <th class="py-3 px-4 text-right">Administrative Action</th>
+              <th scope="col" class="py-3 px-4">ID</th>
+              <th scope="col" class="py-3 px-4">{t.univ_student_name} &bull; {t.univ_apaar_id}</th>
+              <th scope="col" class="py-3 px-4">{t.univ_degree_name} &bull; {t.univ_specialization}</th>
+              <th scope="col" class="py-3 px-4">{t.univ_cgpa} / {t.univ_year}</th>
+              <th scope="col" class="py-3 px-4">{t.aicte_col_status}</th>
+              <th scope="col" class="py-3 px-4">Ed25519 + SHA-256</th>
+              <th scope="col" class="py-3 px-4 text-right">{t.univ_revocation_heading}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-200 text-slate-800">
@@ -189,7 +221,7 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
                   <div class="font-semibold text-slate-900">{d.student_name}</div>
                   <div class="text-xs font-mono text-slate-700 mt-0.5">APAAR: <span class="font-bold text-[#0F2942]">{maskApaar(d.apaar_id)}</span></div>
                   <div class="text-[11px] font-mono text-blue-800 bg-blue-50 border border-blue-200 inline-block px-1.5 py-0.5 rounded mt-1">
-                    Roll/Univ ID: {d.student_roll_id}
+                    {d.student_roll_id}
                   </div>
                 </td>
                 <td class="py-3.5 px-4">
@@ -197,8 +229,8 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
                   <div class="text-xs text-slate-500">{d.specialization}</div>
                 </td>
                 <td class="py-3.5 px-4 font-mono">
-                  <div class="font-semibold text-slate-800">CGPA: {d.cgpa}</div>
-                  <div class="text-xs text-slate-500">Year: {d.year_of_passing}</div>
+                  <div class="font-semibold text-slate-800">{t.univ_cgpa}: {d.cgpa}</div>
+                  <div class="text-xs text-slate-500">{t.univ_year}: {d.year_of_passing}</div>
                 </td>
                 <td class="py-3.5 px-4">
                   {d.status === 'ISSUED' ? (
@@ -232,18 +264,22 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
                   {d.status === 'ISSUED' ? (
                     <button
                       type="button"
-                      onclick={`revokeDegreePrompt('${d.id}', '${d.student_name}', '${d.degree_name}')`}
-                      class="px-3 py-1.5 rounded bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 font-semibold text-xs transition-colors"
+                      data-revoke-id={d.id}
+                      data-student-name={d.student_name}
+                      data-degree-name={d.degree_name}
+                      class="px-3 py-1.5 rounded bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 font-semibold text-xs transition-colors cursor-pointer"
                     >
-                      Revoke Degree
+                      Revoke
                     </button>
                   ) : (
                     <button
                       type="button"
-                      onclick={`reinstateDegreePrompt('${d.id}', '${d.student_name}', '${d.degree_name}')`}
-                      class="px-3 py-1.5 rounded bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-700 font-semibold text-xs transition-colors"
+                      data-reinstate-id={d.id}
+                      data-student-name={d.student_name}
+                      data-degree-name={d.degree_name}
+                      class="px-3 py-1.5 rounded bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-700 font-semibold text-xs transition-colors cursor-pointer"
                     >
-                      Reinstate Degree
+                      Reinstate
                     </button>
                   )}
                 </td>
@@ -260,41 +296,39 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
         <div>
           <div class="flex flex-wrap items-center gap-2 mb-1">
             <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded">
-              <svg class="w-3.5 h-3.5 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-3.5 h-3.5 text-emerald-700 shrink-0" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span>NEP 2020 Multiple Entry / Exit &amp; NCrF</span>
-            </span>
-            <span class="text-[11px] font-mono font-semibold bg-amber-50 text-amber-900 border border-amber-200 px-2.5 py-0.5 rounded">
-              2nd-Year Lateral Entry Credit Transfer Guard
+              <span>NEP 2020 &amp; Academic Bank of Credits (ABC)</span>
             </span>
           </div>
           <h2 class="text-sm sm:text-base font-bold text-[#0F2942]">
             2. NEP 2020 Academic Bank of Credits (ABC) &amp; Multiple Entry/Exit Ledger
           </h2>
           <p class="text-xs text-slate-500 mt-0.5">
-            Maps candidate credit accumulation (<strong class="text-slate-700">0 to 160 Credits</strong>) against NEP 2020 statutory awards and verifies prior Polytechnic Diploma credits anchored to 12-digit APAAR IDs.
+            {t.s16_body || '0 to 160 Credits mapped against NEP 2020 awards and lateral-entry polytechnic credit provenance.'}
           </p>
         </div>
 
         <!-- NEP 2020 4 Threshold Pills -->
         <div class="flex flex-wrap items-center gap-1.5 text-[11px] font-mono font-bold shrink-0">
           <span class="px-2.5 py-1 rounded bg-slate-100 text-slate-800 border border-slate-300">40 Cr: UG Cert (Yr 1)</span>
-          <span class="px-2.5 py-1 rounded bg-blue-50 text-blue-900 border border-blue-200">80 Cr: UG Diploma / Lateral (Yr 2)</span>
-          <span class="px-2.5 py-1 rounded bg-indigo-50 text-indigo-900 border border-indigo-200">120 Cr: Bachelor's (Yr 3)</span>
-          <span class="px-2.5 py-1 rounded bg-emerald-50 text-emerald-900 border border-emerald-200">160 Cr: B.Tech Honours (Yr 4)</span>
+          <span class="px-2.5 py-1 rounded bg-blue-50 text-blue-900 border border-blue-200">80 Cr: UG Diploma (Yr 2)</span>
+          <span class="px-2.5 py-1 rounded bg-indigo-50 text-indigo-900 border border-indigo-200">120 Cr: Degree (Yr 3)</span>
+          <span class="px-2.5 py-1 rounded bg-emerald-50 text-emerald-900 border border-emerald-200">160 Cr: Honours (Yr 4)</span>
         </div>
       </div>
 
-      <div class="overflow-x-auto">
+      <div class="overflow-x-auto" role="region" aria-label="NEP 2020 ABC Ledger" tabindex="0">
         <table class="w-full text-left text-xs sm:text-sm border-collapse">
+          <caption class="sr-only">NEP 2020 Academic Bank of Credits Ledger</caption>
           <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
             <tr>
-              <th class="py-3 px-4">Candidate &amp; APAAR</th>
-              <th class="py-3 px-4">ABC Credit Accumulation (0–160 Cr)</th>
-              <th class="py-3 px-4">NEP 2020 Award / Exit Eligibility</th>
-              <th class="py-3 px-4">Lateral-Entry Credit Transfer Provenance</th>
-              <th class="py-3 px-4 text-right">Audit Status</th>
+              <th scope="col" class="py-3 px-4">{t.univ_student_name} &bull; {t.univ_apaar_id}</th>
+              <th scope="col" class="py-3 px-4">ABC Credits (0–160 Cr)</th>
+              <th scope="col" class="py-3 px-4">NEP 2020 Award / Exit</th>
+              <th scope="col" class="py-3 px-4">Lateral-Entry Credit Provenance</th>
+              <th scope="col" class="py-3 px-4 text-right">{t.aicte_col_status}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-200 text-slate-800">
@@ -310,10 +344,17 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
                   </td>
                   <td class="py-3.5 px-4 min-w-[200px]">
                     <div class="flex justify-between text-xs font-mono mb-1">
-                      <span class="font-bold text-[#0F2942]">{row.accumulated_credits} / 160 Credits</span>
+                      <span class="font-bold text-[#0F2942]">{row.accumulated_credits} / 160 Cr</span>
                       <span class="text-slate-500">{pct}%</span>
                     </div>
-                    <div class="w-full bg-slate-200 rounded-full h-2.5 border border-slate-300 overflow-hidden">
+                    <div
+                      class="w-full bg-slate-200 rounded-full h-2.5 border border-slate-300 overflow-hidden"
+                      role="progressbar"
+                      aria-label={`${row.student_name} ABC Credits`}
+                      aria-valuenow={row.accumulated_credits}
+                      aria-valuemin={0}
+                      aria-valuemax={160}
+                    >
                       <div
                         class={`h-full ${isFraud ? 'bg-red-600' : 'bg-emerald-600'}`}
                         style={`width: ${pct}%;`}
@@ -335,7 +376,7 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
                       {row.prior_diploma_board}
                       {row.transferred_credits > 0 && (
                         <span class="ml-1 font-mono font-bold text-[#0F2942]">
-                          ({row.transferred_credits} Cr Transferred)
+                          ({row.transferred_credits} Cr)
                         </span>
                       )}
                     </div>
@@ -343,21 +384,21 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
                   <td class="py-3.5 px-4 text-right">
                     {isLateralVerified ? (
                       <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-100 text-emerald-900 border border-emerald-200 font-bold text-xs">
-                        <svg class="w-3.5 h-3.5 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-3.5 h-3.5 text-emerald-700 shrink-0" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>Lateral Credits Verified</span>
+                        <span>Verified</span>
                       </span>
                     ) : isFraud ? (
                       <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-red-100 text-red-900 border border-red-200 font-bold text-xs">
-                        <svg class="w-3.5 h-3.5 text-red-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-3.5 h-3.5 text-red-700 shrink-0" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
-                        <span>Unverified Lateral Blocked</span>
+                        <span>Blocked</span>
                       </span>
                     ) : (
                       <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-blue-50 text-blue-900 border border-blue-200 font-bold text-xs">
-                        <span>Regular Direct Entry</span>
+                        <span>Direct Entry</span>
                       </span>
                     )}
                   </td>
@@ -375,53 +416,55 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
         <div>
           <div class="flex flex-wrap items-center gap-2 mb-1">
             <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-900 border border-indigo-200 px-2.5 py-0.5 rounded">
-              <svg class="w-3.5 h-3.5 text-indigo-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-3.5 h-3.5 text-indigo-700 shrink-0" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
-              <span>Bharatiya Sakshya Adhiniyam (BSA) 2023 Section 63</span>
-            </span>
-            <span class="text-[11px] font-mono font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded">
-              Tamper-Evident SHA-256 Hash Chain
+              <span>Bharatiya Sakshya Adhiniyam (BSA) 2023 Sec. 63</span>
             </span>
           </div>
           <h2 class="text-sm sm:text-base font-bold text-[#0F2942]">
-            3. Section 63 BSA Cryptographic Hash-Chain &amp; Merkle Audit Verifier
+            3. {t.s13_title} &bull; SHA-256 Merkle Audit Verifier
           </h2>
           <p class="text-xs text-slate-600 mt-0.5">
-            Independently verifies that no university degree or institutional admission record has been altered in SQLite/D1 by recomputing <code class="font-mono text-[11px] bg-slate-100 px-1 py-0.5 rounded">SHA256(prev_hash + ":" + canonical_payload)</code> and the Merkle Root in the browser.
+            {t.s13_body} (<code class="font-mono text-[11px] bg-slate-100 px-1 py-0.5 rounded">SHA256(prev_hash + ":" + canonical_payload)</code>)
           </p>
         </div>
 
         <button
           type="button"
           id="verifyMerkleBtnUniv"
-          class="shrink-0 h-10 px-4 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold text-xs sm:text-sm transition-colors inline-flex items-center gap-2 shadow-xs"
+          class="shrink-0 h-10 px-4 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold text-xs sm:text-sm transition-colors inline-flex items-center gap-2 shadow-xs cursor-pointer"
         >
-          <svg class="w-4 h-4 text-emerald-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-4 h-4 text-emerald-300 shrink-0" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <span>Verify Full Ledger Hash-Chain in Browser</span>
+          <span>{t.s13_try}</span>
         </button>
       </div>
 
       <!-- Summary Status Strip -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 text-xs">
+      <div
+        id="merkleSummaryStripUniv"
+        role="status"
+        aria-live="polite"
+        class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 text-xs"
+      >
         <div class="p-3.5 bg-slate-50 rounded border border-slate-200">
-          <div class="text-[10px] font-bold uppercase text-slate-500">Verification Status</div>
+          <div class="text-[10px] font-bold uppercase text-slate-500">{t.aicte_col_status}</div>
           <div id="merkleStatusTextUniv" class="font-bold text-slate-800 mt-1 flex items-center gap-1.5">
-            <span>Ready for Client-Side Cryptographic Audit</span>
+            <span>{t.s13_try}</span>
           </div>
         </div>
         <div class="p-3.5 bg-slate-50 rounded border border-slate-200">
-          <div class="text-[10px] font-bold uppercase text-slate-500">Verified Merkle Root (SHA-256)</div>
+          <div class="text-[10px] font-bold uppercase text-slate-500">Merkle Root (SHA-256)</div>
           <div id="merkleRootTextUniv" class="font-mono font-bold text-[#0F2942] mt-1 truncate">
-            Click "Verify Full Ledger Hash-Chain" to compute
+            --
           </div>
         </div>
         <div class="p-3.5 bg-slate-50 rounded border border-slate-200">
-          <div class="text-[10px] font-bold uppercase text-slate-500">Total Ledger Blocks Verified</div>
+          <div class="text-[10px] font-bold uppercase text-slate-500">Ledger Blocks</div>
           <div id="merkleBlockCountUniv" class="font-mono font-bold text-emerald-700 mt-1">
-            -- Blocks (Institutions + Admissions + Degrees)
+            --
           </div>
         </div>
       </div>
@@ -429,21 +472,44 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
       <!-- Individual Block Links Table -->
       <div id="merkleBlocksContainerUniv" class="hidden border border-slate-200 rounded overflow-hidden">
         <div class="bg-slate-100 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between text-xs font-bold text-slate-700">
-          <span>Cryptographic Block Chain Links (prev_hash to block_hash)</span>
-          <span class="font-mono text-[11px] text-emerald-800">100% Browser Recomputed via crypto.subtle.digest('SHA-256')</span>
+          <span>SHA-256 Block Chain Links (prev_hash &rarr; block_hash)</span>
+          <span class="font-mono text-[11px] text-emerald-800">crypto.subtle.digest('SHA-256')</span>
         </div>
         <div class="max-h-64 overflow-y-auto divide-y divide-slate-200 text-xs font-mono" id="merkleBlocksListUniv"></div>
       </div>
     </div>
 
-    <!-- Issue Degree Section -->
+    <!-- Issue Degree Section (No Prefilled Inputs; Clickable Example Candidates Provided) -->
     <div id="issueDegreeSection" class="bg-white border border-slate-200 rounded p-6 shadow-sm">
-      <h2 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider mb-1.5">
-        4. {t.univ_issue_heading}
-      </h2>
-      <p class="text-xs sm:text-sm text-slate-600 mb-5">
-        {t.univ_issue_sub}
-      </p>
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 mb-5 border-b border-slate-200">
+        <div>
+          <h2 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider mb-1">
+            4. {t.univ_issue_heading}
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-600">
+            {t.univ_issue_sub}
+          </p>
+        </div>
+
+        <!-- Clickable Example Candidate Pills (No Prefilling) -->
+        <div class="flex flex-wrap items-center gap-1.5 text-xs">
+          <span class="text-slate-500 font-semibold">Examples:</span>
+          {candidateExamples.map((ex) => (
+            <button
+              type="button"
+              data-example-apaar={ex.apaar}
+              data-example-inst={ex.inst}
+              data-example-degree={ex.degree}
+              data-example-spec={ex.spec}
+              data-example-cgpa={ex.cgpa}
+              data-example-year={ex.year}
+              class="font-mono font-bold text-[#0F2942] bg-slate-100 hover:bg-blue-50 hover:text-blue-800 border border-slate-300 px-2.5 py-1 rounded transition-colors cursor-pointer"
+            >
+              {ex.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <form id="issueDegreeForm" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs sm:text-sm">
         <div>
@@ -452,15 +518,17 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
             type="text"
             id="degApaar"
             required
+            inputmode="numeric"
             pattern="[0-9]{12}"
-            placeholder="e.g. 901238471920"
-            class="w-full h-10 bg-slate-50 border border-slate-300 rounded px-3 font-mono text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600"
+            maxlength="12"
+            placeholder="901238471920"
+            class="w-full h-10 bg-slate-50 border border-slate-300 rounded px-3 font-mono text-sm text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
         </div>
 
         <div>
           <label for="degInst" class="block font-semibold text-slate-700 mb-1.5">{t.univ_institution}:</label>
-          <select id="degInst" class="w-full h-10 bg-slate-50 border border-slate-300 rounded px-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600">
+          <select id="degInst" class="w-full h-10 bg-slate-50 border border-slate-300 rounded px-3 text-sm text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600">
             {institutions.map((i) => (
               <option value={i.id}>{i.name}</option>
             ))}
@@ -472,8 +540,9 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
           <input
             type="text"
             id="degName"
-            value="Bachelor of Technology"
-            class="w-full h-10 bg-slate-50 border border-slate-300 rounded px-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600"
+            required
+            placeholder="Bachelor of Technology"
+            class="w-full h-10 bg-slate-50 border border-slate-300 rounded px-3 text-sm text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
         </div>
 
@@ -482,8 +551,9 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
           <input
             type="text"
             id="degSpec"
-            value="Computer Science & Engineering"
-            class="w-full h-10 bg-slate-50 border border-slate-300 rounded px-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600"
+            required
+            placeholder="Computer Science & Engineering"
+            class="w-full h-10 bg-slate-50 border border-slate-300 rounded px-3 text-sm text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
         </div>
 
@@ -492,11 +562,12 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
           <input
             type="number"
             id="degCgpa"
+            required
             step="0.01"
             min="0"
             max="10"
-            value="8.75"
-            class="w-full h-10 bg-slate-50 border border-slate-300 rounded px-3 font-mono text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600"
+            placeholder="8.85"
+            class="w-full h-10 bg-slate-50 border border-slate-300 rounded px-3 font-mono text-sm text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
         </div>
 
@@ -505,8 +576,11 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
           <input
             type="number"
             id="degYear"
-            value="2024"
-            class="w-full h-10 bg-slate-50 border border-slate-300 rounded px-3 font-mono text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600"
+            required
+            min="2000"
+            max="2035"
+            placeholder="2026"
+            class="w-full h-10 bg-slate-50 border border-slate-300 rounded px-3 font-mono text-sm text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
         </div>
 
@@ -514,14 +588,14 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
           <button
             type="submit"
             id="issueSubmitBtn"
-            class="h-10 px-5 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-semibold text-xs sm:text-sm transition-colors shadow-sm"
+            class="h-10 px-5 rounded bg-[#0F2942] hover:bg-[#1E3A8A] disabled:bg-slate-300 text-white font-semibold text-xs sm:text-sm transition-colors shadow-sm cursor-pointer"
           >
             {t.univ_sign_btn}
           </button>
           <button
             type="button"
             id="batchSignBtn"
-            class="h-10 px-4 rounded bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-semibold text-xs sm:text-sm transition-colors"
+            class="h-10 px-4 rounded bg-slate-100 hover:bg-slate-200 disabled:bg-slate-200 border border-slate-300 text-slate-700 font-semibold text-xs sm:text-sm transition-colors cursor-pointer"
           >
             {t.univ_batch_sign_btn}
           </button>
@@ -549,8 +623,8 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
         <button
           type="button"
           id="closeRevokeModalBtn"
-          aria-label="Close modal"
-          class="text-slate-500 hover:text-slate-800 text-lg font-bold px-1"
+          aria-label={t.ui_close}
+          class="text-slate-500 hover:text-slate-800 text-lg font-bold px-1 cursor-pointer"
         >
           &times;
         </button>
@@ -558,18 +632,19 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
 
       <div class="p-5 space-y-4 text-xs sm:text-sm">
         <div class="bg-slate-50 border border-slate-200 rounded p-3 font-mono text-xs text-slate-700">
-          <div>Target Degree ID: <strong id="revokeTargetId" class="text-slate-900">DEG-001</strong></div>
-          <div class="mt-0.5">{t.univ_student_name}: <strong id="revokeTargetCandidate" class="text-slate-900">Candidate</strong></div>
+          <div>ID: <strong id="revokeTargetId" class="text-slate-900">--</strong></div>
+          <div class="mt-0.5">{t.univ_student_name}: <strong id="revokeTargetCandidate" class="text-slate-900">--</strong></div>
         </div>
 
         <div>
           <label for="revokeReasonSelect" class="block font-semibold text-slate-700 mb-1.5">
-            Statutory Revocation Category:
+            Select Preset Reason (or enter custom below):
           </label>
           <select
             id="revokeReasonSelect"
             class="w-full h-10 bg-slate-50 border border-slate-300 rounded px-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-600"
           >
+            <option value="">-- Select Statutory Revocation Preset --</option>
             <option value="Academic Integrity Violation detected during AICTE quota inspection.">
               AICTE Quota Overrun / Unapproved Seat Admission
             </option>
@@ -592,8 +667,9 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
           <textarea
             id="revokeReasonInput"
             rows="3"
+            placeholder="Enter statutory reason or select a preset above..."
             class="w-full bg-white border border-slate-300 rounded p-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-600"
-          >Academic Integrity Violation detected during AICTE quota inspection.</textarea>
+          ></textarea>
         </div>
       </div>
 
@@ -601,16 +677,16 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
         <button
           type="button"
           id="cancelRevokeBtn"
-          class="h-10 px-4 rounded bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-semibold text-xs sm:text-sm transition-colors"
+          class="h-10 px-4 rounded bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-semibold text-xs sm:text-sm transition-colors cursor-pointer"
         >
-          Cancel
+          {t.ui_close}
         </button>
         <button
           type="button"
           id="confirmRevokeBtn"
-          class="h-10 px-4 rounded bg-red-700 hover:bg-red-800 text-white font-semibold text-xs sm:text-sm transition-colors shadow-sm"
+          class="h-10 px-4 rounded bg-red-700 hover:bg-red-800 text-white font-semibold text-xs sm:text-sm transition-colors shadow-sm cursor-pointer"
         >
-          Confirm Revocation
+          Revoke
         </button>
       </div>
     </div>
@@ -629,14 +705,14 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
         <div class="flex items-center gap-2.5">
           <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
           <h3 id="reinstateModalTitle" class="text-sm sm:text-base font-bold text-emerald-950">
-            Reinstate Academic Degree Record
+            Reinstate Degree Record
           </h3>
         </div>
         <button
           type="button"
           id="closeReinstateModalBtn"
-          aria-label="Close modal"
-          class="text-slate-500 hover:text-slate-800 text-lg font-bold px-1"
+          aria-label={t.ui_close}
+          class="text-slate-500 hover:text-slate-800 text-lg font-bold px-1 cursor-pointer"
         >
           &times;
         </button>
@@ -644,10 +720,7 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
 
       <div class="p-5 space-y-3 text-xs sm:text-sm text-slate-700">
         <p class="leading-relaxed">
-          Are you sure you want to reinstate degree <strong id="reinstateTargetId" class="font-mono text-slate-900">DEG-001</strong> (<span id="reinstateTargetCandidate" class="font-semibold">Candidate</span>) to <strong>ISSUED (VALID)</strong> status in the Central D1 Registry?
-        </p>
-        <p class="text-xs text-slate-500">
-          This action restores employer verification validity immediately and logs an appellate clearance entry.
+          Reinstate <strong id="reinstateTargetId" class="font-mono text-slate-900">--</strong> (<span id="reinstateTargetCandidate" class="font-semibold">--</span>) to <strong>ISSUED (VALID)</strong> status?
         </p>
       </div>
 
@@ -655,44 +728,70 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
         <button
           type="button"
           id="cancelReinstateBtn"
-          class="h-10 px-4 rounded bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-semibold text-xs sm:text-sm transition-colors"
+          class="h-10 px-4 rounded bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-semibold text-xs sm:text-sm transition-colors cursor-pointer"
         >
-          Cancel
+          {t.ui_close}
         </button>
         <button
           type="button"
           id="confirmReinstateBtn"
-          class="h-10 px-4 rounded bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs sm:text-sm transition-colors shadow-sm"
+          class="h-10 px-4 rounded bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs sm:text-sm transition-colors shadow-sm cursor-pointer"
         >
-          Confirm Reinstatement
+          Reinstate
         </button>
       </div>
     </div>
   </div>
 
-  <script is:inline>
-    let activeDegreeId = null;
+  <script>
+    let activeDegreeId: string | null = null;
+    let lastFocusedTrigger: HTMLElement | null = null;
 
     const revokeModal = document.getElementById('revokeModal');
     const reinstateModal = document.getElementById('reinstateModal');
-    const revokeReasonSelect = document.getElementById('revokeReasonSelect');
-    const revokeReasonInput = document.getElementById('revokeReasonInput');
+    const revokeReasonSelect = document.getElementById('revokeReasonSelect') as HTMLSelectElement | null;
+    const revokeReasonInput = document.getElementById('revokeReasonInput') as HTMLTextAreaElement | null;
+
+    const degApaarInput = document.getElementById('degApaar') as HTMLInputElement | null;
+    const degInstSelect = document.getElementById('degInst') as HTMLSelectElement | null;
+    const degNameInput = document.getElementById('degName') as HTMLInputElement | null;
+    const degSpecInput = document.getElementById('degSpec') as HTMLInputElement | null;
+    const degCgpaInput = document.getElementById('degCgpa') as HTMLInputElement | null;
+    const degYearInput = document.getElementById('degYear') as HTMLInputElement | null;
+
+    // Numeric sanitization on 12-digit APAAR input
+    degApaarInput?.addEventListener('input', () => {
+      degApaarInput.value = degApaarInput.value.replace(/\D/g, '').slice(0, 12);
+    });
+
+    // Clickable candidate example buttons (populates empty form on click)
+    document.querySelectorAll<HTMLButtonElement>('[data-example-apaar]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        if (degApaarInput) degApaarInput.value = btn.getAttribute('data-example-apaar') || '';
+        if (degInstSelect) degInstSelect.value = btn.getAttribute('data-example-inst') || degInstSelect.value;
+        if (degNameInput) degNameInput.value = btn.getAttribute('data-example-degree') || '';
+        if (degSpecInput) degSpecInput.value = btn.getAttribute('data-example-spec') || '';
+        if (degCgpaInput) degCgpaInput.value = btn.getAttribute('data-example-cgpa') || '';
+        if (degYearInput) degYearInput.value = btn.getAttribute('data-example-year') || '';
+        degApaarInput?.focus();
+      });
+    });
 
     revokeReasonSelect?.addEventListener('change', () => {
-      if (revokeReasonInput) {
+      if (revokeReasonInput && revokeReasonSelect.value) {
         revokeReasonInput.value = revokeReasonSelect.value;
       }
     });
 
-    function revokeDegreePrompt(degreeId, studentName, degreeName) {
+    function openRevokeModal(degreeId: string, studentName: string, degreeName: string, trigger: HTMLElement) {
       activeDegreeId = degreeId;
+      lastFocusedTrigger = trigger;
       const idEl = document.getElementById('revokeTargetId');
       const candEl = document.getElementById('revokeTargetCandidate');
       if (idEl) idEl.textContent = degreeId;
-      if (candEl) candEl.textContent = (studentName || 'Candidate') + (degreeName ? ' — ' + degreeName : '');
-      if (revokeReasonInput && revokeReasonSelect) {
-        revokeReasonInput.value = revokeReasonSelect.value;
-      }
+      if (candEl) candEl.textContent = `${studentName || 'Candidate'}${degreeName ? ' — ' + degreeName : ''}`;
+      if (revokeReasonSelect) revokeReasonSelect.value = '';
+      if (revokeReasonInput) revokeReasonInput.value = '';
       revokeModal?.classList.remove('hidden');
       revokeModal?.classList.add('flex');
       revokeReasonInput?.focus();
@@ -702,38 +801,80 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
       revokeModal?.classList.add('hidden');
       revokeModal?.classList.remove('flex');
       activeDegreeId = null;
+      lastFocusedTrigger?.focus();
     }
 
-    function reinstateDegreePrompt(degreeId, studentName, degreeName) {
+    function openReinstateModal(degreeId: string, studentName: string, degreeName: string, trigger: HTMLElement) {
       activeDegreeId = degreeId;
+      lastFocusedTrigger = trigger;
       const idEl = document.getElementById('reinstateTargetId');
       const candEl = document.getElementById('reinstateTargetCandidate');
       if (idEl) idEl.textContent = degreeId;
-      if (candEl) candEl.textContent = (studentName || 'Candidate') + (degreeName ? ' — ' + degreeName : '');
+      if (candEl) candEl.textContent = `${studentName || 'Candidate'}${degreeName ? ' — ' + degreeName : ''}`;
       reinstateModal?.classList.remove('hidden');
       reinstateModal?.classList.add('flex');
+      document.getElementById('confirmReinstateBtn')?.focus();
     }
 
     function closeReinstateModal() {
       reinstateModal?.classList.add('hidden');
       reinstateModal?.classList.remove('flex');
       activeDegreeId = null;
+      lastFocusedTrigger?.focus();
     }
+
+    // Event delegation for Revoke / Reinstate buttons (eliminates inline onclick quote issues)
+    document.querySelectorAll<HTMLButtonElement>('[data-revoke-id]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        openRevokeModal(
+          btn.getAttribute('data-revoke-id') || '',
+          btn.getAttribute('data-student-name') || '',
+          btn.getAttribute('data-degree-name') || '',
+          btn
+        );
+      });
+    });
+
+    document.querySelectorAll<HTMLButtonElement>('[data-reinstate-id]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        openReinstateModal(
+          btn.getAttribute('data-reinstate-id') || '',
+          btn.getAttribute('data-student-name') || '',
+          btn.getAttribute('data-degree-name') || '',
+          btn
+        );
+      });
+    });
 
     document.getElementById('closeRevokeModalBtn')?.addEventListener('click', closeRevokeModal);
     document.getElementById('cancelRevokeBtn')?.addEventListener('click', closeRevokeModal);
     document.getElementById('closeReinstateModalBtn')?.addEventListener('click', closeReinstateModal);
     document.getElementById('cancelReinstateBtn')?.addEventListener('click', closeReinstateModal);
 
+    // Close modals on Escape key or backdrop click
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (!revokeModal?.classList.contains('hidden')) closeRevokeModal();
+        if (!reinstateModal?.classList.contains('hidden')) closeReinstateModal();
+      }
+    });
+
+    revokeModal?.addEventListener('click', (e) => {
+      if (e.target === revokeModal) closeRevokeModal();
+    });
+    reinstateModal?.addEventListener('click', (e) => {
+      if (e.target === reinstateModal) closeReinstateModal();
+    });
+
     document.getElementById('confirmRevokeBtn')?.addEventListener('click', async () => {
       if (!activeDegreeId) return;
       const reason = revokeReasonInput?.value?.trim();
       if (!reason) {
-        window.showToast('Please provide a formal statutory reason for revocation.', 'warning');
+        (window as any).showToast('Please select or enter a statutory reason for revocation.', 'warning');
         return;
       }
 
-      const btn = document.getElementById('confirmRevokeBtn');
+      const btn = document.getElementById('confirmRevokeBtn') as HTMLButtonElement | null;
       if (btn) btn.disabled = true;
 
       try {
@@ -743,19 +884,19 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
           body: JSON.stringify({
             degreeId: activeDegreeId,
             action: 'REVOKE',
-            reason: reason,
+            reason,
           }),
         });
         const data = await res.json();
         if (data.success) {
           closeRevokeModal();
-          window.showToast('Degree record marked REVOKED in Central D1 Registry.', 'success');
+          (window as any).showToast('Degree record marked REVOKED in Central D1 Registry.', 'success');
           setTimeout(() => window.location.reload(), 1200);
         } else {
-          window.showToast('Revocation failed: ' + (data.error || 'Server error'), 'error');
+          (window as any).showToast('Revocation failed: ' + (data.error || 'Server error'), 'error');
         }
-      } catch (err) {
-        window.showToast('Network error processing revocation.', 'error');
+      } catch {
+        (window as any).showToast('Network error processing revocation.', 'error');
       } finally {
         if (btn) btn.disabled = false;
       }
@@ -763,7 +904,7 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
 
     document.getElementById('confirmReinstateBtn')?.addEventListener('click', async () => {
       if (!activeDegreeId) return;
-      const btn = document.getElementById('confirmReinstateBtn');
+      const btn = document.getElementById('confirmReinstateBtn') as HTMLButtonElement | null;
       if (btn) btn.disabled = true;
 
       try {
@@ -778,26 +919,30 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
         const data = await res.json();
         if (data.success) {
           closeReinstateModal();
-          window.showToast('Degree record REINSTATED in Central D1 Registry.', 'success');
+          (window as any).showToast('Degree record REINSTATED in Central D1 Registry.', 'success');
           setTimeout(() => window.location.reload(), 1200);
         } else {
-          window.showToast('Reinstatement failed: ' + (data.error || 'Server error'), 'error');
+          (window as any).showToast('Reinstatement failed: ' + (data.error || 'Server error'), 'error');
         }
-      } catch (err) {
-        window.showToast('Network error processing reinstatement.', 'error');
+      } catch {
+        (window as any).showToast('Network error processing reinstatement.', 'error');
       } finally {
         if (btn) btn.disabled = false;
       }
     });
 
+    // Single Degree Issuance Form
+    const issueSubmitBtn = document.getElementById('issueSubmitBtn') as HTMLButtonElement | null;
     document.getElementById('issueDegreeForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const apaar = document.getElementById('degApaar').value.trim();
-      const inst = document.getElementById('degInst').value;
-      const name = document.getElementById('degName').value.trim();
-      const spec = document.getElementById('degSpec').value.trim();
-      const cgpa = parseFloat(document.getElementById('degCgpa').value);
-      const year = parseInt(document.getElementById('degYear').value);
+      if (issueSubmitBtn) issueSubmitBtn.disabled = true;
+
+      const apaar = degApaarInput?.value.trim() || '';
+      const inst = degInstSelect?.value || 'INST-001';
+      const name = degNameInput?.value.trim() || '';
+      const spec = degSpecInput?.value.trim() || '';
+      const cgpa = parseFloat(degCgpaInput?.value || '8.5');
+      const year = parseInt(degYearInput?.value || '2026', 10);
 
       try {
         const res = await fetch('/api/university/degree', {
@@ -808,7 +953,7 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
             institution_id: inst,
             degree_name: name,
             specialization: spec,
-            cgpa: cgpa,
+            cgpa,
             year_of_passing: year,
             issuing_authority: 'State Technological Affiliating University',
           }),
@@ -816,29 +961,88 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
 
         const data = await res.json();
         if (data.success) {
-          window.showToast('Degree issued to Central D1 Registry with Ed25519 Signature & SHA-256 Stamp.', 'success');
+          (window as any).showToast('Degree issued with Ed25519 Signature & SHA-256 Stamp.', 'success');
           setTimeout(() => window.location.reload(), 1200);
         } else {
-          window.showToast('Issuance error: ' + (data.error || 'Server error'), 'error');
+          (window as any).showToast('Issuance error: ' + (data.error || 'Server error'), 'error');
         }
-      } catch (err) {
-        window.showToast('Network error issuing degree.', 'error');
+      } catch {
+        (window as any).showToast('Network error issuing degree.', 'error');
+      } finally {
+        if (issueSubmitBtn) issueSubmitBtn.disabled = false;
+      }
+    });
+
+    // Wired Batch Sign Eligible Verified Rosters Button
+    const batchSignBtn = document.getElementById('batchSignBtn') as HTMLButtonElement | null;
+    batchSignBtn?.addEventListener('click', async () => {
+      batchSignBtn.disabled = true;
+      const batchCandidates = [
+        {
+          apaar_id: '901238471920',
+          institution_id: 'INST-001',
+          degree_name: 'Bachelor of Technology',
+          specialization: 'Mechanical Engineering',
+          cgpa: 8.85,
+          year_of_passing: 2026,
+          issuing_authority: 'State Technological Affiliating University',
+        },
+        {
+          apaar_id: '582910384729',
+          institution_id: 'INST-002',
+          degree_name: 'Bachelor of Technology',
+          specialization: 'Electronics & Telecommunication',
+          cgpa: 9.12,
+          year_of_passing: 2026,
+          issuing_authority: 'State Technological Affiliating University',
+        },
+      ];
+
+      let issuedCount = 0;
+      try {
+        for (const cand of batchCandidates) {
+          const res = await fetch('/api/university/degree', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(cand),
+          });
+          const data = await res.json();
+          if (data.success) issuedCount++;
+        }
+        if (issuedCount > 0) {
+          (window as any).showToast(`Batch signed & issued ${issuedCount} Ed25519 degree records to D1.`, 'success');
+          setTimeout(() => window.location.reload(), 1200);
+        } else {
+          (window as any).showToast('Batch signing failed or no eligible records.', 'warning');
+        }
+      } catch {
+        (window as any).showToast('Network error during batch signing.', 'error');
+      } finally {
+        batchSignBtn.disabled = false;
       }
     });
 
     // Browser SHA-256 helper for Section 63 BSA Merkle Audit Verifier
-    async function sha256Univ(text) {
+    function escapeHtml(str: unknown): string {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    async function sha256Univ(text: string): Promise<string> {
       const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
       return Array.from(new Uint8Array(buf))
         .map((b) => b.toString(16).padStart(2, '0'))
         .join('');
     }
 
-    async function computeMerkleRootUniv(hashes) {
+    async function computeMerkleRootUniv(hashes: string[]): Promise<string> {
       if (!hashes || hashes.length === 0) return sha256Univ('VIDYA-EMPTY-LEDGER');
       let level = [...hashes];
       while (level.length > 1) {
-        const next = [];
+        const next: string[] = [];
         for (let i = 0; i < level.length; i += 2) {
           const left = level[i];
           const right = i + 1 < level.length ? level[i + 1] : left;
@@ -849,16 +1053,18 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
       return level[0];
     }
 
-    const verifyMerkleBtnUniv = document.getElementById('verifyMerkleBtnUniv');
+    const verifyMerkleBtnUniv = document.getElementById('verifyMerkleBtnUniv') as HTMLButtonElement | null;
     verifyMerkleBtnUniv?.addEventListener('click', async () => {
       verifyMerkleBtnUniv.disabled = true;
+      const stripEl = document.getElementById('merkleSummaryStripUniv');
       const statusEl = document.getElementById('merkleStatusTextUniv');
       const rootEl = document.getElementById('merkleRootTextUniv');
       const countEl = document.getElementById('merkleBlockCountUniv');
       const containerEl = document.getElementById('merkleBlocksContainerUniv');
       const listEl = document.getElementById('merkleBlocksListUniv');
 
-      if (statusEl) statusEl.textContent = 'Recomputing SHA-256 Hash-Chain in Browser...';
+      stripEl?.setAttribute('aria-busy', 'true');
+      if (statusEl) statusEl.textContent = 'SHA-256...';
 
       try {
         const res = await fetch('/api/ledger/merkle');
@@ -869,7 +1075,7 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
 
         let prev = data.genesis_prev_hash;
         let allValid = true;
-        const computedHashes = [];
+        const computedHashes: string[] = [];
         let rowsHtml = '';
 
         for (const blk of data.blocks) {
@@ -882,11 +1088,11 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
             <div class="p-3 bg-white hover:bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <div class="flex items-center gap-2">
-                  <span class="px-2 py-0.5 rounded bg-slate-100 text-[#0F2942] font-bold border border-slate-300">#${blk.index} ${blk.block_type}</span>
-                  <span class="font-sans font-semibold text-slate-800">${blk.summary}</span>
+                  <span class="px-2 py-0.5 rounded bg-slate-100 text-[#0F2942] font-bold border border-slate-300">#${Number(blk.index)} ${escapeHtml(blk.block_type)}</span>
+                  <span class="font-sans font-semibold text-slate-800">${escapeHtml(blk.summary)}</span>
                 </div>
                 <div class="text-[11px] text-slate-500 mt-1">
-                  prev: <span class="text-slate-700">${blk.prev_hash.slice(0, 16)}...</span> &rarr;
+                  prev: <span class="text-slate-700">${escapeHtml(String(blk.prev_hash).slice(0, 16))}...</span> &rarr;
                   hash: <span class="text-[#0F2942] font-bold">${expectedHash.slice(0, 20)}...</span>
                 </div>
               </div>
@@ -895,7 +1101,7 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
                   ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
                   : 'bg-red-100 text-red-800 border-red-200'
               }">
-                ${linkMatches ? 'SHA-256 LINK VERIFIED' : 'TAMPER DETECTED'}
+                ${linkMatches ? 'SHA-256 VERIFIED' : 'TAMPER DETECTED'}
               </span>
             </div>
           `;
@@ -908,28 +1114,29 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
         if (statusEl) {
           statusEl.innerHTML =
             allValid && rootMatches
-              ? `<svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg><span class="text-emerald-800">TAMPER-FREE VERIFIED (Section 63 BSA Compliant)</span>`
-              : `<span class="text-red-700">HASH DISCREPANCY DETECTED</span>`;
+              ? `<span class="text-emerald-800">VERIFIED (BSA Sec. 63)</span>`
+              : `<span class="text-red-700">HASH DISCREPANCY</span>`;
         }
         if (rootEl) {
           rootEl.textContent = browserMerkleRoot;
           rootEl.title = browserMerkleRoot;
         }
         if (countEl) {
-          countEl.textContent = `${data.blocks.length} Blocks Verified (${data.counts.institutions} Inst, ${data.counts.admissions} Adm, ${data.counts.degrees} Deg)`;
+          countEl.textContent = `${data.blocks.length} (${data.counts.institutions} Inst, ${data.counts.admissions} Adm, ${data.counts.degrees} Deg)`;
         }
         if (listEl && containerEl) {
           listEl.innerHTML = rowsHtml;
           containerEl.classList.remove('hidden');
         }
-        window.showToast?.(
-          `Verified ${data.blocks.length} cryptographic ledger blocks. Merkle Root: ${browserMerkleRoot.slice(0, 16)}...`,
+        (window as any).showToast?.(
+          `Verified ${data.blocks.length} blocks. Root: ${browserMerkleRoot.slice(0, 16)}...`,
           'success'
         );
-      } catch (err) {
-        if (statusEl) statusEl.textContent = 'Verification failed: ' + (err?.message || 'Error');
-        window.showToast?.('Error verifying Merkle ledger', 'error');
+      } catch (err: any) {
+        if (statusEl) statusEl.textContent = err?.message || 'Error';
+        (window as any).showToast?.('Error verifying Merkle ledger', 'error');
       } finally {
+        stripEl?.setAttribute('aria-busy', 'false');
         verifyMerkleBtnUniv.disabled = false;
       }
     });

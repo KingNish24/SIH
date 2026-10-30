@@ -21,16 +21,33 @@ export interface VerifyCredentialOptions {
 
 export interface VerifyCredentialResult {
   success: boolean;
-  student: Partial<Student> | null;
+  requestId: string;
+  responseTimeMs: number;
+  apaar_id: string;
+  consentStatus: string;
+  consentGranted: boolean;
+  predicateMode: boolean;
+  predicateVerified?: boolean;
+  redactedCgpa?: string;
+  predicateProof: Record<string, unknown> | null;
+  student: Record<string, unknown> | null;
   admissions: Array<Admission & { institution_name: string; institution_code: string }>;
-  degrees: Array<Degree & { verified: boolean; error?: string }>;
+  enrollments: Array<Admission & { institution_name: string; institution_code: string }>;
+  degrees: Array<Record<string, unknown>>;
+  integrityAudit: {
+    totalDegrees: number;
+    revokedDegrees: number;
+    hasDuplicateEnrollment: boolean;
+    cryptographicProofVerified: boolean;
+    unsignedOrInvalidDegrees: string[];
+  };
   predicate_result?: {
     satisfied: boolean;
     cgpa_check?: boolean;
     year_check?: boolean;
     degree_check?: boolean;
     attestation_statement?: string;
-    attestation_signature?: string;
+    attestation_signature?: string | null;
     verified_by?: string;
     timestamp?: string;
   } | null;
@@ -52,24 +69,25 @@ const bytesToB64 = (buf: ArrayBuffer | Uint8Array) => {
  * Encapsulates:
  * 1. APAAR identity resolution
  * 2. Section 6 DPDP statutory masking & consent validation
- * 3. Ed25519 cryptographic degree validation
+ * 3. Ed25519 cryptographic degree validation (full 3-argument canonical check)
  * 4. Zero-Knowledge selective disclosure predicate attestation & signing
  * 5. Tamper-evident W3C VC payload and QR code synthesis
  * 6. Audit logging into the verification ledger
  */
 export async function verifyCredential(options: VerifyCredentialOptions): Promise<VerifyCredentialResult> {
-  const { apaar_id, verifier_name = 'Public Verifier', purpose = 'Credential Verification', predicate, consent_token, db } = options;
+  const startTime = Date.now();
+  const { apaar_id, verifier_name, purpose, predicate, consent_token, db } = options;
 
   const cleanApaar = String(apaar_id || '').trim();
   if (!/^\d{12}$/.test(cleanApaar)) {
-    throw new Error('INVALID_APAAR_FORMAT: Must be an exact 12-digit numerical identifier');
+    throw new Error('INVALID_APAAR_FORMAT: Invalid APAAR ID format. Must be an exact 12-digit numerical identifier.');
   }
 
   // 1. Fetch Student
   const studentRes = await db.prepare('SELECT * FROM students WHERE apaar_id = ?').bind(cleanApaar).all<Student>();
   const student = studentRes.results[0];
   if (!student) {
-    throw new Error(`STUDENT_NOT_FOUND: No records found for APAAR ID: ${cleanApaar}`);
+    throw new Error(`STUDENT_NOT_FOUND: No records found for APAAR ID: ${cleanApaar}. Please verify the APAAR ID or check AICTE central registry.`);
   }
 
   // 2. DPDP Consent Check (DPDP Act 2023 Sec. 6)
@@ -94,30 +112,114 @@ export async function verifyCredential(options: VerifyCredentialOptions): Promis
     };
   });
 
-  // 5. Verify cryptographic signatures on degrees
-  const verifiedDegrees = await Promise.all(
-    degrees.map(async (deg) => {
-      try {
-        const verified = await verifyDegree(deg);
-        return { ...deg, verified };
-      } catch (err: any) {
-        return { ...deg, verified: false, error: err?.message };
+  const isPredicateMode = Boolean(
+    predicate &&
+    typeof predicate === 'object' &&
+    (predicate.min_cgpa !== undefined || predicate.min_year !== undefined || predicate.require_valid_degree !== undefined)
+  );
+
+  const minCgpa = predicate?.min_cgpa !== undefined ? Number(predicate.min_cgpa) : 7.5;
+  const minYear = predicate?.min_year !== undefined ? Number(predicate.min_year) : 2022;
+  const reqValidDegree = predicate?.require_valid_degree !== undefined ? Boolean(predicate.require_valid_degree) : true;
+
+  // 5. Verify cryptographic signatures on degrees & build W3C VC QR payloads
+  const enrichedDegrees = await Promise.all(
+    degrees.map(async (d: any) => {
+      const inst = institutions.find((i) => i.id === d.institution_id);
+      const signablePayload = {
+        id: d.id,
+        apaar_id: d.apaar_id,
+        institution_id: d.institution_id,
+        degree_name: d.degree_name,
+        specialization: d.specialization,
+        cgpa: d.cgpa,
+        year_of_passing: d.year_of_passing,
+        issuing_authority: d.issuing_authority,
+        issued_at: d.issued_at,
+      };
+      const signatureValid = await verifyDegree(signablePayload, d.signature, d.signing_key_id);
+
+      const qrVcPayloadObj = {
+        v: 'W3C-VC-NAD-1.0',
+        id: d.id,
+        apaar_id: d.apaar_id,
+        institution_id: d.institution_id,
+        degree_name: d.degree_name,
+        specialization: d.specialization,
+        cgpa: isPredicateMode ? undefined : Number(d.cgpa),
+        cgpa_predicate: isPredicateMode ? `>= ${minCgpa.toFixed(2)}` : undefined,
+        year_of_passing: Number(d.year_of_passing),
+        issuing_authority: d.issuing_authority,
+        issued_at: d.issued_at,
+        status: d.status,
+        kid: d.signing_key_id || 'aicte-nad-2026',
+        sig: d.signature || '',
+      };
+
+      const offlineVerifiablePayload = {
+        id: d.id,
+        apaar_id: d.apaar_id,
+        institution_id: d.institution_id,
+        degree_name: d.degree_name,
+        specialization: d.specialization,
+        cgpa: Number(d.cgpa),
+        year_of_passing: Number(d.year_of_passing),
+        issuing_authority: d.issuing_authority,
+        issued_at: d.issued_at,
+        kid: d.signing_key_id || 'aicte-nad-2026',
+        sig: d.signature || '',
+      };
+
+      const qrSvg = generateQrSvg(JSON.stringify(qrVcPayloadObj), {
+        size: 168,
+        margin: 2,
+        darkColor: '#0F2942',
+        lightColor: '#FFFFFF',
+        label: `W3C Verifiable Credential QR for ${d.id}`,
+      });
+
+      if (isPredicateMode) {
+        const meetsCgpa = Number(d.cgpa) >= minCgpa;
+        return {
+          ...d,
+          cgpa: meetsCgpa
+            ? `REDACTED (Meets >= ${minCgpa.toFixed(2)} Threshold)`
+            : `REDACTED (Below ${minCgpa.toFixed(2)} Threshold)`,
+          cgpa_redacted: true,
+          institution_name: inst?.name || d.institution_id,
+          institution_code: inst?.code || 'N/A',
+          signatureValid,
+          verified: signatureValid,
+          qrSvg,
+          offlineQrPayload: offlineVerifiablePayload,
+        };
       }
+
+      return {
+        ...d,
+        institution_name: inst?.name || d.institution_id,
+        institution_code: inst?.code || 'N/A',
+        signatureValid,
+        verified: signatureValid,
+        qrSvg,
+        offlineQrPayload: offlineVerifiablePayload,
+      };
     })
   );
 
-  // 6. Generate W3C Verifiable Credential QR
-  let qrSvg: string | null = null;
+  // 6. Top-level W3C Verifiable Credential summary
+  let topQrSvg: string | null = null;
   let vcPayload: any = null;
-  const primaryDegree = verifiedDegrees[0];
-
-  if (primaryDegree && primaryDegree.verified) {
+  const primaryDegree = enrichedDegrees[0] as any;
+  if (primaryDegree) {
+    topQrSvg = primaryDegree.qrSvg || null;
     const signingKeys = await getSigningKeys();
+    const kid = signingKeys?.kid || primaryDegree.signing_key_id || 'aicte-nad-2026';
     vcPayload = {
       '@context': ['https://www.w3.org/2018/credentials/v1'],
       type: ['VerifiableCredential', 'UniversityDegreeCredential'],
       issuer: primaryDegree.institution_name,
-      issuanceDate: primaryDegree.issue_date,
+      issuanceDate: primaryDegree.issued_at,
       credentialSubject: {
         id: `did:apaar:${student.apaar_id}`,
         name: isConsentGranted ? student.full_name : maskName(student.full_name),
@@ -128,100 +230,175 @@ export async function verifyCredential(options: VerifyCredentialOptions): Promis
       },
       proof: {
         type: 'Ed25519Signature2020',
-        created: primaryDegree.created_at,
-        verificationMethod: `did:aicte:keys#${signingKeys.kid}`,
+        created: primaryDegree.issued_at,
+        verificationMethod: `did:aicte:keys#${kid}`,
         proofValue: primaryDegree.signature,
       },
     };
-
-    const qrPayload = JSON.stringify({
-      t: 'AICTE-DEGREE-VC',
-      id: primaryDegree.id,
-      apaar: primaryDegree.apaar_id,
-      deg: primaryDegree.degree_name,
-      yr: primaryDegree.year_of_passing,
-      cgpa: primaryDegree.cgpa,
-      sig: primaryDegree.signature.slice(0, 32) + '...',
-      v: true,
-    });
-
-    qrSvg = generateQrSvg(qrPayload, 200);
   }
 
   // 7. ZKP / Selective Disclosure Predicate Attestation
+  let predicateProof: Record<string, unknown> | null = null;
   let predicateResult: VerifyCredentialResult['predicate_result'] = null;
-  if (predicate && Object.keys(predicate).length > 0) {
-    let satisfied = true;
-    let cgpaCheck: boolean | undefined;
-    let yearCheck: boolean | undefined;
-    let degreeCheck: boolean | undefined;
+  if (isPredicateMode) {
+    const rawPrimaryDeg = degrees[0];
+    const rawCgpa = rawPrimaryDeg ? Number(rawPrimaryDeg.cgpa) : 0;
+    const rawYear = rawPrimaryDeg ? Number(rawPrimaryDeg.year_of_passing) : 0;
+    const isIssuedAndValid = Boolean(
+      rawPrimaryDeg &&
+      rawPrimaryDeg.status === 'ISSUED' &&
+      primaryDegree?.signatureValid
+    );
 
-    if (predicate.min_cgpa !== undefined) {
-      cgpaCheck = primaryDegree ? primaryDegree.cgpa >= predicate.min_cgpa : false;
-      if (!cgpaCheck) satisfied = false;
-    }
-    if (predicate.min_year !== undefined) {
-      yearCheck = primaryDegree ? primaryDegree.year_of_passing >= predicate.min_year : false;
-      if (!yearCheck) satisfied = false;
-    }
-    if (predicate.require_valid_degree) {
-      degreeCheck = primaryDegree ? Boolean(primaryDegree.verified) : false;
-      if (!degreeCheck) satisfied = false;
-    }
+    const cgpaSatisfied = Boolean(rawPrimaryDeg && rawCgpa >= minCgpa);
+    const yearSatisfied = Boolean(rawPrimaryDeg && rawYear >= minYear);
+    const statusSatisfied = reqValidDegree ? isIssuedAndValid : Boolean(rawPrimaryDeg);
+    const predicateVerified = cgpaSatisfied && yearSatisfied && statusSatisfied;
 
+    const redactedCgpaLabel = rawPrimaryDeg
+      ? (cgpaSatisfied
+          ? `REDACTED (Meets >= ${minCgpa.toFixed(2)} Threshold)`
+          : `REDACTED (Does Not Meet >= ${minCgpa.toFixed(2)} Threshold)`)
+      : 'REDACTED (No Degree Conferred)';
+
+    const evaluatedAt = new Date().toISOString();
+    const canonicalPredicateStatement = JSON.stringify({
+      apaar_id: cleanApaar,
+      cgpa_threshold_met: cgpaSatisfied,
+      degree_status_valid: statusSatisfied,
+      evaluated_at: evaluatedAt,
+      min_cgpa: minCgpa,
+      min_year: minYear,
+      predicate_verified: predicateVerified,
+      protocol: 'ZK-SELECTIVE-DISCLOSURE-DPDP-SEC6',
+      year_threshold_met: yearSatisfied,
+    });
+
+    let attestationSignature: string | null = null;
+    let attestationKid = 'aicte-nad-zkp-2026';
     const signingKeys = await getSigningKeys();
-    const statement = `ATT_PREDICATE:apaar=${cleanApaar}:min_cgpa=${predicate.min_cgpa ?? 'na'}:min_year=${predicate.min_year ?? 'na'}:degree_valid=${predicate.require_valid_degree ?? 'na'}:satisfied=${satisfied}`;
-    const enc = new TextEncoder();
-    const sigBuf = await crypto.subtle.sign('Ed25519', signingKeys.priv, enc.encode(statement));
+    if (signingKeys) {
+      const sigBuf = await crypto.subtle.sign(
+        { name: 'Ed25519' },
+        signingKeys.priv,
+        new TextEncoder().encode(canonicalPredicateStatement)
+      );
+      attestationSignature = bytesToB64(sigBuf);
+      attestationKid = signingKeys.kid;
+    }
+
+    predicateProof = {
+      enabled: true,
+      predicateVerified,
+      redactedCgpa: redactedCgpaLabel,
+      thresholds: {
+        min_cgpa: minCgpa,
+        min_year: minYear,
+        require_valid_degree: reqValidDegree,
+      },
+      assertions: {
+        cgpaThresholdMet: cgpaSatisfied,
+        graduationYearMet: yearSatisfied,
+        activeIssuedDegreeMet: statusSatisfied,
+      },
+      canonicalStatement: canonicalPredicateStatement,
+      attestationSignature,
+      attestationKeyId: attestationKid,
+      evaluatedAt,
+    };
 
     predicateResult = {
-      satisfied,
-      cgpa_check: cgpaCheck,
-      year_check: yearCheck,
-      degree_check: degreeCheck,
-      attestation_statement: statement,
-      attestation_signature: bytesToB64(sigBuf),
+      satisfied: predicateVerified,
+      cgpa_check: cgpaSatisfied,
+      year_check: yearSatisfied,
+      degree_check: statusSatisfied,
+      attestation_statement: canonicalPredicateStatement,
+      attestation_signature: attestationSignature,
       verified_by: 'AICTE Central Attestation Node (Ed25519)',
-      timestamp: new Date().toISOString(),
+      timestamp: evaluatedAt,
     };
   }
+
+  const elapsedMs = Date.now() - startTime;
+  const reqId = `REQ-${crypto.randomUUID()}`;
+  const verifier = verifier_name || 'Authorized Verifier (e.g. TCS / UPSC)';
+  const reqPurpose = isPredicateMode
+    ? `${purpose || 'Zero-Knowledge Eligibility Predicate Verification'} [CGPA >= ${minCgpa}]`
+    : (purpose || 'Employment / Higher Education Credential Verification');
 
   // 8. Log Verification Audit Record
   let auditLogged = false;
   try {
-    const requestId = `REQ-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`.toUpperCase();
     await db
       .prepare(
-        `INSERT INTO verification_requests (id, apaar_id, verifier_name, purpose, status)
-         VALUES (?, ?, ?, ?, ?)`
+        `INSERT INTO verification_requests (id, apaar_id, verifier_name, purpose, consent_status, verified_at, response_time_ms)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
       )
-      .bind(requestId, cleanApaar, verifier_name, purpose, isConsentGranted ? 'VERIFIED' : 'PENDING_CONSENT')
+      .bind(
+        reqId,
+        cleanApaar,
+        verifier,
+        reqPurpose,
+        isConsentGranted ? 'GRANTED' : 'PENDING_BIOMETRIC',
+        new Date().toISOString().replace('T', ' ').substring(0, 19),
+        elapsedMs
+      )
       .run();
     auditLogged = true;
   } catch {
     // Non-fatal audit log failure
   }
 
-  // 9. Apply DPDP PII Masking
-  const finalStudent: Partial<Student> = isConsentGranted
-    ? student
+  // 9. Apply DPDP PII Masking while preserving both camelCase (verifier UI) and snake_case (domain types)
+  const finalStudent = isConsentGranted
+    ? {
+        apaar_id: student.apaar_id,
+        fullName: student.full_name,
+        full_name: student.full_name,
+        dob: isPredicateMode ? 'REDACTED (Zero-Knowledge Mode)' : student.dob,
+        gender: student.gender,
+        email: isPredicateMode ? 'REDACTED (Zero-Knowledge Mode)' : student.email,
+        phone: isPredicateMode ? 'REDACTED (Zero-Knowledge Mode)' : student.phone,
+        hasPasskeyBiometric: Boolean(student.passkey_credential_id),
+        dpdp_consent_status: student.dpdp_consent_status,
+      }
     : {
         apaar_id: maskApaar(student.apaar_id),
+        fullName: maskName(student.full_name),
         full_name: maskName(student.full_name),
         dob: '****-**-**',
         gender: student.gender,
         email: maskEmail(student.email),
         phone: maskPhone(student.phone),
+        hasPasskeyBiometric: Boolean(student.passkey_credential_id),
         dpdp_consent_status: student.dpdp_consent_status,
+        notice: 'DPDP Act 2023 Compliance: Full academic and biometric record requires explicit student Passkey authorization.',
       };
 
   return {
     success: true,
+    requestId: reqId,
+    responseTimeMs: elapsedMs,
+    apaar_id: cleanApaar,
+    consentStatus: hasValidConsentToken ? 'GRANTED_VIA_TOKEN' : student.dpdp_consent_status,
+    consentGranted: isConsentGranted,
+    predicateMode: isPredicateMode,
+    predicateVerified: predicateProof ? Boolean(predicateProof.predicateVerified) : undefined,
+    redactedCgpa: predicateProof ? String(predicateProof.redactedCgpa) : undefined,
+    predicateProof,
     student: finalStudent,
     admissions: enrichedAdmissions,
-    degrees: verifiedDegrees,
+    enrollments: enrichedAdmissions,
+    degrees: enrichedDegrees,
+    integrityAudit: {
+      totalDegrees: enrichedDegrees.length,
+      revokedDegrees: enrichedDegrees.filter((d: any) => d.status === 'REVOKED').length,
+      hasDuplicateEnrollment: enrichedAdmissions.some((a) => a.is_duplicate === 1),
+      cryptographicProofVerified: enrichedDegrees.length > 0 && enrichedDegrees.every((d: any) => d.signatureValid),
+      unsignedOrInvalidDegrees: enrichedDegrees.filter((d: any) => !d.signatureValid).map((d: any) => d.id),
+    },
     predicate_result: predicateResult,
-    qr_svg: qrSvg,
+    qr_svg: topQrSvg,
     vc_payload: vcPayload,
     audit_logged: auditLogged,
     dpdp_consent_applied: !isConsentGranted,

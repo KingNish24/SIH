@@ -8,10 +8,10 @@ const t = getUIDictionary(lang);
 const url = Astro.url;
 const queryApaar = url.searchParams.get('apaar')?.trim() || '';
 const queryInst = url.searchParams.get('institution')?.trim() || '';
-const initialApaar = /^\d{12}$/.test(queryApaar) ? queryApaar : '412398471029';
+const initialApaar = /^\d{12}$/.test(queryApaar) ? queryApaar : '';
 const initialOrg = queryInst
   ? `Institutional Audit (${queryInst}) — National Recruitment / Admissions`
-  : 'Union Public Service Commission (UPSC) / Corporate Verification Gateway';
+  : '';
 ---
 
 <Layout
@@ -88,7 +88,7 @@ const initialOrg = queryInst
       <form id="verifierQueryForm" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
         <div class="md:col-span-4">
           <label for="queryApaar" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-            {t.verifier_apaar_label} *
+            {t.verifier_apaar_label}
           </label>
           <input
             type="text"
@@ -163,6 +163,15 @@ const initialOrg = queryInst
         </div>
 
         <div id="zkPredicateControls" class="flex flex-wrap items-center gap-3 text-xs pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-200">
+          <button
+            type="button"
+            id="zkPresetCutoffBtn"
+            class="px-2 py-1 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 font-mono font-semibold text-[11px] transition-colors cursor-pointer"
+            data-cgpa="7.5"
+            data-year="2022"
+          >
+            Preset: CGPA &ge; 7.5 &bull; 2022
+          </button>
           <div class="flex items-center gap-1.5">
             <label for="zkMinCgpa" class="font-semibold text-slate-700 whitespace-nowrap">Min CGPA &ge;</label>
             <input
@@ -171,7 +180,7 @@ const initialOrg = queryInst
               step="0.05"
               min="4.0"
               max="10.0"
-              value="7.5"
+              placeholder="e.g. 7.5"
               class="w-20 h-8 bg-white border border-slate-300 rounded px-2 font-mono font-bold text-slate-900 text-xs"
             />
           </div>
@@ -183,7 +192,7 @@ const initialOrg = queryInst
               step="1"
               min="2000"
               max="2030"
-              value="2022"
+              placeholder="e.g. 2022"
               class="w-20 h-8 bg-white border border-slate-300 rounded px-2 font-mono font-bold text-slate-900 text-xs"
             />
           </div>
@@ -209,6 +218,7 @@ const initialOrg = queryInst
             type="button"
             class="demoApaarBtn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-medium text-xs border border-emerald-300 transition-colors cursor-pointer"
             data-apaar="412398471029"
+            data-org="Union Public Service Commission (UPSC) / Corporate Verification Gateway"
           >
             <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
             <span class="font-mono font-bold">412398471029</span>
@@ -218,6 +228,7 @@ const initialOrg = queryInst
             type="button"
             class="demoApaarBtn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 hover:bg-red-100 text-red-900 font-medium text-xs border border-red-300 transition-colors cursor-pointer"
             data-apaar="601928374819"
+            data-org="AICTE Vigilance & Anti-Forgery Cell"
           >
             <span class="w-2 h-2 rounded-full bg-red-600"></span>
             <span class="font-mono font-bold">601928374819</span>
@@ -227,6 +238,7 @@ const initialOrg = queryInst
             type="button"
             class="demoApaarBtn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-900 font-medium text-xs border border-amber-300 transition-colors cursor-pointer"
             data-apaar="739284019283"
+            data-org="National Scholarship Portal (NSP) Nodal Cell"
           >
             <span class="w-2 h-2 rounded-full bg-amber-600"></span>
             <span class="font-mono font-bold">739284019283</span>
@@ -249,7 +261,7 @@ const initialOrg = queryInst
     </div>
 
     <!-- Official Digital Credential Verification Certificate Card -->
-    <div id="resultContainer" class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+    <div id="resultContainer" aria-live="polite" class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
       <!-- Top Certificate Banner -->
       <div id="resBanner" class="bg-[#0F2942] text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-[#FF9933]">
         <div class="flex items-center gap-3">
@@ -261,13 +273,13 @@ const initialOrg = queryInst
               Official Digital Credential Verification Certificate &bull; NAD / DigiLocker Standard
             </div>
             <h2 id="resTitle" class="text-base sm:text-lg font-bold text-white mt-0.5">
-              Verifying Academic Record against Cloudflare D1 Registry...
+              Ready to Verify Academic Credential Against Cloudflare D1 Registry
             </h2>
           </div>
         </div>
         <div class="flex items-center gap-2 self-start sm:self-center">
           <span id="resBadge" class="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider px-3 py-1.5 rounded bg-emerald-500/20 text-emerald-200 border border-emerald-400/40">
-            <span>QUERYING LEDGER...</span>
+            <span>AWAITING QUERY</span>
           </span>
         </div>
       </div>
@@ -277,25 +289,22 @@ const initialOrg = queryInst
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 text-xs">
           <div class="p-3.5 bg-slate-50 rounded-md border border-slate-200">
             <div class="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Candidate Name</div>
-            <div id="resName" class="font-bold text-slate-900 text-sm mt-1 truncate">Sneha S.</div>
-            <div id="resConsentPill" class="text-[11px] text-emerald-700 font-medium mt-0.5 flex items-center gap-1">
-              <span>DPDP Consent: Granted</span>
+            <div id="resName" class="font-bold text-slate-900 text-sm mt-1 truncate">Select or Enter Candidate</div>
+            <div id="resConsentPill" class="text-[11px] text-slate-600 font-medium mt-0.5 flex items-center gap-1">
+              <span>DPDP Consent: Pending Lookup</span>
             </div>
           </div>
 
           <div class="p-3.5 bg-slate-50 rounded-md border border-slate-200">
             <div class="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">12-Digit APAAR &amp; Student ID</div>
-            <div id="resApaar" class="font-bold font-mono text-slate-900 text-sm mt-1">XXXX-XXXX-{initialApaar.slice(-4)}</div>
-            <div id="resStudentRollId" class="text-[11px] font-mono font-bold text-[#1E40AF] mt-0.5">Roll ID: STU-TCA-2020-{initialApaar.slice(-4)}</div>
+            <div id="resApaar" class="font-bold font-mono text-slate-900 text-sm mt-1">{initialApaar ? `XXXX-XXXX-${initialApaar.slice(-4)}` : 'XXXX-XXXX-••••'}</div>
+            <div id="resStudentRollId" class="text-[11px] font-mono font-bold text-[#1E40AF] mt-0.5">{initialApaar ? `Roll ID: STU-TCA-2020-${initialApaar.slice(-4)}` : 'Roll ID: Awaiting Query'}</div>
           </div>
 
           <div class="p-3.5 bg-slate-50 rounded-md border border-slate-200">
             <div class="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Cryptographic Proof</div>
-            <div id="resCryptoStatus" class="font-bold text-emerald-700 text-sm mt-1 flex items-center gap-1">
-              <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-              </svg>
-              <span>{t.verifier_tamper_verified}</span>
+            <div id="resCryptoStatus" class="font-bold text-slate-700 text-sm mt-1 flex items-center gap-1">
+              <span>Awaiting Ed25519 Check</span>
             </div>
             <div id="resKeyId" class="text-[11px] font-mono text-slate-500 mt-0.5 truncate">Key ID: aicte-nad-2026</div>
             <span id="i18nTamperVerified" class="hidden">{t.verifier_tamper_verified}</span>
@@ -304,7 +313,7 @@ const initialOrg = queryInst
 
           <div class="p-3.5 bg-slate-50 rounded-md border border-slate-200">
             <div class="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Audit Request ID</div>
-            <div id="resRequestId" class="font-bold font-mono text-slate-900 text-xs mt-1 truncate">REQ-INITIALIZING</div>
+            <div id="resRequestId" class="font-bold font-mono text-slate-900 text-xs mt-1 truncate">REQ-READY</div>
             <div class="text-[11px] text-slate-500 mt-0.5">Logged in D1 Audit Trail</div>
           </div>
 
@@ -320,9 +329,8 @@ const initialOrg = queryInst
 
         <!-- Degree & Enrollment Certificate Body -->
         <div id="resDegrees" class="space-y-4">
-          <div class="p-5 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-600 flex items-center gap-3">
-            <span class="animate-spin inline-block w-4 h-4 border-2 border-[#0F2942] border-t-transparent rounded-full"></span>
-            <span>Performing Ed25519 cryptographic signature verification and D1 revocation check...</span>
+          <div class="p-5 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-600 flex items-center justify-between gap-3">
+            <span>Enter a 12-digit APAAR ID above or click one of the <strong>Quick-Test Registry Scenarios</strong> to verify Ed25519 cryptographic signatures and D1 revocation status in real time.</span>
           </div>
         </div>
 
@@ -492,7 +500,16 @@ const initialOrg = queryInst
                 <span id="vlmProgressPct" class="font-mono font-bold text-[#1E40AF]">100%</span>
               </div>
               <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                <div id="vlmProgressBar" class="h-full bg-[#1E40AF] transition-all duration-200" style="width: 100%"></div>
+                <div
+                  id="vlmProgressBar"
+                  role="progressbar"
+                  aria-valuenow="100"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  aria-label="VLM Model Execution Progress"
+                  class="h-full bg-[#1E40AF] transition-all duration-200"
+                  style="width: 100%"
+                ></div>
               </div>
               <div id="vlmFileDetail" class="font-mono text-[11px] text-slate-500 truncate">
                 Device Backend: WebGPU / WASM Auto-Detect &bull; Strict JSON Schema Constrained Generation
@@ -559,12 +576,13 @@ const initialOrg = queryInst
 
           <div class="overflow-x-auto border border-slate-200 rounded-lg">
             <table class="w-full text-left border-collapse text-xs">
+              <caption class="sr-only">Field-by-Field Forensic Comparison Table (Document vs. Central D1 Ed25519 Ledger)</caption>
               <thead>
                 <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 uppercase text-[11px] font-bold tracking-wider">
-                  <th class="py-3 px-4">Credential Attribute</th>
-                  <th class="py-3 px-4">Extracted from Uploaded Document (LFM2.5-VL Structured Output)</th>
-                  <th class="py-3 px-4">Central D1 Ledger (Ed25519 Signed Truth)</th>
-                  <th class="py-3 px-4 text-right">Forensic Verdict</th>
+                  <th scope="col" class="py-3 px-4">Credential Attribute</th>
+                  <th scope="col" class="py-3 px-4">Extracted from Uploaded Document (LFM2.5-VL Structured Output)</th>
+                  <th scope="col" class="py-3 px-4">Central D1 Ledger (Ed25519 Signed Truth)</th>
+                  <th scope="col" class="py-3 px-4 text-right">Forensic Verdict</th>
                 </tr>
               </thead>
               <tbody id="forensicComparisonTbody" class="divide-y divide-slate-200 bg-white">
@@ -798,19 +816,49 @@ const initialOrg = queryInst
 
     // Re-trigger verification when Zero-Knowledge Predicate toggle changes
     zkPredicateToggle?.addEventListener('change', () => {
-      isInitialAutoLoad = false;
-      form?.dispatchEvent(new Event('submit'));
+      if (zkPredicateToggle.checked) {
+        if (zkMinCgpa && !zkMinCgpa.value) zkMinCgpa.value = '7.5';
+        if (zkMinYear && !zkMinYear.value) zkMinYear.value = '2022';
+      }
+      const input = document.getElementById('queryApaar') as HTMLInputElement | null;
+      if (input && /^\d{12}$/.test(input.value.trim())) {
+        isInitialAutoLoad = false;
+        form?.dispatchEvent(new Event('submit'));
+      }
+    });
+
+    document.getElementById('zkPresetCutoffBtn')?.addEventListener('click', () => {
+      if (zkMinCgpa) zkMinCgpa.value = '7.5';
+      if (zkMinYear) zkMinYear.value = '2022';
+      if (zkPredicateToggle) zkPredicateToggle.checked = true;
+      (window as any).showToast?.('Zero-Knowledge Predicate cutoff set: CGPA >= 7.5 & Graduation Year >= 2022.', 'info');
+    });
+
+    document.getElementById('scanQrBtn')?.addEventListener('click', () => {
+      const offlineSec = document.getElementById('offlineVerifierSection');
+      const offlineInput = document.getElementById('offlinePayloadInput') as HTMLTextAreaElement | null;
+      if (offlineSec) {
+        offlineSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      if (offlineInput) {
+        if (!offlineInput.value && activeOfflineQrPayload) {
+          offlineInput.value = JSON.stringify(activeOfflineQrPayload, null, 2);
+        }
+        offlineInput.focus();
+      }
+      (window as any).showToast?.('Scrolled to Offline W3C Verifiable Credential QR / Payload Verifier.', 'info');
     });
 
     document.querySelectorAll('.demoApaarBtn').forEach((btn) => {
       btn.addEventListener('click', () => {
         isInitialAutoLoad = false;
         const input = document.getElementById('queryApaar') as HTMLInputElement | null;
+        const orgInput = document.getElementById('verifierOrg') as HTMLInputElement | null;
         const apaar = (btn as HTMLElement).dataset.apaar || '';
-        if (input) {
-          input.value = apaar;
-          form?.dispatchEvent(new Event('submit'));
-        }
+        const org = (btn as HTMLElement).dataset.org || 'Union Public Service Commission (UPSC) / Corporate Verification Gateway';
+        if (input) input.value = apaar;
+        if (orgInput && !orgInput.value.trim()) orgInput.value = org;
+        form?.dispatchEvent(new Event('submit'));
       });
     });
 
@@ -820,18 +868,22 @@ const initialOrg = queryInst
 
     if (queryApaarParam && /^\d{12}$/.test(queryApaarParam.trim())) {
       const input = document.getElementById('queryApaar') as HTMLInputElement | null;
+      const orgInput = document.getElementById('verifierOrg') as HTMLInputElement | null;
       if (input) input.value = queryApaarParam.trim();
-    }
-    if (queryInstParam && queryInstParam.trim()) {
+      if (orgInput && !orgInput.value.trim()) {
+        orgInput.value = queryInstParam?.trim()
+          ? `Institutional Audit (${queryInstParam.trim()}) — National Recruitment / Admissions`
+          : 'Union Public Service Commission (UPSC) / Corporate Verification Gateway';
+      }
+      setTimeout(() => {
+        form?.dispatchEvent(new Event('submit'));
+      }, 100);
+    } else if (queryInstParam && queryInstParam.trim()) {
       const orgInput = document.getElementById('verifierOrg') as HTMLInputElement | null;
       if (orgInput) {
         orgInput.value = `Institutional Audit (${queryInstParam.trim()}) — National Recruitment / Admissions`;
       }
     }
-
-    setTimeout(() => {
-      form?.dispatchEvent(new Event('submit'));
-    }, 100);
 
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -973,12 +1025,14 @@ const initialOrg = queryInst
             }
           }
 
+          const tamperVerifiedText = document.getElementById('i18nTamperVerified')?.textContent || 'Ed25519 Signature Verified';
+          const tamperFailedText = document.getElementById('i18nTamperFailed')?.textContent || 'Signature Unverified / Legacy';
           if (resKeyId) resKeyId.textContent = 'Key ID: ' + kid;
           if (resCryptoStatus) {
             if (sigValid) {
-              resCryptoStatus.innerHTML = `<span class="text-emerald-700 inline-flex items-center gap-1">${SVG_CHECK} <span>Ed25519 Signature Verified</span></span>`;
+              resCryptoStatus.innerHTML = `<span class="text-emerald-700 inline-flex items-center gap-1">${SVG_CHECK} <span>${tamperVerifiedText}</span></span>`;
             } else {
-              resCryptoStatus.innerHTML = `<span class="text-red-700 inline-flex items-center gap-1">${SVG_ALERT} <span>Signature Unverified / Legacy</span></span>`;
+              resCryptoStatus.innerHTML = `<span class="text-red-700 inline-flex items-center gap-1">${SVG_ALERT} <span>${tamperFailedText}</span></span>`;
             }
           }
 
@@ -1685,8 +1739,12 @@ const initialOrg = queryInst
         if (statusLabel) {
           statusLabel.innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-600 animate-ping"></span><span>${msg}</span>`;
         }
+        const clampedPct = Math.max(4, Math.min(100, pct));
         if (progressPct) progressPct.textContent = `${Math.round(pct)}%`;
-        if (progressBar) progressBar.style.width = `${Math.max(4, Math.min(100, pct))}%`;
+        if (progressBar) {
+          progressBar.style.width = `${clampedPct}%`;
+          progressBar.setAttribute('aria-valuenow', String(Math.round(clampedPct)));
+        }
         if (fileDetail) fileDetail.textContent = detail;
       };
 

@@ -54,8 +54,8 @@ const policyReportRows = institutions.map((i) => ({
   compliance_status: i.current_enrollment > i.sanctioned_intake ? 'OVERRUN_FLAGGED' : 'COMPLIANT',
 }));
 
-// Duplicates & Cross-Council / NSP Scholarship Surveillance
-const duplicatesMap = new Map<string, any[]>();
+// Real D1 Duplicates & Cross-Council / NSP Scholarship Surveillance (No Synthetic Mock Injection)
+const duplicatesMap = new Map<string, Admission[]>();
 for (const a of admissions) {
   if (!duplicatesMap.has(a.apaar_id)) {
     duplicatesMap.set(a.apaar_id, []);
@@ -88,23 +88,25 @@ for (const [apaar, list] of duplicatesMap.entries()) {
   const distinctInsts = new Set(list.map((l) => l.institution_id));
   if (distinctInsts.size > 1) {
     const student = students.find((s) => s.apaar_id === apaar);
-    const isFirstAnomaly = apaar === '739284019283';
+    const hasFlaggedDuplicate = list.some((l) => Boolean(l.is_duplicate));
     duplicateStudents.push({
       apaar_id: apaar,
       name: student?.full_name || 'Student',
       email: student?.email || '',
-      councils: isFirstAnomaly
+      councils: hasFlaggedDuplicate
         ? ['AICTE Technical', 'UGC General Degree', 'NSP Portal']
-        : ['AICTE Technical', 'PCI Pharmacy Council', 'NSP Portal'],
-      has_nsp_overlap: true,
-      nsp_scheme_name: isFirstAnomaly
-        ? 'AICTE Pragati / Post-Matric Central Sector Scholarship (NSP-2024-88219)'
-        : 'State Post-Matric Technical Tuition Fee Reimbursement (NSP-2024-44102)',
-      nsp_disbursement_status: 'NSP Ghost Beneficiary Risk: Blocked',
-      nsp_amount_inr: isFirstAnomaly ? 'INR 50,000 / Yr (PFMS Hold)' : 'INR 42,500 / Yr (PFMS Hold)',
+        : ['AICTE Technical', 'Affiliated University'],
+      has_nsp_overlap: hasFlaggedDuplicate,
+      nsp_scheme_name: hasFlaggedDuplicate
+        ? 'AICTE Pragati / Post-Matric Central Sector Scholarship (PFMS Hold)'
+        : 'Dual Seat Reservation (No Active NSP DBT Claim)',
+      nsp_disbursement_status: hasFlaggedDuplicate
+        ? 'NSP Ghost Beneficiary Risk: Blocked'
+        : 'Concurrent Seat Lock: Flagged',
+      nsp_amount_inr: hasFlaggedDuplicate ? 'INR 50,000 / Yr (PFMS Hold)' : 'INR 0 (Seat Audit)',
       colleges: list.map((l, idx) => {
         const inst = institutions.find((i) => i.id === l.institution_id);
-        const councilTag = idx === 0 ? 'AICTE Technical' : isFirstAnomaly ? 'UGC General Degree' : 'PCI Pharmacy';
+        const councilTag = idx === 0 ? 'AICTE Technical' : 'Concurrent Campus';
         return {
           id: l.institution_id,
           name: inst?.name || l.institution_id,
@@ -119,39 +121,7 @@ for (const [apaar, list] of duplicatesMap.entries()) {
   }
 }
 
-// Add an additional cross-council PCI / UGC surveillance record if fewer than 3 exist
-if (duplicateStudents.length < 3) {
-  duplicateStudents.push({
-    apaar_id: '601928374819',
-    name: 'Vikram Malhotra',
-    email: 'vikram.m@example.edu.in',
-    councils: ['AICTE Technical', 'PCI Pharmacy'],
-    has_nsp_overlap: false,
-    nsp_scheme_name: 'No Active Central NSP Claim Found (Dual Seat Reservation Only)',
-    nsp_disbursement_status: 'Dual Seat Lock: Flagged',
-    nsp_amount_inr: 'INR 0 (No DBT Claim)',
-    colleges: [
-      {
-        id: 'INST-002',
-        name: 'Technical College B (Metro Polytechnic & College)',
-        code: 'TCB-2081',
-        council_tag: 'AICTE Technical',
-        program: 'B.Tech Civil Engg',
-        batch: 2020,
-        date: '2020-08-15',
-      },
-      {
-        id: 'INST-PCI-409',
-        name: 'National Institute of Pharmaceutical Sciences',
-        code: 'PCI-4092',
-        council_tag: 'PCI Pharmacy',
-        program: 'B.Pharm Regular',
-        batch: 2020,
-        date: '2020-08-29',
-      },
-    ],
-  });
-}
+const sampleSearchCodes = institutions.slice(0, 2).map((i) => i.code);
 ---
 
 <Layout title={`SIH 2026 | ${t.aicte_page_title}`} activeRole="aicte" lang={lang} breadcrumb={t.crumb_aicte}>
@@ -160,7 +130,7 @@ if (duplicateStudents.length < 3) {
     <div class="border-b border-slate-200 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
         <div class="text-xs font-bold text-[#1E40AF] uppercase tracking-wider mb-1">
-          Regulatory Surveillance Module &bull; Code REG-02
+          {t.crumb_aicte}
         </div>
         <h1 class="text-xl sm:text-2xl font-bold text-[#0F2942]">
           {t.aicte_page_title}
@@ -174,9 +144,9 @@ if (duplicateStudents.length < 3) {
         <button
           type="button"
           id="downloadPolicyCsvBtn"
-          class="h-10 px-4 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white text-xs sm:text-sm font-semibold shadow-sm transition-colors inline-flex items-center gap-2"
+          class="h-10 px-4 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white text-xs sm:text-sm font-semibold shadow-sm transition-colors inline-flex items-center gap-2 cursor-pointer"
         >
-          <svg class="w-4 h-4 text-[#FF9933] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-4 h-4 text-[#FF9933] shrink-0" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
           <span>{t.aicte_export_btn}</span>
@@ -186,59 +156,63 @@ if (duplicateStudents.length < 3) {
           type="button"
           id="printRegulatoryDossierBtn"
           onclick="window.print()"
-          class="h-10 px-4 rounded bg-slate-800 hover:bg-slate-900 text-white text-xs sm:text-sm font-semibold shadow-sm transition-colors inline-flex items-center gap-2"
+          class="h-10 px-4 rounded bg-slate-800 hover:bg-slate-900 text-white text-xs sm:text-sm font-semibold shadow-sm transition-colors inline-flex items-center gap-2 cursor-pointer"
         >
-          <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-4 h-4 text-emerald-400 shrink-0" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
           </svg>
-          <span>Print Regulatory Inspection Dossier (PDF)</span>
+          <span>{t.verifier_print_btn}</span>
         </button>
 
         <button
           type="button"
           id="refreshBtn"
-          onclick="window.location.reload()"
-          class="h-10 px-4 rounded bg-white hover:bg-slate-50 border border-slate-300 text-xs sm:text-sm font-semibold text-slate-700 shadow-sm transition-colors inline-flex items-center gap-2"
+          class="h-10 px-4 rounded bg-white hover:bg-slate-50 border border-slate-300 text-xs sm:text-sm font-semibold text-slate-700 shadow-sm transition-colors inline-flex items-center gap-2 cursor-pointer"
         >
-          <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-4 h-4 text-slate-500" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          Refresh Live Registry Scan
+          <span>Sync D1 (/api/aicte/anomalies)</span>
         </button>
       </div>
     </div>
 
     <!-- Urgent Overrun Alert Banner -->
     {overrunColleges.length > 0 && (
-      <div class="bg-red-50 border-l-4 border-red-600 p-4 sm:p-5 rounded-r shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div
+        role="alert"
+        aria-live="polite"
+        class="bg-red-50 border-l-4 border-red-600 p-4 sm:p-5 rounded-r shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+      >
         <div>
           <div class="flex flex-wrap items-center gap-2">
             <span class="font-bold text-red-900 text-sm sm:text-base">
-              Statutory Quota Overrun Detected: {overrunColleges[0].name}
+              {t.statusOverrun}: {overrunColleges[0].name} ({overrunColleges[0].code})
             </span>
             <span class="text-[11px] font-bold px-2.5 py-0.5 rounded bg-red-200 text-red-900 font-mono">
               PRIORITY #1 AUDIT
             </span>
           </div>
           <p class="text-xs sm:text-sm text-red-800 mt-1 leading-relaxed">
-            Reported enrollment of <strong>{overrunColleges[0].current_enrollment} candidates</strong> exceeds statutory sanctioned capacity of <strong>{overrunColleges[0].sanctioned_intake} seats</strong> (+{overrunColleges[0].excess} unapproved admissions).
+            <strong>{overrunColleges[0].current_enrollment} / {overrunColleges[0].sanctioned_intake}</strong> (+{overrunColleges[0].excess} {t.statusOverrun}).
           </p>
         </div>
         <button
           type="button"
-          onclick={`window.showToast('Formal AICTE Show-Cause Notice dispatched to ${overrunColleges[0].code} governing body under Approval Process Handbook 2024-27 Clause 7.14.', 'warning')`}
-          class="shrink-0 h-10 bg-red-700 hover:bg-red-800 text-white font-semibold text-xs sm:text-sm px-4 rounded transition-colors shadow-sm"
+          data-notice-code={overrunColleges[0].code}
+          id="topShowCauseBtn"
+          class="shrink-0 h-10 bg-red-700 hover:bg-red-800 text-white font-semibold text-xs sm:text-sm px-4 rounded transition-colors shadow-sm cursor-pointer"
         >
-          Dispatch Show-Cause Notice
+          Show-Cause Notice ({overrunColleges[0].code})
         </button>
       </div>
     )}
 
-    <!-- Risk Summary KPI Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+    <!-- Risk Summary KPI Grid (Live D1 Telemetry) -->
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4" role="region" aria-label={t.aicte_page_title} aria-live="polite">
       <div class="bg-white p-5 rounded border border-slate-200 shadow-sm">
         <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.aicte_kpi_total_colleges}</div>
-        <div class="text-2xl font-bold text-[#0F2942] mt-1.5 font-mono">
+        <div id="kpiTotalInst" class="text-2xl font-bold text-[#0F2942] mt-1.5 font-mono">
           {institutions.length}
         </div>
         <div class="text-xs text-slate-600 mt-1">{t.crumb_aicte}</div>
@@ -246,33 +220,33 @@ if (duplicateStudents.length < 3) {
 
       <div class="bg-white p-5 rounded border border-slate-200 shadow-sm">
         <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.aicte_kpi_overrun_count}</div>
-        <div class="text-2xl font-bold text-red-600 mt-1.5 font-mono">
-          {overrunColleges.length} {overrunColleges.length === 1 ? 'Institution' : 'Institutions'}
+        <div id="kpiOverrunCount" class="text-2xl font-bold text-red-600 mt-1.5 font-mono">
+          {overrunColleges.length}
         </div>
-        <div class="text-xs text-slate-600 mt-1">Exceeding Sanctioned Seat Intake Cap</div>
+        <div class="text-xs text-slate-600 mt-1">{t.statusOverrun}</div>
       </div>
 
       <div class="bg-white p-5 rounded border border-slate-200 shadow-sm">
-        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Cross-Council &amp; NSP Anomalies</div>
-        <div class="text-2xl font-bold text-amber-600 mt-1.5 font-mono">
-          {duplicateStudents.length} {duplicateStudents.length === 1 ? 'Candidate' : 'Candidates'}
+        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.aicte_duplicate_heading}</div>
+        <div id="kpiDuplicateCount" class="text-2xl font-bold text-amber-600 mt-1.5 font-mono">
+          {duplicateStudents.length}
         </div>
-        <div class="text-xs text-slate-600 mt-1">AICTE / UGC / PCI / NSP Duplicate Surveillance</div>
+        <div class="text-xs text-slate-600 mt-1">APAAR Concurrent Enrollments</div>
       </div>
 
       <div class="bg-white p-5 rounded border border-slate-200 shadow-sm">
         <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.aicte_kpi_compliance_index}</div>
         <div class="flex items-baseline gap-2 mt-1.5">
           <span class="text-2xl font-bold text-emerald-700 font-mono">{complianceIndex}%</span>
-          <span class="text-xs font-mono text-slate-500">({compliantCount}/{institutions.length} Compliant)</span>
+          <span class="text-xs font-mono text-slate-500">({compliantCount}/{institutions.length})</span>
         </div>
         <div class="text-xs text-slate-600 mt-1">
-          {t.aicte_kpi_total_enrollment}: <strong class="font-mono text-slate-800">{totalMonitoredEnrollment} / {totalSanctionedIntake}</strong> seats
+          {t.aicte_kpi_total_enrollment}: <strong class="font-mono text-slate-800">{totalMonitoredEnrollment} / {totalSanctionedIntake}</strong>
         </div>
       </div>
     </div>
 
-    <!-- Statutory Policy, Accreditation (NBA/NAAC) & Category Enrolment Summary (Key Requirement #2 & #9) -->
+    <!-- Statutory Policy, Accreditation (NBA/NAAC) & Category Enrolment Summary -->
     <div
       id="policyAccreditationSection"
       data-policy-rows={JSON.stringify(policyReportRows)}
@@ -282,20 +256,17 @@ if (duplicateStudents.length < 3) {
         <div>
           <div class="flex flex-wrap items-center gap-2 mb-1">
             <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider bg-blue-50 text-blue-900 border border-blue-200 px-2.5 py-0.5 rounded">
-              <svg class="w-3.5 h-3.5 text-blue-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-3.5 h-3.5 text-blue-700 shrink-0" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <span>National Policy-Making &amp; NBA / NAAC Accreditation Feed</span>
-            </span>
-            <span class="text-[11px] font-mono font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded">
-              APH 2024–27 Statutory Category Telemetry
+              <span>NBA / NAAC &amp; {t.heroBadge}</span>
             </span>
           </div>
           <h2 class="text-sm sm:text-base font-bold text-[#0F2942]">
-            Statutory Policy, Accreditation (NBA/NAAC) &amp; Category Enrolment Summary
+            {t.inst_cat_heading}
           </h2>
           <p class="text-xs text-slate-600 mt-0.5">
-            Aggregated national intake and category-wise admission distribution across monitored campuses for AICTE policy planning, NBA program accreditation, and NAAC SSR verification.
+            {t.s12_body}
           </p>
         </div>
       </div>
@@ -304,37 +275,37 @@ if (duplicateStudents.length < 3) {
         <div class="p-3.5 rounded bg-slate-50 border border-slate-200">
           <div class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">{t.aicte_kpi_total_sanctioned}</div>
           <div class="text-lg sm:text-xl font-bold font-mono text-[#0F2942] mt-1">{totalSanctionedIntake}</div>
-          <div class="text-[10px] text-slate-500 mt-0.5">National Sanctioned Base</div>
+          <div class="text-[10px] text-slate-500 mt-0.5">60 / 120 / 180 / 240</div>
         </div>
 
         <div class="p-3.5 rounded bg-slate-50 border border-slate-200">
           <div class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">{t.aicte_kpi_total_enrollment}</div>
           <div class="text-lg sm:text-xl font-bold font-mono text-emerald-700 mt-1">{totalMonitoredEnrollment}</div>
-          <div class="text-[10px] text-slate-500 mt-0.5">APAAR Verified Students</div>
+          <div class="text-[10px] text-slate-500 mt-0.5">APAAR Verified</div>
         </div>
 
         <div class="p-3.5 rounded bg-blue-50/50 border border-blue-200">
-          <div class="text-[10px] font-bold uppercase text-blue-800 tracking-wider">Supernumerary Seats</div>
+          <div class="text-[10px] font-bold uppercase text-blue-800 tracking-wider">{t.inst_cat_supernumerary}</div>
           <div class="text-lg sm:text-xl font-bold font-mono text-blue-900 mt-1">{totalSupernumerarySeats}</div>
           <div class="text-[10px] text-blue-700 mt-0.5">TFW / EWS / PMSSS</div>
         </div>
 
         <div class="p-3.5 rounded bg-amber-50/50 border border-amber-200">
-          <div class="text-[10px] font-bold uppercase text-amber-900 tracking-wider">NRI Category</div>
+          <div class="text-[10px] font-bold uppercase text-amber-900 tracking-wider">{t.inst_cat_nri}</div>
           <div class="text-lg sm:text-xl font-bold font-mono text-amber-900 mt-1">{totalNriSeats}</div>
-          <div class="text-[10px] text-amber-800 mt-0.5">5% Approved NRI Cap</div>
+          <div class="text-[10px] text-amber-800 mt-0.5">Max 5% Cap</div>
         </div>
 
         <div class="p-3.5 rounded bg-indigo-50/50 border border-indigo-200">
-          <div class="text-[10px] font-bold uppercase text-indigo-900 tracking-wider">OCI Status</div>
+          <div class="text-[10px] font-bold uppercase text-indigo-900 tracking-wider">{t.inst_cat_oci}</div>
           <div class="text-lg sm:text-xl font-bold font-mono text-indigo-900 mt-1">{totalOciSeats}</div>
-          <div class="text-[10px] text-indigo-800 mt-0.5">Overseas Citizen of India</div>
+          <div class="text-[10px] text-indigo-800 mt-0.5">Max 2% Cap</div>
         </div>
 
         <div class="p-3.5 rounded bg-emerald-50/50 border border-emerald-200">
-          <div class="text-[10px] font-bold uppercase text-emerald-900 tracking-wider">Foreign National (FN)</div>
+          <div class="text-[10px] font-bold uppercase text-emerald-900 tracking-wider">{t.inst_cat_fn}</div>
           <div class="text-lg sm:text-xl font-bold font-mono text-emerald-900 mt-1">{totalFnSeats}</div>
-          <div class="text-[10px] text-emerald-800 mt-0.5">FN / PIO / Gulf Quota</div>
+          <div class="text-[10px] text-emerald-800 mt-0.5">PIO / FN (3%)</div>
         </div>
       </div>
     </div>
@@ -347,47 +318,69 @@ if (duplicateStudents.length < 3) {
             {t.aicte_surveillance_heading}
           </h2>
           <p class="text-xs text-slate-500 mt-0.5">
-            Live seat utilization, statutory variance, and automated audit risk scoring across affiliated institutions.
+            {t.s10_body}
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-2.5">
+          <!-- Example Quick-Search Chips (No prefilling) -->
+          <div class="flex items-center gap-1.5 text-xs">
+            {sampleSearchCodes.map((code) => (
+              <button
+                type="button"
+                data-sample-aicte-code={code}
+                class="font-mono font-bold text-[#0F2942] bg-slate-100 hover:bg-blue-50 border border-slate-300 px-2 py-1 rounded text-[11px] transition-colors cursor-pointer"
+                title={`Filter by ${code}`}
+              >
+                {code}
+              </button>
+            ))}
+          </div>
+
+          <label for="aicteSearchInput" class="sr-only">{t.aicte_search_placeholder}</label>
           <input
             type="text"
             id="aicteSearchInput"
             placeholder={t.aicte_search_placeholder}
             class="h-9 px-3 text-xs bg-slate-50 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-600 w-48 sm:w-64"
           />
-          <select id="stateFilter" class="h-9 px-2 text-xs bg-slate-50 border border-slate-300 rounded text-slate-700">
+
+          <label for="stateFilter" class="sr-only">{t.aicte_col_state}</label>
+          <select id="stateFilter" aria-label={t.aicte_col_state} class="h-9 px-2 text-xs bg-slate-50 border border-slate-300 rounded text-slate-700">
             <option value="">{t.aicte_all_states}</option>
             {Array.from(new Set(institutions.map(i => i.state))).map(st => (
               <option value={st}>{st}</option>
             ))}
           </select>
-          <select id="statusFilter" class="h-9 px-2 text-xs bg-slate-50 border border-slate-300 rounded text-slate-700">
+
+          <label for="statusFilter" class="sr-only">{t.aicte_col_status}</label>
+          <select id="statusFilter" aria-label={t.aicte_col_status} class="h-9 px-2 text-xs bg-slate-50 border border-slate-300 rounded text-slate-700">
             <option value="">{t.aicte_all_statuses}</option>
-            <option value="OVERRUN">Overrun</option>
-            <option value="COMPLIANT">Compliant</option>
+            <option value="OVERRUN">{t.statusOverrun}</option>
+            <option value="COMPLIANT">{t.statusCompliant}</option>
           </select>
-          <span class="text-xs font-mono font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded border border-slate-200">
-            {institutions.length} {t.aicte_kpi_total_colleges}
+
+          <span id="aicteCountBadge" class="text-xs font-mono font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded border border-slate-200">
+            {institutions.length} / {institutions.length}
           </span>
         </div>
       </div>
-      <div class="overflow-x-auto">
+
+      <div class="overflow-x-auto" role="region" aria-label={t.aicte_surveillance_heading} tabindex="0">
         <table class="w-full text-left text-xs sm:text-sm border-collapse">
+          <caption class="sr-only">{t.aicte_surveillance_heading}</caption>
           <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
             <tr>
-              <th class="py-3 px-4">{t.aicte_col_code}</th>
-              <th class="py-3 px-4">{t.aicte_col_inst}</th>
-              <th class="py-3 px-4">{t.aicte_col_state}</th>
-              <th class="py-3 px-4">{t.aicte_col_sanctioned}</th>
-              <th class="py-3 px-4">{t.aicte_col_actual}</th>
-              <th class="py-3 px-4">{t.aicte_col_utilization}</th>
-              <th class="py-3 px-4">{t.aicte_col_status}</th>
-              <th class="py-3 px-4 text-right">Regulatory Action</th>
+              <th scope="col" class="py-3 px-4">{t.aicte_col_code}</th>
+              <th scope="col" class="py-3 px-4">{t.aicte_col_inst}</th>
+              <th scope="col" class="py-3 px-4">{t.aicte_col_state}</th>
+              <th scope="col" class="py-3 px-4">{t.aicte_col_sanctioned}</th>
+              <th scope="col" class="py-3 px-4">{t.aicte_col_actual}</th>
+              <th scope="col" class="py-3 px-4">{t.aicte_col_utilization}</th>
+              <th scope="col" class="py-3 px-4">{t.aicte_col_status}</th>
+              <th scope="col" class="py-3 px-4 text-right">{t.verifyRecordsBtn}</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-200 text-slate-800">
+          <tbody class="divide-y divide-slate-200 text-slate-800" id="aicteInstTableBody">
             {institutions.map((i) => {
               const diff = i.current_enrollment - i.sanctioned_intake;
               const isOverrun = diff > 0;
@@ -407,10 +400,17 @@ if (duplicateStudents.length < 3) {
                     <div class="flex justify-between text-xs font-mono mb-1">
                       <span class="font-bold text-slate-900">{pct}%</span>
                       <span class={isOverrun ? 'text-red-700 font-bold' : 'text-emerald-700 font-semibold'}>
-                        {isOverrun ? `+${diff} Excess` : `${diff} Under Cap`}
+                        {isOverrun ? `+${diff}` : `${diff}`}
                       </span>
                     </div>
-                    <div class="w-full bg-slate-100 rounded h-2 border border-slate-200 overflow-hidden">
+                    <div
+                      class="w-full bg-slate-100 rounded h-2 border border-slate-200 overflow-hidden"
+                      role="progressbar"
+                      aria-label={`${i.name} ${t.aicte_col_utilization}`}
+                      aria-valuenow={Number(pct)}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                    >
                       <div
                         class={`h-full ${isOverrun ? 'bg-red-600' : 'bg-emerald-600'}`}
                         style={`width: ${barWidth}%;`}
@@ -420,11 +420,11 @@ if (duplicateStudents.length < 3) {
                   <td class="py-3.5 px-4">
                     {isOverrun ? (
                       <span class="bg-red-100 text-red-800 font-bold px-2.5 py-0.5 rounded text-xs border border-red-200">
-                        HIGH (Priority #1)
+                        {t.statusOverrun}
                       </span>
                     ) : (
-                      <span class="bg-slate-100 text-slate-700 font-semibold px-2.5 py-0.5 rounded text-xs border border-slate-200">
-                        ROUTINE
+                      <span class="bg-emerald-50 text-emerald-800 font-semibold px-2.5 py-0.5 rounded text-xs border border-emerald-200">
+                        {t.statusCompliant}
                       </span>
                     )}
                   </td>
@@ -432,18 +432,18 @@ if (duplicateStudents.length < 3) {
                     {isOverrun ? (
                       <button
                         type="button"
-                        onclick={`window.showToast('Statutory Show-Cause Notice issued to ${i.name} (${i.code}) for +${diff} unapproved seat admissions.', 'warning')`}
-                        class="px-3 py-1.5 rounded bg-red-50 hover:bg-red-100 border border-red-300 text-red-800 font-semibold text-xs transition-colors"
+                        data-action-notice={`${i.name} (${i.code})`}
+                        class="px-3 py-1.5 rounded bg-red-50 hover:bg-red-100 border border-red-300 text-red-800 font-semibold text-xs transition-colors cursor-pointer"
                       >
-                        Issue Notice
+                        Show-Cause Notice
                       </button>
                     ) : (
                       <button
                         type="button"
-                        onclick={`window.showToast('Compliance inspection docket opened for ${i.name} (${i.code}) — Status: Quota Compliant (${i.current_enrollment}/${i.sanctioned_intake} seats).', 'info')`}
-                        class="px-3 py-1.5 rounded bg-slate-50 hover:bg-slate-100 border border-slate-300 text-slate-700 font-semibold text-xs transition-colors"
+                        data-action-docket={`${i.name} (${i.code}) — ${i.current_enrollment}/${i.sanctioned_intake}`}
+                        class="px-3 py-1.5 rounded bg-slate-50 hover:bg-slate-100 border border-slate-300 text-slate-700 font-semibold text-xs transition-colors cursor-pointer"
                       >
-                        Inspect Docket
+                        {t.verifyRecordsBtn}
                       </button>
                     )}
                   </td>
@@ -452,6 +452,9 @@ if (duplicateStudents.length < 3) {
             })}
           </tbody>
         </table>
+        <div id="aicteEmptyRow" class="hidden py-8 text-center text-xs sm:text-sm text-slate-500">
+          0 / {institutions.length} — {t.aicte_surveillance_heading}
+        </div>
       </div>
     </div>
 
@@ -461,13 +464,10 @@ if (duplicateStudents.length < 3) {
         <div>
           <div class="flex flex-wrap items-center gap-2 mb-1">
             <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider bg-amber-50 text-amber-900 border border-amber-300 px-2.5 py-0.5 rounded">
-              <svg class="w-3.5 h-3.5 text-amber-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-3.5 h-3.5 text-amber-700 shrink-0" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              <span>PFMS &amp; DBT Anti-Fraud Engine</span>
-            </span>
-            <span class="text-[11px] font-mono font-semibold bg-red-50 text-red-800 border border-red-200 px-2.5 py-0.5 rounded">
-              NSP Ghost Beneficiary Blocker
+              <span>PFMS &amp; DBT Anti-Fraud</span>
             </span>
           </div>
           <h2 class="text-sm sm:text-base font-bold text-[#0F2942]">
@@ -478,42 +478,36 @@ if (duplicateStudents.length < 3) {
           </p>
         </div>
 
-        <!-- Filter Buttons with Crisp SVG Icons -->
-        <div class="flex flex-wrap items-center gap-2 shrink-0" role="group" aria-label="Anomaly Filter Controls">
+        <!-- Accessible Filter Buttons with aria-pressed -->
+        <div class="flex flex-wrap items-center gap-2 shrink-0" role="group" aria-label={t.aicte_duplicate_heading}>
           <button
             type="button"
             data-anomaly-filter="ALL"
-            class="anomaly-filter-btn px-3 py-1.5 rounded bg-[#0F2942] text-white border border-[#0F2942] text-xs font-bold inline-flex items-center gap-1.5 transition-colors"
+            aria-pressed="true"
+            class="anomaly-filter-btn px-3 py-1.5 rounded bg-[#0F2942] text-white border border-[#0F2942] text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
           >
-            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-            <span>All Anomalies ({duplicateStudents.length})</span>
+            <span>All ({duplicateStudents.length})</span>
           </button>
           <button
             type="button"
             data-anomaly-filter="DUAL"
-            class="anomaly-filter-btn px-3 py-1.5 rounded bg-white text-slate-700 hover:bg-slate-100 border border-slate-300 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
+            aria-pressed="false"
+            class="anomaly-filter-btn px-3 py-1.5 rounded bg-white text-slate-700 hover:bg-slate-100 border border-slate-300 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
           >
-            <svg class="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-            </svg>
-            <span>Cross-Campus Dual Admissions</span>
+            <span>Seat Lock Only ({duplicateStudents.filter((d) => !d.has_nsp_overlap).length})</span>
           </button>
           <button
             type="button"
             data-anomaly-filter="NSP"
-            class="anomaly-filter-btn px-3 py-1.5 rounded bg-white text-slate-700 hover:bg-slate-100 border border-slate-300 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
+            aria-pressed="false"
+            class="anomaly-filter-btn px-3 py-1.5 rounded bg-white text-slate-700 hover:bg-slate-100 border border-slate-300 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
           >
-            <svg class="w-3.5 h-3.5 text-red-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>NSP Scholarship Overlap ({duplicateStudents.filter((d) => d.has_nsp_overlap).length})</span>
+            <span>NSP DBT Overlap ({duplicateStudents.filter((d) => d.has_nsp_overlap).length})</span>
           </button>
         </div>
       </div>
 
-      <div class="p-4 sm:p-5 space-y-3" id="anomalyCardsContainer">
+      <div class="p-4 sm:p-5 space-y-3" id="anomalyCardsContainer" role="region" aria-live="polite">
         {duplicateStudents.map((ds) => (
           <div
             data-has-nsp={ds.has_nsp_overlap ? 'true' : 'false'}
@@ -530,13 +524,10 @@ if (duplicateStudents.length < 3) {
                     {maskName(ds.name)}
                   </span>
                   <span class="text-[11px] bg-red-100 text-red-800 font-bold px-2.5 py-0.5 rounded border border-red-200">
-                    CROSS-COUNCIL DUAL ADMISSION
+                    DUAL ADMISSION ({ds.colleges.length} Campuses)
                   </span>
                   {ds.has_nsp_overlap ? (
                     <span class="inline-flex items-center gap-1 text-[11px] bg-red-900 text-white font-bold px-2.5 py-0.5 rounded shadow-2xs">
-                      <svg class="w-3 h-3 text-amber-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                      </svg>
                       <span>{ds.nsp_disbursement_status}</span>
                     </span>
                   ) : (
@@ -546,9 +537,8 @@ if (duplicateStudents.length < 3) {
                   )}
                 </div>
                 <div class="text-xs text-slate-500 flex flex-wrap items-center gap-2">
-                  <span>Contact on Record: <strong class="font-mono text-slate-700">{maskEmail(ds.email)}</strong></span>
+                  <span>Email: <strong class="font-mono text-slate-700">{maskEmail(ds.email)}</strong></span>
                   <span>&bull;</span>
-                  <span>Councils Triggered:</span>
                   {ds.councils.map((c) => (
                     <span class="font-mono text-[10px] font-bold bg-blue-50 text-blue-900 border border-blue-200 px-2 py-0.5 rounded">
                       {c}
@@ -560,13 +550,10 @@ if (duplicateStudents.length < 3) {
               <div class="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
-                  onclick={`window.showToast('PFMS / NSP Scholarship Disbursement Freeze & Dual-Admission Show-Cause Notice issued for APAAR ${maskApaar(ds.apaar_id)}.', 'warning')`}
-                  class="px-3 py-1.5 rounded bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 font-semibold text-xs inline-flex items-center gap-1.5 transition-colors"
+                  data-freeze-apaar={maskApaar(ds.apaar_id)}
+                  class="px-3 py-1.5 rounded bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 font-semibold text-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
-                  <svg class="w-3.5 h-3.5 text-amber-800 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                  <span>Freeze NSP &amp; Flag Seat</span>
+                  <span>PFMS Hold &amp; Flag Seat</span>
                 </button>
               </div>
             </div>
@@ -585,7 +572,7 @@ if (duplicateStudents.length < 3) {
               </div>
               <div class="lg:col-span-5 bg-white px-3 py-2 rounded border border-slate-200 flex items-center justify-between text-xs">
                 <div class="truncate pr-2">
-                  <span class="text-[10px] font-bold uppercase text-slate-400 block">NSP / State DBT Status</span>
+                  <span class="text-[10px] font-bold uppercase text-slate-400 block">NSP / State DBT</span>
                   <span class="font-semibold text-slate-800">{ds.nsp_scheme_name}</span>
                 </div>
                 <span class="font-mono font-bold text-red-700 shrink-0">{ds.nsp_amount_inr}</span>
@@ -602,53 +589,55 @@ if (duplicateStudents.length < 3) {
         <div>
           <div class="flex flex-wrap items-center gap-2 mb-1">
             <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-900 border border-indigo-200 px-2.5 py-0.5 rounded">
-              <svg class="w-3.5 h-3.5 text-indigo-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-              <span>Bharatiya Sakshya Adhiniyam (BSA) 2023 Section 63</span>
+              <span>Bharatiya Sakshya Adhiniyam (BSA) 2023 Sec. 63</span>
             </span>
             <span class="text-[11px] font-mono font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded">
-              Tamper-Evident SHA-256 Hash Chain
+              SHA-256 Merkle Chain
             </span>
           </div>
           <h2 class="text-sm sm:text-base font-bold text-[#0F2942]">
-            3. Section 63 BSA Cryptographic Hash-Chain &amp; Merkle Audit Verifier
+            {t.s13_title} &bull; SHA-256 Merkle Audit Verifier
           </h2>
           <p class="text-xs text-slate-600 mt-0.5">
-            Independently recomputes every block hash (<code class="font-mono text-[11px] bg-slate-100 px-1 py-0.5 rounded">SHA256(prev_hash + ":" + canonical_payload)</code>) and the binary Merkle Root directly inside your browser via Web Crypto API.
+            {t.s13_body} (<code class="font-mono text-[11px] bg-slate-100 px-1 py-0.5 rounded">SHA256(prev_hash + ":" + canonical_payload)</code>)
           </p>
         </div>
 
         <button
           type="button"
           id="verifyMerkleBtnAicte"
-          class="shrink-0 h-10 px-4 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold text-xs sm:text-sm transition-colors inline-flex items-center gap-2 shadow-xs"
+          class="shrink-0 h-10 px-4 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold text-xs sm:text-sm transition-colors inline-flex items-center gap-2 shadow-xs cursor-pointer"
         >
-          <svg class="w-4 h-4 text-emerald-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-4 h-4 text-emerald-300 shrink-0" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <span>Verify Full Ledger Hash-Chain in Browser</span>
+          <span>{t.s13_try}</span>
         </button>
       </div>
 
       <!-- Summary Status Strip -->
-      <div id="merkleSummaryStripAicte" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 text-xs">
+      <div
+        id="merkleSummaryStripAicte"
+        role="status"
+        aria-live="polite"
+        class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 text-xs"
+      >
         <div class="p-3.5 bg-slate-50 rounded border border-slate-200">
-          <div class="text-[10px] font-bold uppercase text-slate-500">Verification Status</div>
+          <div class="text-[10px] font-bold uppercase text-slate-500">{t.aicte_col_status}</div>
           <div id="merkleStatusTextAicte" class="font-bold text-slate-800 mt-1 flex items-center gap-1.5">
-            <span>Ready for Client-Side Cryptographic Audit</span>
+            <span>{t.s13_try}</span>
           </div>
         </div>
         <div class="p-3.5 bg-slate-50 rounded border border-slate-200">
-          <div class="text-[10px] font-bold uppercase text-slate-500">Verified Merkle Root (SHA-256)</div>
+          <div class="text-[10px] font-bold uppercase text-slate-500">Merkle Root (SHA-256)</div>
           <div id="merkleRootTextAicte" class="font-mono font-bold text-[#0F2942] mt-1 truncate">
-            Click "Verify Full Ledger Hash-Chain" to compute
+            --
           </div>
         </div>
         <div class="p-3.5 bg-slate-50 rounded border border-slate-200">
-          <div class="text-[10px] font-bold uppercase text-slate-500">Total Ledger Blocks Verified</div>
+          <div class="text-[10px] font-bold uppercase text-slate-500">Ledger Blocks</div>
           <div id="merkleBlockCountAicte" class="font-mono font-bold text-emerald-700 mt-1">
-            -- Blocks (Institutions + Admissions + Degrees)
+            --
           </div>
         </div>
       </div>
@@ -656,8 +645,8 @@ if (duplicateStudents.length < 3) {
       <!-- Individual Block Links Table -->
       <div id="merkleBlocksContainerAicte" class="hidden border border-slate-200 rounded overflow-hidden">
         <div class="bg-slate-100 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between text-xs font-bold text-slate-700">
-          <span>Cryptographic Block Chain Links (prev_hash to block_hash)</span>
-          <span class="font-mono text-[11px] text-emerald-800">100% Browser Recomputed via crypto.subtle.digest('SHA-256')</span>
+          <span>SHA-256 Block Chain Links (prev_hash &rarr; block_hash)</span>
+          <span class="font-mono text-[11px] text-emerald-800">crypto.subtle.digest('SHA-256')</span>
         </div>
         <div class="max-h-64 overflow-y-auto divide-y divide-slate-200 text-xs font-mono" id="merkleBlocksListAicte"></div>
       </div>
@@ -665,16 +654,19 @@ if (duplicateStudents.length < 3) {
   </div>
 
   <script>
-    // Real-time Search & Filter for Institutions Table
     const searchInput = document.getElementById('aicteSearchInput') as HTMLInputElement | null;
     const stateSelect = document.getElementById('stateFilter') as HTMLSelectElement | null;
     const statusSelect = document.getElementById('statusFilter') as HTMLSelectElement | null;
     const instRows = document.querySelectorAll<HTMLTableRowElement>('.institution-row');
+    const countBadge = document.getElementById('aicteCountBadge');
+    const emptyRow = document.getElementById('aicteEmptyRow');
 
     function filterInstTable() {
       const q = searchInput?.value.toLowerCase().trim() || '';
       const st = stateSelect?.value || '';
       const stat = statusSelect?.value || '';
+      let visible = 0;
+
       instRows.forEach((r) => {
         const text = r.textContent?.toLowerCase() || '';
         const rowState = r.getAttribute('data-state') || '';
@@ -682,15 +674,92 @@ if (duplicateStudents.length < 3) {
         const matchesQ = !q || text.includes(q);
         const matchesState = !st || rowState === st;
         const matchesStatus = !stat || rowStatus === stat;
-        r.style.display = matchesQ && matchesState && matchesStatus ? '' : 'none';
+        const show = matchesQ && matchesState && matchesStatus;
+        r.style.display = show ? '' : 'none';
+        if (show) visible++;
       });
+
+      if (countBadge) {
+        countBadge.textContent = `${visible} / ${instRows.length}`;
+      }
+      if (emptyRow) {
+        emptyRow.classList.toggle('hidden', visible > 0);
+      }
     }
 
     searchInput?.addEventListener('input', filterInstTable);
     stateSelect?.addEventListener('change', filterInstTable);
     statusSelect?.addEventListener('change', filterInstTable);
 
-    // Filter buttons for Cross-Council & NSP Anomalies
+    // One-click sample institution code chips
+    document.querySelectorAll<HTMLButtonElement>('[data-sample-aicte-code]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const code = btn.getAttribute('data-sample-aicte-code') || '';
+        if (searchInput) {
+          searchInput.value = code;
+          filterInstTable();
+          searchInput.focus();
+        }
+      });
+    });
+
+    // Action buttons for Show-Cause Notice, Docket Inspection, and PFMS Freeze
+    document.getElementById('topShowCauseBtn')?.addEventListener('click', (e) => {
+      const code = (e.currentTarget as HTMLElement).getAttribute('data-notice-code') || '';
+      (window as any).showToast?.(`Show-Cause Notice dispatched to ${code} (APH 2024-27 Clause 7.14).`, 'warning');
+    });
+
+    document.querySelectorAll<HTMLButtonElement>('[data-action-notice]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const target = btn.getAttribute('data-action-notice') || '';
+        (window as any).showToast?.(`Show-Cause Notice issued: ${target}`, 'warning');
+      });
+    });
+
+    document.querySelectorAll<HTMLButtonElement>('[data-action-docket]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const target = btn.getAttribute('data-action-docket') || '';
+        (window as any).showToast?.(`Compliance Docket verified: ${target}`, 'info');
+      });
+    });
+
+    document.querySelectorAll<HTMLButtonElement>('[data-freeze-apaar]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const apaar = btn.getAttribute('data-freeze-apaar') || '';
+        (window as any).showToast?.(`PFMS / NSP Scholarship Hold applied for APAAR ${apaar}.`, 'warning');
+      });
+    });
+
+    // Live API sync button wired to /api/aicte/anomalies
+    const refreshBtn = document.getElementById('refreshBtn') as HTMLButtonElement | null;
+    refreshBtn?.addEventListener('click', async () => {
+      refreshBtn.disabled = true;
+      try {
+        const res = await fetch('/api/aicte/anomalies');
+        const json = await res.json();
+        if (json.success && json.data?.summary) {
+          const s = json.data.summary;
+          const totalEl = document.getElementById('kpiTotalInst');
+          const overrunEl = document.getElementById('kpiOverrunCount');
+          const dupEl = document.getElementById('kpiDuplicateCount');
+          if (totalEl) totalEl.textContent = String(s.totalInstitutions);
+          if (overrunEl) overrunEl.textContent = String(s.overrunCount);
+          if (dupEl) dupEl.textContent = String(s.duplicateStudentsCount);
+          (window as any).showToast?.(
+            `Live D1 Scan Complete: ${s.totalInstitutions} institutions, ${s.overrunCount} overrun, ${s.duplicateStudentsCount} duplicate(s).`,
+            'success'
+          );
+        } else {
+          throw new Error(json.error || 'Failed to scan D1 anomalies');
+        }
+      } catch (err: any) {
+        (window as any).showToast?.(err.message || 'Error scanning anomalies', 'error');
+      } finally {
+        refreshBtn.disabled = false;
+      }
+    });
+
+    // Filter buttons for Cross-Council & NSP Anomalies (Fixed DUAL vs NSP vs ALL logic + aria-pressed)
     const filterBtns = document.querySelectorAll<HTMLButtonElement>('.anomaly-filter-btn');
     const anomalyCards = document.querySelectorAll<HTMLElement>('.anomaly-card-item');
 
@@ -698,16 +767,20 @@ if (duplicateStudents.length < 3) {
       btn.addEventListener('click', () => {
         const mode = btn.getAttribute('data-anomaly-filter') || 'ALL';
         filterBtns.forEach((b) => {
+          b.setAttribute('aria-pressed', 'false');
           b.className =
-            'anomaly-filter-btn px-3 py-1.5 rounded bg-white text-slate-700 hover:bg-slate-100 border border-slate-300 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors';
+            'anomaly-filter-btn px-3 py-1.5 rounded bg-white text-slate-700 hover:bg-slate-100 border border-slate-300 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer';
         });
+        btn.setAttribute('aria-pressed', 'true');
         btn.className =
-          'anomaly-filter-btn px-3 py-1.5 rounded bg-[#0F2942] text-white border border-[#0F2942] text-xs font-bold inline-flex items-center gap-1.5 transition-colors';
+          'anomaly-filter-btn px-3 py-1.5 rounded bg-[#0F2942] text-white border border-[#0F2942] text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer';
 
         anomalyCards.forEach((card) => {
           const hasNsp = card.getAttribute('data-has-nsp') === 'true';
-          if (mode === 'NSP' && !hasNsp) {
-            card.classList.add('hidden');
+          if (mode === 'NSP') {
+            card.classList.toggle('hidden', !hasNsp);
+          } else if (mode === 'DUAL') {
+            card.classList.toggle('hidden', hasNsp);
           } else {
             card.classList.remove('hidden');
           }
@@ -715,7 +788,15 @@ if (duplicateStudents.length < 3) {
       });
     });
 
-    // 1-Click Download Policy & Accreditation Report (CSV) via Blob (Key Requirement #9)
+    // Hardened CSV Export (UTF-8 BOM + CSV formula injection protection + full field quoting)
+    function escapeCsvCell(val: unknown): string {
+      let str = String(val ?? '').replace(/"/g, '""');
+      if (/^[=+\-@]/.test(str)) {
+        str = "'" + str;
+      }
+      return `"${str}"`;
+    }
+
     const downloadPolicyCsvBtn = document.getElementById('downloadPolicyCsvBtn');
     downloadPolicyCsvBtn?.addEventListener('click', () => {
       const sectionEl = document.getElementById('policyAccreditationSection');
@@ -747,24 +828,24 @@ if (duplicateStudents.length < 3) {
       rows.forEach((r) => {
         csvLines.push(
           [
-            r.id,
-            r.code,
-            `"${String(r.name || '').replace(/"/g, '""')}"`,
-            r.state,
-            r.district,
+            escapeCsvCell(r.id),
+            escapeCsvCell(r.code),
+            escapeCsvCell(r.name),
+            escapeCsvCell(r.state),
+            escapeCsvCell(r.district),
             r.approved_intake,
             r.actual_enrolment,
             r.supernumerary_seats,
             r.nri_category,
             r.oci_status,
             r.fn_status,
-            `"${String(r.nba_naac_status || '').replace(/"/g, '""')}"`,
-            r.compliance_status,
+            escapeCsvCell(r.nba_naac_status),
+            escapeCsvCell(r.compliance_status),
           ].join(',')
         );
       });
 
-      const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob(['\uFEFF' + csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -773,10 +854,7 @@ if (duplicateStudents.length < 3) {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      (window as any).showToast?.(
-        'AICTE Policy, NBA/NAAC Accreditation & Category Enrolment Report (CSV) downloaded.',
-        'success'
-      );
+      (window as any).showToast?.('aicte_policy_nba_naac_accreditation_report_2026.csv downloaded.', 'success');
     });
 
     // Browser SHA-256 helper for Section 63 BSA Merkle Audit Verifier
@@ -805,13 +883,15 @@ if (duplicateStudents.length < 3) {
     const verifyBtn = document.getElementById('verifyMerkleBtnAicte') as HTMLButtonElement | null;
     verifyBtn?.addEventListener('click', async () => {
       verifyBtn.disabled = true;
+      const stripEl = document.getElementById('merkleSummaryStripAicte');
       const statusEl = document.getElementById('merkleStatusTextAicte');
       const rootEl = document.getElementById('merkleRootTextAicte');
       const countEl = document.getElementById('merkleBlockCountAicte');
       const containerEl = document.getElementById('merkleBlocksContainerAicte');
       const listEl = document.getElementById('merkleBlocksListAicte');
 
-      if (statusEl) statusEl.textContent = 'Recomputing SHA-256 Hash-Chain in Browser...';
+      stripEl?.setAttribute('aria-busy', 'true');
+      if (statusEl) statusEl.textContent = 'SHA-256...';
 
       try {
         const res = await fetch('/api/ledger/merkle');
@@ -848,7 +928,7 @@ if (duplicateStudents.length < 3) {
                   ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
                   : 'bg-red-100 text-red-800 border-red-200'
               }">
-                ${linkMatches ? 'SHA-256 LINK VERIFIED' : 'TAMPER DETECTED'}
+                ${linkMatches ? 'SHA-256 VERIFIED' : 'TAMPER DETECTED'}
               </span>
             </div>
           `;
@@ -861,28 +941,29 @@ if (duplicateStudents.length < 3) {
         if (statusEl) {
           statusEl.innerHTML =
             allValid && rootMatches
-              ? `<svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg><span class="text-emerald-800">TAMPER-FREE VERIFIED (Section 63 BSA Compliant)</span>`
-              : `<span class="text-red-700">HASH DISCREPANCY DETECTED</span>`;
+              ? `<span class="text-emerald-800">VERIFIED (BSA Sec. 63)</span>`
+              : `<span class="text-red-700">HASH DISCREPANCY</span>`;
         }
         if (rootEl) {
           rootEl.textContent = browserMerkleRoot;
           rootEl.title = browserMerkleRoot;
         }
         if (countEl) {
-          countEl.textContent = `${data.blocks.length} Blocks Verified (${data.counts.institutions} Inst, ${data.counts.admissions} Adm, ${data.counts.degrees} Deg)`;
+          countEl.textContent = `${data.blocks.length} (${data.counts.institutions} Inst, ${data.counts.admissions} Adm, ${data.counts.degrees} Deg)`;
         }
         if (listEl && containerEl) {
           listEl.innerHTML = rowsHtml;
           containerEl.classList.remove('hidden');
         }
         (window as any).showToast?.(
-          `Verified ${data.blocks.length} cryptographic ledger blocks. Merkle Root: ${browserMerkleRoot.slice(0, 16)}...`,
+          `Verified ${data.blocks.length} blocks. Root: ${browserMerkleRoot.slice(0, 16)}...`,
           'success'
         );
       } catch (err: any) {
-        if (statusEl) statusEl.textContent = 'Verification failed: ' + (err?.message || 'Error');
+        if (statusEl) statusEl.textContent = err?.message || 'Error';
         (window as any).showToast?.('Error verifying Merkle ledger', 'error');
       } finally {
+        stripEl?.setAttribute('aria-busy', 'false');
         verifyBtn.disabled = false;
       }
     });

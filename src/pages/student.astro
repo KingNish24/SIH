@@ -230,6 +230,8 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
               <span class="text-xs font-bold uppercase text-slate-500">{t.student_consent_label}</span>
               <span
                 id="consentBadge"
+                role="status"
+                aria-live="polite"
                 class={`text-[11px] font-bold px-2.5 py-0.5 rounded border ${
                   initialConsent === 'GRANTED'
                     ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
@@ -262,6 +264,8 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
             <span class="text-[10px] font-bold uppercase text-slate-500">Security Standard</span>
             <span
               id="passkeyBindingBadge"
+              role="status"
+              aria-live="polite"
               class={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded border ${
                 initialHasPasskey
                   ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
@@ -326,6 +330,45 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
             <span class="font-mono text-[11px] text-slate-500">POST /api/student/token</span>
           </div>
 
+          <!-- Clickable Example Presets -->
+          <div class="bg-white border border-slate-200 rounded p-2.5">
+            <div class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+              Quick Consent Presets (Click to Populate):
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                class="token-preset-chip text-[11px] font-mono font-semibold px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 text-[#1E40AF] border border-blue-200 transition-colors cursor-pointer"
+                data-org="UPSC Civil Services Board"
+                data-purpose="Degree & Eligibility Verification"
+                data-scope="degree_status,cgpa_threshold"
+                data-ttl="24"
+              >
+                UPSC Minimal Proof
+              </button>
+              <button
+                type="button"
+                class="token-preset-chip text-[11px] font-mono font-semibold px-2 py-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition-colors cursor-pointer"
+                data-org="TCS Background Verification"
+                data-purpose="Zero-Knowledge CGPA >= 7.5 Check"
+                data-scope="degree_status,cgpa_threshold"
+                data-ttl="24"
+              >
+                TCS ZKP CGPA &gt;= 7.5
+              </button>
+              <button
+                type="button"
+                class="token-preset-chip text-[11px] font-mono font-semibold px-2 py-1 rounded bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition-colors cursor-pointer"
+                data-org="GATE Admissions Committee (IIT Roorkee)"
+                data-purpose="NEP 2020 ABC Credit & Lateral-Entry Audit"
+                data-scope="degree_status,cgpa_threshold,abc_credits"
+                data-ttl="1"
+              >
+                GATE 160-Credit Audit
+              </button>
+            </div>
+          </div>
+
           <div>
             <label for="tokenVerifierOrg" class="block text-xs font-semibold text-slate-700 mb-1">
               Target Verifier Organization:
@@ -334,6 +377,7 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
               id="tokenVerifierOrg"
               class="w-full h-9 bg-white border border-slate-300 rounded px-2.5 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0F2942]"
             >
+              <option value="">-- Select Target Verifier Organization --</option>
               <option value="UPSC Civil Services Board">UPSC Civil Services Board</option>
               <option value="TCS Background Verification">TCS Background Verification</option>
               <option value="GATE Admissions Committee (IIT Roorkee)">GATE Admissions Committee (IIT Roorkee)</option>
@@ -350,6 +394,7 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
               id="tokenPurpose"
               class="w-full h-9 bg-white border border-slate-300 rounded px-2.5 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0F2942]"
             >
+              <option value="">-- Select Statutory Verification Purpose --</option>
               <option value="Degree & Eligibility Verification">Degree &amp; Eligibility Verification</option>
               <option value="Zero-Knowledge CGPA >= 7.5 Check">Zero-Knowledge CGPA &gt;= 7.5 Check</option>
               <option value="NEP 2020 ABC Credit & Lateral-Entry Audit">NEP 2020 ABC Credit &amp; Lateral-Entry Audit</option>
@@ -397,7 +442,7 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
           </button>
 
           <!-- Newly Minted Token Banner -->
-          <div id="mintedTokenBanner" class="hidden p-3.5 rounded bg-emerald-50 border border-emerald-300 text-xs space-y-2">
+          <div id="mintedTokenBanner" role="status" aria-live="polite" class="hidden p-3.5 rounded bg-emerald-50 border border-emerald-300 text-xs space-y-2">
             <div class="flex items-center justify-between">
               <span class="font-bold text-emerald-900 uppercase tracking-wider text-[11px]">Minted One-Time Token</span>
               <span class="text-[10px] font-mono text-emerald-700 font-semibold">Single-Use Active</span>
@@ -490,6 +535,11 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
         <div class="w-full bg-slate-200 rounded-full h-4 border border-slate-300 overflow-hidden relative">
           <div
             id="abcProgressBar"
+            role="progressbar"
+            aria-valuenow={initialAbc.accumulated_credits}
+            aria-valuemin="0"
+            aria-valuemax="160"
+            aria-label="Accumulated Academic Bank of Credits"
             class="h-full bg-gradient-to-r from-[#0F2942] via-blue-700 to-[#138808] transition-all duration-300"
             style={`width: ${Math.min(100, (initialAbc.accumulated_credits / 160) * 100)}%`}
           ></div>
@@ -769,7 +819,17 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
     </div>
   </div>
 
-  <!-- Serialize ABC Profiles for instant client-side switching -->
+  <!-- Serialize ABC Profiles & localized i18n strings for instant client-side switching -->
+  <div
+    id="studentI18nData"
+    class="hidden"
+    data-passkey-active={t.student_passkey_active}
+    data-consent-active={t.student_consent_active}
+    data-consent-revoked={t.student_consent_revoked}
+    data-revoke-btn={t.student_revoke_btn}
+    data-grant-btn={t.student_grant_btn}
+    data-register-btn={t.student_register_passkey_btn}
+  ></div>
   <script is:inline define:vars={{ abcProfiles }}>
     window.__ABC_PROFILES__ = abcProfiles;
   </script>
@@ -778,6 +838,24 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
     import { startRegistration, startAuthentication, browserSupportsWebAuthn } from '@simplewebauthn/browser';
 
     const toast = (msg: string, kind: string) => (window as any).showToast?.(msg, kind);
+    const i18nEl = document.getElementById('studentI18nData');
+    const i18n = {
+      passkeyActive: i18nEl?.getAttribute('data-passkey-active') || 'Passkey Bound',
+      consentActive: i18nEl?.getAttribute('data-consent-active') || 'DPDP CONSENT ACTIVE',
+      consentRevoked: i18nEl?.getAttribute('data-consent-revoked') || 'DPDP CONSENT REVOKED',
+      revokeBtn: i18nEl?.getAttribute('data-revoke-btn') || 'Consent Active (Revoke)',
+      grantBtn: i18nEl?.getAttribute('data-grant-btn') || 'Consent Revoked (Grant)',
+      registerBtn: i18nEl?.getAttribute('data-register-btn') || 'Bind Hardware Biometric Passkey',
+    };
+
+    const escapeHtml = (str: unknown) =>
+      String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
     const selector = document.getElementById('studentSelector') as HTMLSelectElement | null;
     const nameDisplay = document.getElementById('studentNameDisplay');
     const emailDisplay = document.getElementById('studentEmailDisplay');
@@ -799,7 +877,7 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
     function updatePasskeyBadge(hasPasskey: boolean) {
       if (!passkeyBadge) return;
       if (hasPasskey) {
-        passkeyBadge.innerHTML = `<svg class="w-3 h-3 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg><span>Passkey Bound</span>`;
+        passkeyBadge.innerHTML = `<svg class="w-3 h-3 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg><span>${escapeHtml(i18n.passkeyActive)}</span>`;
         passkeyBadge.className = 'inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded border bg-emerald-100 text-emerald-800 border-emerald-200';
       } else {
         passkeyBadge.textContent = 'No Passkey Bound — Click Below to Register';
@@ -811,25 +889,25 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
       const consentBadge = document.getElementById('consentBadge');
       if (status === 'GRANTED') {
         if (toggleBtn) {
-          toggleBtn.textContent = 'Consent Active (Revoke)';
+          toggleBtn.textContent = i18n.revokeBtn;
           toggleBtn.className = 'h-10 px-4 rounded bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs sm:text-sm transition-colors shadow-sm';
         }
         if (consentBadge) {
-          consentBadge.textContent = 'DPDP CONSENT ACTIVE';
+          consentBadge.textContent = i18n.consentActive;
           consentBadge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200';
         }
       } else if (status === 'REVOKED') {
         if (toggleBtn) {
-          toggleBtn.textContent = 'Consent Revoked (Grant)';
+          toggleBtn.textContent = i18n.grantBtn;
           toggleBtn.className = 'h-10 px-4 rounded bg-red-700 hover:bg-red-800 text-white font-semibold text-xs sm:text-sm transition-colors shadow-sm';
         }
         if (consentBadge) {
-          consentBadge.textContent = 'DPDP CONSENT REVOKED';
+          consentBadge.textContent = i18n.consentRevoked;
           consentBadge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded bg-red-100 text-red-800 border border-red-200';
         }
       } else {
         if (toggleBtn) {
-          toggleBtn.textContent = 'Consent Pending (Grant)';
+          toggleBtn.textContent = i18n.grantBtn;
           toggleBtn.className = 'h-10 px-4 rounded bg-amber-700 hover:bg-amber-800 text-white font-semibold text-xs sm:text-sm transition-colors shadow-sm';
         }
         if (consentBadge) {
@@ -854,7 +932,10 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
 
       if (totalBadge) totalBadge.textContent = `${p.accumulated_credits} / 160 ABC Credits`;
       if (stageText) stageText.textContent = p.nep_exit_stage;
-      if (bar) bar.style.width = `${Math.min(100, (p.accumulated_credits / 160) * 100)}%`;
+      if (bar) {
+        bar.style.width = `${Math.min(100, (p.accumulated_credits / 160) * 100)}%`;
+        bar.setAttribute('aria-valuenow', String(p.accumulated_credits));
+      }
 
       const setMilestone = (id: string, threshold: number) => {
         const el = document.getElementById(id);
@@ -912,27 +993,34 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
             const badgeClass = isActive
               ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
               : 'bg-red-100 text-red-800 border-red-200';
-            const scopeLabels = (t.disclosed_fields || []).join(', ');
+            const scopeLabels = escapeHtml((t.disclosed_fields || []).join(', '));
+            const safeTokenId = escapeHtml(t.token_id);
+            const safeStatus = escapeHtml(t.status);
+            const safeTtl = escapeHtml(t.ttl_label);
+            const safeOrg = escapeHtml(t.verifier_org);
+            const safePurpose = escapeHtml(t.purpose);
+            const safeDigest = escapeHtml(t.signature_digest);
+            const safeExpires = escapeHtml(String(t.expires_at || '').replace('T', ' ').slice(0, 16));
             return `
               <div class="p-3.5 rounded border border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div class="space-y-1">
                   <div class="flex flex-wrap items-center gap-2">
-                    <code class="font-mono font-bold text-[#0F2942] bg-white px-2 py-0.5 rounded border border-slate-300 text-xs">${t.token_id}</code>
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded border ${badgeClass}">${t.status}</span>
-                    <span class="text-[11px] font-mono text-slate-500">${t.ttl_label}</span>
+                    <code class="font-mono font-bold text-[#0F2942] bg-white px-2 py-0.5 rounded border border-slate-300 text-xs">${safeTokenId}</code>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded border ${badgeClass}">${safeStatus}</span>
+                    <span class="text-[11px] font-mono text-slate-500">${safeTtl}</span>
                   </div>
-                  <div class="font-bold text-slate-900 text-xs sm:text-sm">${t.verifier_org}</div>
+                  <div class="font-bold text-slate-900 text-xs sm:text-sm">${safeOrg}</div>
                   <div class="text-xs text-slate-600">
-                    Purpose: <strong>${t.purpose}</strong> &bull; Disclosed Scope: <code class="font-mono text-[11px] bg-slate-200/70 px-1.5 py-0.5 rounded">${scopeLabels}</code>
+                    Purpose: <strong>${safePurpose}</strong> &bull; Disclosed Scope: <code class="font-mono text-[11px] bg-slate-200/70 px-1.5 py-0.5 rounded">${scopeLabels}</code>
                   </div>
-                  <div class="text-[10px] font-mono text-slate-400 truncate max-w-md" title="${t.signature_digest}">
-                    ${t.signature_digest} &bull; Expires: ${t.expires_at.replace('T', ' ').slice(0, 16)} UTC
+                  <div class="text-[10px] font-mono text-slate-400 truncate max-w-md" title="${safeDigest}">
+                    ${safeDigest} &bull; Expires: ${safeExpires} UTC
                   </div>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
-                    data-copy-token="${t.token_id}"
+                    data-copy-token="${safeTokenId}"
                     class="copy-token-btn px-2.5 py-1.5 rounded bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-semibold text-xs inline-flex items-center gap-1 transition-colors"
                   >
                     <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -944,7 +1032,7 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
                     isActive
                       ? `<button
                           type="button"
-                          data-revoke-token="${t.token_id}"
+                          data-revoke-token="${safeTokenId}"
                           class="revoke-token-btn px-2.5 py-1.5 rounded bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 font-semibold text-xs inline-flex items-center gap-1 transition-colors"
                         >
                           <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1045,6 +1133,21 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
       filterStudentRecords(initialOpt.value);
     }
 
+    // Wire Quick Consent Preset Chips
+    document.querySelectorAll<HTMLButtonElement>('.token-preset-chip').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const orgEl = document.getElementById('tokenVerifierOrg') as HTMLSelectElement | null;
+        const purpEl = document.getElementById('tokenPurpose') as HTMLSelectElement | null;
+        const scopeEl = document.getElementById('tokenScope') as HTMLSelectElement | null;
+        const ttlEl = document.getElementById('tokenTtl') as HTMLSelectElement | null;
+        if (orgEl && chip.dataset.org) orgEl.value = chip.dataset.org;
+        if (purpEl && chip.dataset.purpose) purpEl.value = chip.dataset.purpose;
+        if (scopeEl && chip.dataset.scope) scopeEl.value = chip.dataset.scope;
+        if (ttlEl && chip.dataset.ttl) ttlEl.value = chip.dataset.ttl;
+        toast(`Preset loaded: ${chip.dataset.org}`, 'info');
+      });
+    });
+
     // Mint Purpose-Scoped One-Time Consent Token
     const mintBtn = document.getElementById('mintTokenBtn') as HTMLButtonElement | null;
     const mintedBanner = document.getElementById('mintedTokenBanner');
@@ -1053,12 +1156,17 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
 
     mintBtn?.addEventListener('click', async () => {
       const apaar = selector ? selector.value : '739284019283';
-      const verifierOrg = (document.getElementById('tokenVerifierOrg') as HTMLSelectElement)?.value || 'UPSC Civil Services Board';
-      const purpose = (document.getElementById('tokenPurpose') as HTMLSelectElement)?.value || 'Degree & Eligibility Verification';
+      const verifierOrg = (document.getElementById('tokenVerifierOrg') as HTMLSelectElement)?.value || '';
+      const purpose = (document.getElementById('tokenPurpose') as HTMLSelectElement)?.value || '';
       const scopeRaw = (document.getElementById('tokenScope') as HTMLSelectElement)?.value || 'degree_status,cgpa_threshold';
       const ttlSelect = document.getElementById('tokenTtl') as HTMLSelectElement | null;
       const ttlHours = Number(ttlSelect?.value || 24);
       const singleUse = ttlSelect?.selectedOptions?.[0]?.getAttribute('data-single') !== 'false';
+
+      if (!verifierOrg || !purpose) {
+        toast('Please select a Target Verifier Organization and Statutory Purpose (or click a Quick Consent Preset above).', 'warning');
+        return;
+      }
 
       mintBtn.disabled = true;
       try {
@@ -1190,7 +1298,7 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
           </svg>
-          <span>Bind Hardware Biometric Passkey</span>
+          <span>${escapeHtml(i18n.registerBtn)}</span>
         `;
       }
     });
