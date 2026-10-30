@@ -1,7 +1,17 @@
 ---
 // Reviewer guide: story-driven tour with bonus features and 22-language support, powered by Driver.js.
-import { EIGHTH_SCHEDULE_LANGUAGES } from '../lib/i18n';
+import { EIGHTH_SCHEDULE_LANGUAGES, getUIDictionary, isSupportedLang, type LangCode } from '../lib/i18n';
+
+interface Props {
+  lang?: LangCode | string;
+  isIndic?: boolean;
+}
+
 const user = Astro.locals.user;
+const resolvedLang: LangCode = isSupportedLang(Astro.props.lang)
+  ? (Astro.props.lang as LangCode)
+  : (isSupportedLang(Astro.locals.lang) ? Astro.locals.lang : 'en');
+const t = getUIDictionary(resolvedLang);
 const LANGS = EIGHTH_SCHEDULE_LANGUAGES.map((l) => ({ code: l.code, nativeName: l.nativeName, dir: l.dir }));
 ---
 
@@ -9,7 +19,7 @@ const LANGS = EIGHTH_SCHEDULE_LANGUAGES.map((l) => ({ code: l.code, nativeName: 
   {
     user && (
       <div class="text-[11px] bg-white border border-slate-300 text-slate-700 rounded px-2.5 py-1 shadow-sm">
-        Demo mode: signed in as <strong class="text-[#0F2942]">{user.username}</strong>
+        {t.nav_demo_mode || 'Demo mode: signed in as'} <strong class="text-[#0F2942]">{user.username}</strong>
       </div>
     )
   }
@@ -19,7 +29,7 @@ const LANGS = EIGHTH_SCHEDULE_LANGUAGES.map((l) => ({ code: l.code, nativeName: 
     class="flex items-center gap-2 bg-[#0F2942] hover:bg-[#1E3A8A] text-white text-sm font-bold px-4 py-2.5 rounded-full shadow-xl border-2 border-[#FF9933] cursor-pointer transition-colors"
   >
     <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#FF9933] text-slate-950 text-xs font-black">?</span>
-    <span>Guide</span>
+    <span>{t.ui_guide || 'Guide'}</span>
   </button>
 </div>
 
@@ -172,7 +182,7 @@ const LANGS = EIGHTH_SCHEDULE_LANGUAGES.map((l) => ({ code: l.code, nativeName: 
   }
 </style>
 
-<script type="application/json" id="nsrvp-langs" set:html={JSON.stringify(LANGS)}></script>
+<script type="application/json" id="nsrvp-langs" set:html={JSON.stringify({ langs: LANGS, defaultLang: resolvedLang })}></script>
 
 <script>
   import { driver, type DriveStep } from 'driver.js';
@@ -193,27 +203,12 @@ const LANGS = EIGHTH_SCHEDULE_LANGUAGES.map((l) => ({ code: l.code, nativeName: 
   const NEEDS_LOGIN: Phase[] = ['institution', 'aicte', 'university', 'student'];
   const KEY = 'nsrvp_tour_phase';
   const SEEN = 'nsrvp_tour_seen';
-  const LANG_KEY = 'nsrvp_tour_lang';
   const TOTAL = 23;
 
-  const LANGS: { code: string; nativeName: string; dir: string }[] = JSON.parse(
-    document.getElementById('nsrvp-langs')?.textContent || '[]'
+  const { langs: LANGS, defaultLang }: { langs: { code: string; nativeName: string; dir: string }[]; defaultLang: string } = JSON.parse(
+    document.getElementById('nsrvp-langs')?.textContent || '{"langs":[],"defaultLang":"en"}'
   );
   const loaders = import.meta.glob<{ default: Dict }>(['../locales/*.json', '!../locales/en.json']);
-  const FONTS: Record<string, string> = {
-    bn: 'Noto+Sans+Bengali',
-    as: 'Noto+Sans+Bengali',
-    mni: 'Noto+Sans+Bengali',
-    te: 'Noto+Sans+Telugu',
-    ta: 'Noto+Sans+Tamil',
-    ur: 'Noto+Nastaliq+Urdu',
-    gu: 'Noto+Sans+Gujarati',
-    kn: 'Noto+Sans+Kannada',
-    ml: 'Noto+Sans+Malayalam',
-    or: 'Noto+Sans+Oriya',
-    pa: 'Noto+Sans+Gurmukhi',
-    sat: 'Noto+Sans+Ol+Chiki',
-  };
 
   let lang = 'en';
   let T: Dict = en as Dict;
@@ -229,27 +224,18 @@ const LANGS = EIGHTH_SCHEDULE_LANGUAGES.map((l) => ({ code: l.code, nativeName: 
 
   async function setLang(code: string) {
     lang = LANGS.some((l) => l.code === code) ? code : 'en';
-    localStorage.setItem(LANG_KEY, lang);
     const loader = loaders[`../locales/${lang}.json`];
     T = lang === 'en' || !loader ? (en as Dict) : { ...(en as Dict), ...(await loader()).default };
-    const font = FONTS[lang];
-    if (font && !$(`nsrvp-font-${font}`)) {
-      const link = document.createElement('link');
-      link.id = `nsrvp-font-${font}`;
-      link.rel = 'stylesheet';
-      link.href = `https://fonts.googleapis.com/css2?family=${font}:wght@400;600;700&display=swap`;
-      document.head.appendChild(link);
-    }
     const label = document.querySelector('#btn-launch-tour span:last-child');
     if (label) label.textContent = t('ui_guide');
   }
 
   function initialLang(): string {
-    const saved = localStorage.getItem(LANG_KEY);
-    if (saved && LANGS.some((l) => l.code === saved)) return saved;
+    const docLang = document.documentElement.lang;
+    if (docLang && LANGS.some((l) => l.code === docLang)) return docLang;
     const seg = location.pathname.split('/').filter(Boolean)[0];
     if (seg && LANGS.some((l) => l.code === seg)) return seg;
-    return 'en';
+    return defaultLang || 'en';
   }
 
   const TRY: Record<string, () => void> = {
@@ -404,16 +390,22 @@ const LANGS = EIGHTH_SCHEDULE_LANGUAGES.map((l) => ({ code: l.code, nativeName: 
     };
   }
 
+  function getPath(phase: Phase): string {
+    const base = PATH[phase];
+    return lang === 'en' ? base : `/${lang}${base === '/' ? '' : base}`;
+  }
+
   function currentPhase(): Phase {
-    const p = location.pathname;
-    return (ORDER.find((ph) => ph !== 'overview' && p.startsWith(PATH[ph])) as Phase) || 'overview';
+    const cleanPath = location.pathname.replace(/^\/[a-z]{2,3}(?=\/|$)/, '') || '/';
+    return (ORDER.find((ph) => ph !== 'overview' && cleanPath.startsWith(PATH[ph])) as Phase) || 'overview';
   }
 
   function go(target: Phase) {
     sessionStorage.setItem(KEY, target);
+    const targetUrl = getPath(target);
     location.href = NEEDS_LOGIN.includes(target)
-      ? `/api/tour/switch?role=${target}&next=${encodeURIComponent(PATH[target])}`
-      : PATH[target];
+      ? `/api/tour/switch?role=${target}&next=${encodeURIComponent(targetUrl)}`
+      : targetUrl;
   }
 
   function run(phase: Phase, startAt = 0) {
@@ -493,19 +485,14 @@ const LANGS = EIGHTH_SCHEDULE_LANGUAGES.map((l) => ({ code: l.code, nativeName: 
 
   async function init() {
     await setLang(initialLang());
-    // Header language menu drives the tour language while the tour is open (no page reload).
+    // When header language menu changes while tour is active, remember phase
     document.addEventListener(
       'change',
-      async (e) => {
+      (e) => {
         const sel = e.target as HTMLSelectElement | null;
         if (sel?.id !== 'gov-lang-select') return;
         if (activeDriver?.isActive()) {
-          e.stopImmediatePropagation();
-          const at = activeDriver.getActiveIndex() ?? 0;
-          await setLang(sel.value);
-          run(curPhase, at);
-        } else {
-          localStorage.setItem(LANG_KEY, sel.value);
+          sessionStorage.setItem(KEY, curPhase);
         }
       },
       true
