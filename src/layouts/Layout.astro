@@ -151,6 +151,14 @@ const googleFontsHref = `https://fonts.googleapis.com/css2?family=Inter:wght@400
         outline: 2px solid #FF9933 !important;
         outline-offset: 2px !important;
       }
+      /* GIGW 3.0 High Contrast Theme */
+      html.gov-hc body {
+        filter: contrast(1.18) saturate(1.05);
+        background-color: #FFFFFF !important;
+      }
+      html.gov-hc .bg-white, html.gov-hc .bg-slate-50 {
+        border-color: #0F2942 !important;
+      }
     </style>
   </head>
   <body class="bg-[#F8FAFC] text-[#0F172A] min-h-screen flex flex-col antialiased">
@@ -189,6 +197,18 @@ const googleFontsHref = `https://fonts.googleapis.com/css2?family=Inter:wght@400
               {t.ministrySubtitle}
             </div>
           </div>
+          <div class="hidden xl:flex items-center gap-2 pl-3 ml-2 border-l border-slate-200">
+            <img
+              src="/digital_india.svg"
+              alt="Digital India"
+              class="h-7 w-auto object-contain"
+              width="85"
+              height="28"
+            />
+            <span class="text-[10px] font-mono font-bold text-slate-600 bg-slate-100 border border-slate-300 px-2 py-0.5 rounded">
+              GIGW 3.0 &bull; UX4G
+            </span>
+          </div>
         </div>
 
         <!-- Right: GIGW Utility Controls (Skip to Main Content, Font Scaler, 22 Official Indian Languages Switcher) -->
@@ -201,12 +221,12 @@ const googleFontsHref = `https://fonts.googleapis.com/css2?family=Inter:wght@400
           </a>
           <span class="hidden md:inline-block text-slate-300" aria-hidden="true">|</span>
 
-          <!-- GIGW Standard Font Size Scaler (A-, A, A+) -->
-          <div class="flex items-center border border-slate-300 rounded overflow-hidden bg-slate-50 font-bold text-slate-700 shadow-xs" role="group" aria-label="Text Size Controls">
+          <!-- GIGW Standard Font Size Scaler (A-, A, A+) + High Contrast Toggle -->
+          <div class="flex items-center border border-slate-300 rounded overflow-hidden bg-slate-50 font-bold text-slate-700 shadow-xs" role="group" aria-label="Text Size & Contrast Controls">
             <button
               type="button"
               id="btn-font-decrease"
-              class="px-2 py-0.5 hover:bg-slate-200 focus:bg-slate-200 focus:outline-none transition-colors border-r border-slate-200 text-xs"
+              class="px-2 py-0.5 hover:bg-slate-200 focus:bg-slate-200 focus:outline-none transition-colors border-r border-slate-200 text-xs cursor-pointer"
               title="Decrease Font Size (A-)"
               aria-label="Decrease Font Size"
             >
@@ -215,7 +235,7 @@ const googleFontsHref = `https://fonts.googleapis.com/css2?family=Inter:wght@400
             <button
               type="button"
               id="btn-font-reset"
-              class="px-2 py-0.5 hover:bg-slate-200 focus:bg-slate-200 focus:outline-none transition-colors border-r border-slate-200 text-xs"
+              class="px-2 py-0.5 hover:bg-slate-200 focus:bg-slate-200 focus:outline-none transition-colors border-r border-slate-200 text-xs cursor-pointer"
               title="Reset Font Size to Standard (A)"
               aria-label="Reset Font Size"
             >
@@ -224,11 +244,20 @@ const googleFontsHref = `https://fonts.googleapis.com/css2?family=Inter:wght@400
             <button
               type="button"
               id="btn-font-increase"
-              class="px-2 py-0.5 hover:bg-slate-200 focus:bg-slate-200 focus:outline-none transition-colors text-xs"
+              class="px-2 py-0.5 hover:bg-slate-200 focus:bg-slate-200 focus:outline-none transition-colors border-r border-slate-200 text-xs cursor-pointer"
               title="Increase Font Size (A+)"
               aria-label="Increase Font Size"
             >
               A+
+            </button>
+            <button
+              type="button"
+              id="btn-high-contrast"
+              class="px-2 py-0.5 bg-slate-900 text-amber-300 hover:bg-black focus:outline-none transition-colors text-[11px] font-extrabold cursor-pointer"
+              title="Toggle High Contrast Mode (GIGW Accessibility)"
+              aria-label="Toggle High Contrast Mode"
+            >
+              A
             </button>
           </div>
 
@@ -641,6 +670,19 @@ const googleFontsHref = `https://fonts.googleapis.com/css2?family=Inter:wght@400
         document.getElementById('btn-font-decrease')?.addEventListener('click', () => setScale(currentScale - 5));
         document.getElementById('btn-font-reset')?.addEventListener('click', () => setScale(100));
         document.getElementById('btn-font-increase')?.addEventListener('click', () => setScale(currentScale + 5));
+
+        try {
+          if (localStorage.getItem('gov_hc') === '1') {
+            root.classList.add('gov-hc');
+          }
+        } catch (e) {}
+
+        document.getElementById('btn-high-contrast')?.addEventListener('click', () => {
+          const isHc = root.classList.toggle('gov-hc');
+          try {
+            localStorage.setItem('gov_hc', isHc ? '1' : '0');
+          } catch (e) {}
+        });
 
         const langSelect = document.getElementById('gov-lang-select');
         langSelect?.addEventListener('change', function() {
