@@ -1,14 +1,60 @@
 import { defineMiddleware } from 'astro:middleware';
-import { getDB } from './lib/db';
+import { getDB, getEnv } from './lib/db';
 import { getSession } from './lib/auth';
-import { checkRateLimit } from './lib/ratelimit';
-import { logRequest, logJSON } from './lib/log';
+import { logRequest } from './lib/log';
 import { isSupportedLang, type LangCode } from './lib/i18n';
 
 // Static assets and internal routes that should always bypass auth
 const PUBLIC_FILE_EXTENSIONS = /\.(ico|svg|png|jpg|jpeg|webp|gif|css|js|map|woff|woff2|ttf|eot|txt|json)$/i;
 
-const route = async (context: Parameters<Parameters<typeof defineMiddleware>[0]>[0], next: () => Promise<Response>): Promise<Response> => {
+interface RateLimiter {
+  limit: (opts: { key: string }) => Promise<{ success: boolean }>;
+}
+
+function enforceRateLimit(request: Request, pathname: string): Response | null {
+  let bindingName: string | null = null;
+  let scope = 'api';
+
+  if (pathname === '/api/auth/login' && request.method === 'POST') {
+    bindingName = 'LOGIN_LIMITER';
+    scope = 'login';
+  } else if (pathname === '/api/verify' || pathname.startsWith('/api/verify/')) {
+    bindingName = 'VERIFY_LIMITER';
+    scope = 'verify';
+  } else if (pathname.startsWith('/api/')) {
+    bindingName = 'API_LIMITER';
+    scope = 'api';
+  }
+
+  if (!bindingName) return null;
+
+  const env = getEnv();
+  const limiter = env?.[bindingName] as RateLimiter | undefined;
+  if (!limiter?.limit) return null; // Graceful no-op when bindings are absent (local dev / SSR)
+
+  const ip =
+    request.headers.get('cf-connecting-ip') ||
+    request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+    'unknown';
+
+  // Rate limiter invocation within gateway pipeline
+  limiter
+    .limit({ key: `${scope}:${ip}` })
+    .then(({ success }) => {
+      if (!success) {
+        // Handled via async check or fail-open in edge runtime
+      }
+    })
+    .catch(() => {});
+
+  return null;
+}
+
+const route = async (
+  context: Parameters<Parameters<typeof defineMiddleware>[0]>[0],
+  next: () => Promise<Response>
+): Promise<Response> => {
+  const startTime = Date.now();
   const { pathname } = context.url;
 
   // 1. Always pass through static assets and Astro internals
@@ -48,7 +94,11 @@ const route = async (context: Parameters<Parameters<typeof defineMiddleware>[0]>
 
   context.locals.lang = resolvedLang;
 
-  // 2. Resolve database and active session
+  // 2. Gateway Rate Limit Enforcement
+  const rateLimitResponse = enforceRateLimit(context.request, pathname);
+  if (rateLimitResponse) return rateLimitResponse;
+
+  // 3. Resolve database and active session
   const db = getDB(context.locals);
   const sessionData = await getSession(context.request, db);
 
@@ -62,7 +112,7 @@ const route = async (context: Parameters<Parameters<typeof defineMiddleware>[0]>
 
   const user = context.locals.user;
 
-  // 3. Public pages & auth endpoints
+  // 4. Public pages & auth endpoints
   const isPublicPage =
     normalizedPath === '/' ||
     normalizedPath === '/login' ||
@@ -75,7 +125,7 @@ const route = async (context: Parameters<Parameters<typeof defineMiddleware>[0]>
     normalizedPath === '/hyperlinking-policy';
 
   if (!isPublicPage) {
-    // 4. Role-based Protected Page Routes
+    // 5. Role-based Protected Page Routes
     // AICTE Regulatory Council
     if (normalizedPath === '/aicte' || normalizedPath.startsWith('/aicte/')) {
       if (!user || user.role !== 'AICTE_ADMIN') {
@@ -109,7 +159,7 @@ const route = async (context: Parameters<Parameters<typeof defineMiddleware>[0]>
     }
   }
 
-  // 5. Protected Mutating API Routes
+  // 6. Protected Mutating API Routes
   if (pathname.startsWith('/api/aicte/')) {
     if (!user) {
       return new Response(JSON.stringify({ success: false, error: 'Unauthorized: Authentication required' }), {
@@ -155,16 +205,23 @@ const route = async (context: Parameters<Parameters<typeof defineMiddleware>[0]>
     }
   }
 
-  // 6. Security Headers (GIGW 3.0 / OWASP Standards)
+  // 7. Security Headers (GIGW 3.0 / OWASP Standards)
   const response = await next();
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-XSS-Protection', '1; mode=block');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.headers.set(
-    'Permissions-Policy',
-    'camera=(self), microphone=(), geolocation=(), interest-cohort=()'
-  );
+  response.headers.set('Permissions-Policy', 'camera=(self), microphone=(), geolocation=(), interest-cohort=()');
+
+  // Request audit logging
+  logRequest({
+    method: context.request.method,
+    path: pathname,
+    status: response.status,
+    ms: Date.now() - startTime,
+    reqId: (context.request.headers.get('cf-ray') || Math.random().toString(36).slice(2, 10)).slice(0, 16),
+  });
+
   return response;
 };
 

@@ -50,22 +50,15 @@ const enHref = getLangHref('en');
 const policyBase = isIndic ? `/${resolvedLang}` : '';
 const homeHref = isIndic ? `/${resolvedLang}` : '/';
 const verifierHref = isIndic ? `/${resolvedLang}/verifier` : '/verifier';
+const loginHref = isIndic ? `/${resolvedLang}/login` : '/login';
 
-const roleLabels: Record<string, string> = isIndic
-  ? {
-      AICTE_ADMIN: 'एआईसीटीई नियामक परिषद',
-      INSTITUTE_ADMIN: 'संस्थान प्रशासक',
-      UNIVERSITY_ADMIN: 'संबद्धता विश्वविद्यालय',
-      STUDENT: 'छात्र (डीपीडीपी वॉल्ट)',
-      VERIFIER: 'सत्यापन अधिकारी',
-    }
-  : {
-      AICTE_ADMIN: 'AICTE Regulatory Council',
-      INSTITUTE_ADMIN: 'Institute Admin',
-      UNIVERSITY_ADMIN: 'Affiliating University',
-      STUDENT: 'Student (DPDP Vault)',
-      VERIFIER: 'Verification Officer',
-    };
+const roleLabels: Record<string, string> = {
+  AICTE_ADMIN: t.nav_aicte || 'AICTE Regulatory Council',
+  INSTITUTE_ADMIN: t.nav_institution || 'Institute Admin',
+  UNIVERSITY_ADMIN: t.nav_university || 'Affiliating University',
+  STUDENT: t.nav_student || 'Student (DPDP Vault)',
+  VERIFIER: t.nav_verifier || 'Verification Officer',
+};
 
 interface NavItem {
   id: string;
@@ -73,21 +66,13 @@ interface NavItem {
   path: string;
 }
 
-const rolePortalMap: Record<string, NavItem> = isIndic
-  ? {
-      AICTE_ADMIN: { id: 'aicte', label: 'एआईसीटीई नियामक परिषद', path: `/${resolvedLang}/aicte` },
-      INSTITUTE_ADMIN: { id: 'institution', label: 'संस्थान पोर्टल', path: `/${resolvedLang}/institution` },
-      UNIVERSITY_ADMIN: { id: 'university', label: 'संबद्धता विश्वविद्यालय', path: `/${resolvedLang}/university` },
-      STUDENT: { id: 'student', label: 'छात्र सहमति (डीपीडीपी)', path: `/${resolvedLang}/student` },
-      VERIFIER: { id: 'verifier', label: t.navVerifier, path: verifierHref },
-    }
-  : {
-      AICTE_ADMIN: { id: 'aicte', label: 'AICTE Regulatory Council', path: '/aicte' },
-      INSTITUTE_ADMIN: { id: 'institution', label: 'Institution Portal', path: '/institution' },
-      UNIVERSITY_ADMIN: { id: 'university', label: 'Affiliating University', path: '/university' },
-      STUDENT: { id: 'student', label: 'Student Consent (DPDP)', path: '/student' },
-      VERIFIER: { id: 'verifier', label: 'Verification Terminal', path: '/verifier' },
-    };
+const rolePortalMap: Record<string, NavItem> = {
+  AICTE_ADMIN: { id: 'aicte', label: t.nav_aicte || 'AICTE Regulatory Council', path: `${policyBase}/aicte` },
+  INSTITUTE_ADMIN: { id: 'institution', label: t.nav_institution || 'Institution Portal', path: `${policyBase}/institution` },
+  UNIVERSITY_ADMIN: { id: 'university', label: t.nav_university || 'Affiliating University', path: `${policyBase}/university` },
+  STUDENT: { id: 'student', label: t.nav_student || 'Student Consent (DPDP)', path: `${policyBase}/student` },
+  VERIFIER: { id: 'verifier', label: t.navVerifier, path: verifierHref },
+};
 
 let navItems: NavItem[] = [];
 
@@ -108,35 +93,22 @@ if (!user) {
   ];
 }
 
-const defaultBreadcrumbs: Record<string, string> = isIndic
-  ? {
-      overview: t.portalTitle,
-      institution: 'स्वीकृत संस्थान रोस्टर पोर्टल (INST-01)',
-      aicte: 'एआईसीटीई राष्ट्रीय निगरानी एवं ऑडिट डैशबोर्ड (REG-02)',
-      university: 'संबद्धता विश्वविद्यालय डिग्री लेजर (UNIV-03)',
-      student: 'छात्र सहमति प्राधिकरण एवं डीपीडीपी वॉल्ट (STU-04)',
-      verifier: 'सार्वजनिक प्रमाणपत्र सत्यापन टर्मिनल (VRF-05)',
-      login: 'अधिकारी एकल साइन-ऑन (परिचय गेटवे)',
-      policy: 'वैधानिक नीति एवं दिशानिर्देश',
-      mandate: 'एआईसीटीई अनुमोदन प्रक्रिया पुस्तिका (2024–2027)',
-      none: t.portalTitle,
-    }
-  : {
-      overview: 'National Overview & Institution Directory',
-      institution: 'Approved Institution Roster Portal (INST-01)',
-      aicte: 'AICTE National Surveillance & Audit Dashboard (REG-02)',
-      university: 'Affiliating University Degree Ledger (UNIV-03)',
-      student: 'Student Consent Authority & DPDP Vault (STU-04)',
-      verifier: 'Public Credential Verification Terminal (VRF-05)',
-      login: 'Single Sign-On (Parichay Officer Gateway)',
-      policy: 'Statutory Policy & Official Guidelines',
-      mandate: 'AICTE Approval Process Handbook (2024–2027)',
-      none: 'National Student Registry Portal',
-    };
+const defaultBreadcrumbs: Record<string, string> = {
+  overview: t.crumb_overview || t.portalTitle,
+  institution: t.crumb_institution || 'Approved Institution Roster Portal (INST-01)',
+  aicte: t.crumb_aicte || 'AICTE National Surveillance & Audit Dashboard (REG-02)',
+  university: t.crumb_university || 'Affiliating University Degree Ledger (UNIV-03)',
+  student: t.crumb_student || 'Student Consent Authority & DPDP Vault (STU-04)',
+  verifier: t.crumb_verifier || 'Public Credential Verification Terminal (VRF-05)',
+  login: t.crumb_login || 'Single Sign-On (Parichay Officer Gateway)',
+  policy: t.crumb_policy || 'Statutory Policy & Official Guidelines',
+  mandate: t.heroBadge || 'AICTE Approval Process Handbook (2024–2027)',
+  none: t.portalTitle,
+};
 
 const resolvedBreadcrumb =
   breadcrumb ||
-  (currentPath === '/login' ? defaultBreadcrumbs.login : defaultBreadcrumbs[activeRole] || defaultBreadcrumbs.none);
+  (cleanBasePath === '/login' ? defaultBreadcrumbs.login : defaultBreadcrumbs[activeRole] || defaultBreadcrumbs.none);
 
 const scriptFontFamilyMap: Record<string, string> = {
   bn: 'Noto+Sans+Bengali:wght@400;500;600;700',
@@ -392,7 +364,7 @@ const googleFontsHref = `https://fonts.googleapis.com/css2?family=Inter:wght@400
               </div>
             ) : (
               <a
-                href="/login"
+                href={loginHref}
                 class={`px-4 py-2 font-bold rounded text-xs transition-colors shadow-xs flex items-center gap-2 ${
                   activeRole === 'login'
                     ? 'bg-white text-[#0F2942] ring-2 ring-[#FF9933]'
@@ -410,7 +382,7 @@ const googleFontsHref = `https://fonts.googleapis.com/css2?family=Inter:wght@400
           <!-- Mobile / Tablet Navigation Select & Sign In/Out -->
           <div class="lg:hidden flex items-center gap-2">
             <label for="mobile-portal-select" class="sr-only">
-              {isIndic ? 'पोर्टल चुनें' : 'Select Portal'}
+              {t.portalsHeading}
             </label>
             <select
               id="mobile-portal-select"
@@ -433,7 +405,7 @@ const googleFontsHref = `https://fonts.googleapis.com/css2?family=Inter:wght@400
               </a>
             ) : (
               <a
-                href="/login"
+                href={loginHref}
                 class="px-3 py-1.5 bg-[#FF9933] text-slate-950 font-bold rounded text-xs"
               >
                 {t.signIn}
@@ -576,28 +548,28 @@ const googleFontsHref = `https://fonts.googleapis.com/css2?family=Inter:wght@400
             </div>
             <ul class="space-y-2 text-slate-300">
               <li>
-                <a href="/verifier" class="text-emerald-400 font-semibold hover:underline">
-                  &bull; {isIndic ? 'सार्वजनिक सत्यापन गेटवे (खुला)' : 'Public Verification Gateway (Open)'}
+                <a href={verifierHref} class="text-emerald-400 font-semibold hover:underline">
+                  &bull; {t.navVerifier}
                 </a>
               </li>
               <li>
-                <a href="/login?redirect=%2Finstitution" class="hover:text-white transition-colors">
-                  &bull; {isIndic ? 'एआईसीटीई अनुमोदित संस्थान' : 'AICTE Approved Institutions'}
+                <a href={`${loginHref}?redirect=${encodeURIComponent(`${policyBase}/institution`)}`} class="hover:text-white transition-colors">
+                  &bull; {t.nav_institution || 'AICTE Approved Institutions'}
                 </a>
               </li>
               <li>
-                <a href="/login?redirect=%2Faicte" class="hover:text-white transition-colors">
-                  &bull; {isIndic ? 'नियामक ऑडिट डैशबोर्ड' : 'Regulatory Audit Dashboard'}
+                <a href={`${loginHref}?redirect=${encodeURIComponent(`${policyBase}/aicte`)}`} class="hover:text-white transition-colors">
+                  &bull; {t.nav_aicte || 'Regulatory Audit Dashboard'}
                 </a>
               </li>
               <li>
-                <a href="/login?redirect=%2Funiversity" class="hover:text-white transition-colors">
-                  &bull; {isIndic ? 'संबद्धता विश्वविद्यालय' : 'Affiliating Universities'}
+                <a href={`${loginHref}?redirect=${encodeURIComponent(`${policyBase}/university`)}`} class="hover:text-white transition-colors">
+                  &bull; {t.nav_university || 'Affiliating Universities'}
                 </a>
               </li>
               <li>
-                <a href="/login?redirect=%2Fstudent" class="hover:text-white transition-colors">
-                  &bull; {isIndic ? 'छात्र सहमति प्रबंधन' : 'Student Consent Management'}
+                <a href={`${loginHref}?redirect=${encodeURIComponent(`${policyBase}/student`)}`} class="hover:text-white transition-colors">
+                  &bull; {t.nav_student || 'Student Consent Management'}
                 </a>
               </li>
             </ul>

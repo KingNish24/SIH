@@ -13,11 +13,18 @@ import {
 const resolvedLang: LangCode = isSupportedLang(Astro.locals.lang) ? Astro.locals.lang : 'en';
 const langInfo = getLanguageInfo(resolvedLang);
 const t = getUIDictionary(resolvedLang);
+const langPrefix = resolvedLang === 'en' ? '' : `/${resolvedLang}`;
 
 const db = getDB(Astro.locals);
 const instRes = await db.prepare('SELECT * FROM institutions ORDER BY name ASC').bind().all<Institution>();
 const institutions = instRes.results || [];
 const user = Astro.locals.user;
+
+const totalMonitored = institutions.length;
+const overrunCount = institutions.filter((i) => i.current_enrollment > i.sanctioned_intake).length;
+const compliantCount = totalMonitored - overrunCount;
+const totalSanctioned = institutions.reduce((sum, i) => sum + (i.sanctioned_intake || 0), 0);
+const totalEnrollment = institutions.reduce((sum, i) => sum + (i.current_enrollment || 0), 0);
 
 const portals = [
   {
@@ -25,7 +32,7 @@ const portals = [
     title: t.portal1Title,
     code: 'INST-01',
     description: t.portal1Desc,
-    path: '/institution',
+    path: `${langPrefix}/institution`,
     stats: '60 / 120 / 180 / 240 Cap',
     isPublic: false,
   },
@@ -34,7 +41,7 @@ const portals = [
     title: t.portal2Title,
     code: 'REG-02',
     description: t.portal2Desc,
-    path: '/aicte',
+    path: `${langPrefix}/aicte`,
     stats: 'AICTE APH 2024–2027 Audit',
     isPublic: false,
   },
@@ -43,7 +50,7 @@ const portals = [
     title: t.portal3Title,
     code: 'UNIV-03',
     description: t.portal3Desc,
-    path: '/university',
+    path: `${langPrefix}/university`,
     stats: 'Ed25519 Signed Ledger',
     isPublic: false,
   },
@@ -52,7 +59,7 @@ const portals = [
     title: t.portal4Title,
     code: 'STU-04',
     description: t.portal4Desc,
-    path: '/student',
+    path: `${langPrefix}/student`,
     stats: 'DPDP Act Sec. 6 & Passkey',
     isPublic: false,
   },
@@ -61,7 +68,7 @@ const portals = [
     title: t.portal5Title,
     code: 'VRF-05',
     description: t.portal5Desc,
-    path: '/verifier',
+    path: `${langPrefix}/verifier`,
     stats: '< 50 ms Edge Verification',
     isPublic: true,
   },
@@ -104,7 +111,7 @@ const portals = [
 
         <div class="flex flex-wrap items-center gap-3 pt-1">
           <a
-            href="/verifier"
+            href={`${langPrefix}/verifier`}
             class="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-[#138808] hover:bg-[#0E6506] text-white text-xs sm:text-sm font-bold shadow-xs transition-colors"
           >
             <svg class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -113,7 +120,7 @@ const portals = [
             <span data-i18n="verifyCta">{t.verifyCta}</span>
           </a>
           <a
-            href="/login"
+            href={`${langPrefix}/login`}
             class="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-[#FF9933] hover:bg-[#F28500] text-slate-950 text-xs sm:text-sm font-bold shadow-xs transition-colors"
           >
             <span data-i18n="signIn">{t.signIn}</span>
@@ -141,11 +148,11 @@ const portals = [
               </h2>
             </div>
             <span class="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-bold px-2.5 py-0.5 rounded">
-              Open Access
+              {t.navVerifier}
             </span>
           </div>
 
-          <form action="/verifier" method="GET" class="space-y-3">
+          <form action={`${langPrefix}/verifier`} method="GET" class="space-y-3" id="quickVerifyForm">
             <div>
               <label for="quickApaarInputLang" class="block text-xs font-bold text-slate-700 mb-1.5" data-i18n="quickVerifyLabel">
                 {t.quickVerifyLabel}
@@ -154,24 +161,44 @@ const portals = [
                 type="text"
                 id="quickApaarInputLang"
                 name="apaar"
+                inputmode="numeric"
                 pattern="[0-9]{12}"
                 maxlength="12"
+                required
                 placeholder="412398471029"
                 class="w-full bg-slate-50 border border-slate-300 rounded px-3.5 py-2.5 font-mono text-sm text-slate-900 tracking-wider focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F2942]"
               />
             </div>
             <button
               type="submit"
-              class="w-full py-2.5 px-4 bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold rounded text-xs sm:text-sm transition-colors shadow-xs flex items-center justify-center gap-2"
+              class="w-full py-2.5 px-4 bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold rounded text-xs sm:text-sm transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer"
             >
               <span data-i18n="quickVerifyBtn">{t.quickVerifyBtn}</span>
               <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
             </button>
           </form>
 
-          <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>ID: <code class="font-mono font-bold text-slate-700">102938475610</code></span>
-            <a href="/verifier" class="text-blue-700 hover:underline font-semibold inline-flex items-center gap-1">
+          <div class="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span>APAAR:</span>
+              <button
+                type="button"
+                data-sample-apaar="102938475610"
+                class="font-mono font-bold text-[#0F2942] bg-slate-100 hover:bg-blue-50 hover:text-blue-800 border border-slate-300 px-2 py-0.5 rounded transition-colors cursor-pointer"
+                title="Click to populate sample APAAR ID"
+              >
+                102938475610
+              </button>
+              <button
+                type="button"
+                data-sample-apaar="412398471029"
+                class="font-mono font-bold text-[#0F2942] bg-slate-100 hover:bg-blue-50 hover:text-blue-800 border border-slate-300 px-2 py-0.5 rounded transition-colors cursor-pointer"
+                title="Click to populate Sneha Deshmukh APAAR ID"
+              >
+                412398471029
+              </button>
+            </div>
+            <a href={`${langPrefix}/verifier`} class="text-blue-700 hover:underline font-semibold inline-flex items-center gap-1">
               <span>{t.navVerifier}</span>
               <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
             </a>
@@ -181,30 +208,42 @@ const portals = [
     </div>
   </section>
 
-  <!-- 2. 4 KPI Benchmark Cards -->
-  <section aria-label="National Regulatory Benchmarks" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+  <!-- 2. 4 KPI Benchmark Cards (With Live D1 Registry Telemetry) -->
+  <section aria-label={t.portalTitle} class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
     <div class="bg-white p-5 rounded-lg border border-slate-200 border-l-4 border-l-[#0F2942] shadow-xs">
       <div class="text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="kpi1Label">{t.kpi1Label}</div>
       <div class="text-2xl sm:text-3xl font-bold text-[#0F2942] mt-1.5">8,500+</div>
-      <div class="text-xs text-slate-600 mt-1">AICTE National Registry</div>
+      <div class="text-xs text-slate-600 mt-1 flex items-center justify-between">
+        <span>{t.aicte_kpi_total_colleges}:</span>
+        <span class="font-mono font-bold text-[#0F2942] bg-slate-100 px-1.5 py-0.5 rounded">{totalMonitored}</span>
+      </div>
     </div>
 
     <div class="bg-white p-5 rounded-lg border border-slate-200 border-l-4 border-l-[#FF9933] shadow-xs">
       <div class="text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="kpi2Label">{t.kpi2Label}</div>
       <div class="text-2xl sm:text-3xl font-bold text-[#0F2942] mt-1.5">3.2M+</div>
-      <div class="text-xs text-slate-600 mt-1">60 / 120 / 180 / 240 Seats</div>
+      <div class="text-xs text-slate-600 mt-1 flex items-center justify-between">
+        <span>{t.aicte_col_actual} / {t.aicte_col_sanctioned}:</span>
+        <span class="font-mono font-bold text-[#0F2942] bg-amber-50 px-1.5 py-0.5 rounded">{totalEnrollment} / {totalSanctioned}</span>
+      </div>
     </div>
 
     <div class="bg-white p-5 rounded-lg border border-slate-200 border-l-4 border-l-[#138808] shadow-xs">
       <div class="text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="kpi3Label">{t.kpi3Label}</div>
       <div class="text-2xl sm:text-3xl font-bold text-[#0F2942] mt-1.5">100%</div>
-      <div class="text-xs text-slate-600 mt-1">12-Digit APAAR &amp; WebAuthn</div>
+      <div class="text-xs text-slate-600 mt-1 flex items-center justify-between">
+        <span>{t.statusCompliant}:</span>
+        <span class="font-mono font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded">{compliantCount} / {totalMonitored}</span>
+      </div>
     </div>
 
     <div class="bg-white p-5 rounded-lg border border-slate-200 border-l-4 border-l-blue-600 shadow-xs">
       <div class="text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="kpi4Label">{t.kpi4Label}</div>
       <div class="text-2xl sm:text-3xl font-bold text-[#0F2942] mt-1.5">&lt; 50 ms</div>
-      <div class="text-xs text-slate-600 mt-1">Ed25519 Signed Ledger</div>
+      <div class="text-xs text-slate-600 mt-1 flex items-center justify-between">
+        <span>Ed25519 + WebAuthn</span>
+        <span class="font-mono font-bold text-blue-800 bg-blue-50 px-1.5 py-0.5 rounded">D1 Edge</span>
+      </div>
     </div>
   </section>
 
@@ -214,7 +253,7 @@ const portals = [
       <div>
         <div class="flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-          <span class="text-xs font-bold text-emerald-700 uppercase tracking-wider">AICTE APH 2024–2027</span>
+          <span class="text-xs font-bold text-emerald-700 uppercase tracking-wider">{t.heroBadge}</span>
         </div>
         <h2 class="text-lg sm:text-xl font-bold text-[#0F2942] mt-0.5" data-i18n="dirHeading">
           {t.dirHeading}
@@ -224,8 +263,11 @@ const portals = [
         </p>
       </div>
       <div class="flex items-center gap-2 shrink-0">
+        <span id="dirCountBadge" class="text-xs font-mono font-bold bg-slate-100 text-slate-700 border border-slate-300 px-2.5 py-1.5 rounded">
+          {totalMonitored} / {totalMonitored}
+        </span>
         <a
-          href="/verifier"
+          href={`${langPrefix}/verifier`}
           class="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white text-xs font-bold shadow-xs transition-colors"
         >
           <span>{t.navVerifier}</span>
@@ -236,7 +278,7 @@ const portals = [
 
     <!-- Search & Filter Controls for Directory -->
     <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-4">
-      <div class="md:col-span-8 relative">
+      <div class="md:col-span-6 relative">
         <label for="instSearchInput" class="sr-only">{t.dirHeading}</label>
         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -246,21 +288,33 @@ const portals = [
         <input
           type="text"
           id="instSearchInput"
-          placeholder={t.dirSub}
+          placeholder={t.aicte_search_placeholder || t.dirSub}
           class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded text-xs sm:text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
         />
       </div>
 
-      <div class="md:col-span-4">
-        <label for="stateFilterSelect" class="sr-only">State / UT</label>
+      <div class="md:col-span-3">
+        <label for="stateFilterSelect" class="sr-only">{t.aicte_col_state}</label>
         <select
           id="stateFilterSelect"
           class="w-full py-2 px-3 bg-slate-50 border border-slate-300 rounded text-xs sm:text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
         >
-          <option value="">All States / Union Territories</option>
+          <option value="">{t.aicte_all_states}</option>
           {Array.from(new Set(institutions.map((i) => i.state).filter(Boolean))).sort().map((st) => (
-            <option value={st}>{st}</option>
+            <option value={st.toLowerCase()}>{st}</option>
           ))}
+        </select>
+      </div>
+
+      <div class="md:col-span-3">
+        <label for="statusFilterSelect" class="sr-only">{t.aicte_col_status}</label>
+        <select
+          id="statusFilterSelect"
+          class="w-full py-2 px-3 bg-slate-50 border border-slate-300 rounded text-xs sm:text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
+        >
+          <option value="">{t.aicte_all_statuses}</option>
+          <option value="compliant">{t.statusCompliant} ({compliantCount})</option>
+          <option value="overrun">{t.statusOverrun} ({overrunCount})</option>
         </select>
       </div>
     </div>
@@ -270,11 +324,11 @@ const portals = [
       <table class="w-full text-left text-xs sm:text-sm" id="institutionsTable">
         <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider text-xs">
           <tr>
-            <th class="py-3 px-4">AICTE Code &amp; Institution</th>
-            <th class="py-3 px-4">State / District</th>
-            <th class="py-3 px-4">Sanctioned Intake</th>
-            <th class="py-3 px-4">Enrollment</th>
-            <th class="py-3 px-4">Status</th>
+            <th class="py-3 px-4">{t.aicte_col_inst}</th>
+            <th class="py-3 px-4">{t.aicte_col_state}</th>
+            <th class="py-3 px-4">{t.aicte_col_sanctioned}</th>
+            <th class="py-3 px-4">{t.aicte_col_actual}</th>
+            <th class="py-3 px-4">{t.aicte_col_status}</th>
             <th class="py-3 px-4 text-right">{t.verifyRecordsBtn}</th>
           </tr>
         </thead>
@@ -291,11 +345,12 @@ const portals = [
                 data-id={inst.id.toLowerCase()}
                 data-state={inst.state.toLowerCase()}
                 data-district={inst.district.toLowerCase()}
+                data-status={isOverrun ? 'overrun' : 'compliant'}
               >
                 <td class="py-3.5 px-4">
                   <div class="font-bold text-[#0F2942] text-sm">{inst.name}</div>
                   <div class="text-xs font-mono text-slate-500 mt-0.5">
-                    Code: {inst.code} &bull; ID: {inst.id}
+                    {t.aicte_col_code}: {inst.code} &bull; ID: {inst.id}
                   </div>
                 </td>
                 <td class="py-3.5 px-4">
@@ -331,7 +386,7 @@ const portals = [
                 </td>
                 <td class="py-3.5 px-4 text-right">
                   <a
-                    href={`/verifier?institution=${encodeURIComponent(inst.id)}&code=${encodeURIComponent(inst.code)}`}
+                    href={`${langPrefix}/verifier?institution=${encodeURIComponent(inst.id)}&code=${encodeURIComponent(inst.code)}`}
                     class="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-slate-100 hover:bg-[#0F2942] text-[#0F2942] hover:text-white border border-slate-300 text-xs font-bold transition-colors"
                   >
                     <span data-i18n="verifyRecordsBtn">{t.verifyRecordsBtn}</span>
@@ -344,7 +399,7 @@ const portals = [
         </tbody>
       </table>
       <div id="noResultsMsg" class="hidden p-6 text-center text-sm text-slate-500">
-        No matching institutions found.
+        0 / {totalMonitored} — {t.dirHeading}
       </div>
     </div>
   </section>
@@ -361,7 +416,7 @@ const portals = [
         </p>
       </div>
       <span class="text-xs font-mono font-semibold bg-slate-100 text-slate-700 px-3 py-1 rounded border border-slate-300">
-        5 Statutory Modules
+        INST-01 &bull; REG-02 &bull; UNIV-03 &bull; STU-04 &bull; VRF-05
       </span>
     </div>
 
@@ -371,8 +426,8 @@ const portals = [
         const targetUrl = user
           ? p.path
           : isPublic
-          ? '/verifier'
-          : `/login?redirect=${encodeURIComponent(p.path)}`;
+          ? `${langPrefix}/verifier`
+          : `${langPrefix}/login?redirect=${encodeURIComponent(p.path)}`;
         const actionText = user
           ? `${t.navOverview}`
           : isPublic
@@ -396,11 +451,11 @@ const portals = [
                 </span>
                 {isPublic ? (
                   <span class="text-xs font-bold px-2.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
-                    Open Access
+                    {t.navVerifier}
                   </span>
                 ) : (
                   <span class="text-xs font-bold px-2.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200">
-                    Auth Required
+                    {t.signIn}
                   </span>
                 )}
               </div>
@@ -414,7 +469,7 @@ const portals = [
               </p>
 
               <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span class="text-slate-500 font-medium">Mandate:</span>
+                <span class="text-slate-500 font-medium">{t.heroBadge}:</span>
                 <span class="font-bold text-slate-800">{p.stats}</span>
               </div>
             </div>
@@ -482,7 +537,7 @@ const portals = [
     <div class="grid grid-cols-1 md:grid-cols-3 gap-5 text-sm">
       <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
         <div class="font-bold text-[#0F2942] mb-1.5 flex items-center gap-2">
-          <span>1. In-Browser Memory Triage &amp; Dynamic Intake Locks</span>
+          <span>{t.portal1Title}</span>
         </div>
         <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
           {t.portal1Desc}
@@ -491,19 +546,19 @@ const portals = [
 
       <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
         <div class="font-bold text-[#0F2942] mb-1.5 flex items-center gap-2">
-          <span>2. Ed25519 Signed Ledger &amp; DPDP Passkey Consent</span>
+          <span>{t.portal3Title}</span>
         </div>
         <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
-          {t.portal4Desc}
+          {t.portal3Desc}
         </p>
       </div>
 
       <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
         <div class="font-bold text-[#0F2942] mb-1.5 flex items-center gap-2">
-          <span>3. NIC MeghRaj / Sovereign GovCloud Portability</span>
+          <span>{t.portal4Title}</span>
         </div>
         <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
-          Zero vendor lock-in (&lt;15 MB lightweight runtime). Deploys seamlessly across NIC MeghRaj National Cloud, CDAC sovereign Linux VMs, Docker containers, or edge workers with standard SQLite/PostgreSQL.
+          {t.portal4Desc}
         </p>
       </div>
     </div>
@@ -512,12 +567,16 @@ const portals = [
   <script is:inline>
     const searchInput = document.getElementById('instSearchInput');
     const stateFilter = document.getElementById('stateFilterSelect');
+    const statusFilter = document.getElementById('statusFilterSelect');
     const rows = document.querySelectorAll('.inst-row');
     const noResults = document.getElementById('noResultsMsg');
+    const countBadge = document.getElementById('dirCountBadge');
+    const quickApaarInput = document.getElementById('quickApaarInputLang');
 
     function filterInstitutions() {
       const q = (searchInput?.value || '').toLowerCase().trim();
       const state = (stateFilter?.value || '').toLowerCase().trim();
+      const status = (statusFilter?.value || '').toLowerCase().trim();
       let visibleCount = 0;
 
       rows.forEach((row) => {
@@ -526,12 +585,14 @@ const portals = [
         const id = row.getAttribute('data-id') || '';
         const rowState = row.getAttribute('data-state') || '';
         const district = row.getAttribute('data-district') || '';
+        const rowStatus = row.getAttribute('data-status') || '';
 
         const matchesQuery =
           !q || name.includes(q) || code.includes(q) || id.includes(q) || district.includes(q);
         const matchesState = !state || rowState === state;
+        const matchesStatus = !status || rowStatus === status;
 
-        if (matchesQuery && matchesState) {
+        if (matchesQuery && matchesState && matchesStatus) {
           row.style.display = '';
           visibleCount++;
         } else {
@@ -542,9 +603,28 @@ const portals = [
       if (noResults) {
         noResults.classList.toggle('hidden', visibleCount > 0);
       }
+      if (countBadge) {
+        countBadge.textContent = `${visibleCount} / ${rows.length}`;
+      }
     }
 
     searchInput?.addEventListener('input', filterInstitutions);
     stateFilter?.addEventListener('change', filterInstitutions);
+    statusFilter?.addEventListener('change', filterInstitutions);
+
+    // Quick Verify sample APAAR buttons & numeric sanitization
+    quickApaarInput?.addEventListener('input', () => {
+      quickApaarInput.value = quickApaarInput.value.replace(/\D/g, '').slice(0, 12);
+    });
+
+    document.querySelectorAll('[data-sample-apaar]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const sampleId = btn.getAttribute('data-sample-apaar') || '';
+        if (quickApaarInput && sampleId) {
+          quickApaarInput.value = sampleId;
+          quickApaarInput.focus();
+        }
+      });
+    });
   </script>
 </Layout>
