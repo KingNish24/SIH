@@ -1,5 +1,9 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { getUIDictionary, type LangCode, isSupportedLang } from '../lib/i18n';
+
+const lang: LangCode = isSupportedLang(Astro.locals.lang) ? Astro.locals.lang : 'en';
+const t = getUIDictionary(lang);
 
 const user = Astro.locals.user;
 const url = Astro.url;
@@ -71,9 +75,10 @@ const quickSwitchRoles = [
 ---
 
 <Layout
-  title="National Single Sign-On (Parichay / MeriPehchaan) | VIDYA Portal"
+  title={`SIH 2026 | ${t.login_page_title}`}
   activeRole="login"
-  breadcrumb="Single Sign-On (Parichay Gateway)"
+  breadcrumb={t.crumb_login}
+  lang={lang}
 >
   <div class="max-w-6xl mx-auto">
     <!-- Notice Banners based on query params -->
@@ -173,7 +178,7 @@ const quickSwitchRoles = [
                   </span>
                 </div>
                 <h1 class="text-base sm:text-lg font-bold tracking-tight text-white mt-0.5">
-                  National Academic Depository &amp; AICTE Single Sign-On
+                  {t.login_page_title}
                 </h1>
               </div>
             </div>
@@ -190,10 +195,10 @@ const quickSwitchRoles = [
             <div class="mb-5 pb-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2">
               <div>
                 <h2 class="text-sm font-bold text-[#0F2942] uppercase tracking-wider">
-                  Officer &amp; Student Credential Sign-In
+                  {t.login_page_title}
                 </h2>
                 <p class="text-xs text-slate-600 mt-0.5">
-                  Enter your official NIC Parichay handle, institutional ID, or 12-digit APAAR student identifier.
+                  {t.login_subtitle}
                 </p>
               </div>
               <span class="text-[11px] font-semibold text-blue-800 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded">
@@ -208,7 +213,7 @@ const quickSwitchRoles = [
               <!-- Username Input -->
               <div>
                 <label for="usernameInput" class="block text-sm font-bold text-slate-800 mb-1.5">
-                  Official Username / APAAR ID <span class="text-red-600">*</span>
+                  {t.login_officer_id} <span class="text-red-600">*</span>
                 </label>
                 <div class="relative">
                   <input
@@ -230,7 +235,7 @@ const quickSwitchRoles = [
               <div>
                 <div class="flex items-center justify-between mb-1.5">
                   <label for="passwordInput" class="block text-sm font-bold text-slate-800">
-                    Statutory Passcode <span class="text-red-600">*</span>
+                    {t.login_password} <span class="text-red-600">*</span>
                   </label>
                   <button
                     type="button"
@@ -262,7 +267,7 @@ const quickSwitchRoles = [
                   <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
-                  <span>Statutory Compliance Notice (IT Act 2000 &amp; DPDP Act 2023)</span>
+                  <span>{t.login_security_notice}</span>
                 </div>
                 <p class="leading-relaxed text-slate-600">
                   This is a restricted Government of India information system. All authentication attempts and session actions are logged with IP provenance under Section 43 &amp; 66 of the Information Technology Act, 2000 and the Digital Personal Data Protection Act, 2023.
@@ -280,7 +285,7 @@ const quickSwitchRoles = [
                 <svg class="w-4 h-4 text-[#FF9933]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                 </svg>
-                <span id="btnText">Sign In with Parichay Gateway</span>
+                <span id="btnText">{t.login_btn}</span>
               </button>
             </form>
           </div>
@@ -309,7 +314,7 @@ const quickSwitchRoles = [
                   SIH 2026 Sandbox
                 </span>
                 <h2 class="text-sm font-bold tracking-tight text-white">
-                  Authorized Role Sandbox (1-Click Quick Sign-In)
+                  {t.login_quick_roles}
                 </h2>
               </div>
               <p class="text-[11px] text-slate-300 mt-0.5">

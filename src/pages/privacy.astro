@@ -1,5 +1,9 @@
 ---
 import PolicyPage from '../components/PolicyPage.astro';
+import { getUIDictionary, isSupportedLang, type LangCode } from '../lib/i18n';
+
+const lang: LangCode = isSupportedLang(Astro.locals.lang) ? Astro.locals.lang : 'en';
+const t = getUIDictionary(lang);
 
 const sections = [
   {
@@ -93,7 +97,8 @@ const sections = [
 ---
 
 <PolicyPage
-  title="Privacy Policy"
+  title={t.footerPrivacy}
+  lang={lang}
   updated="28 October 2026"
   intro="This policy tells you what personal data this portal collects, why we collect it, how long we keep it and what your rights are. It follows the Digital Personal Data Protection Act, 2023."
   sections={sections}

@@ -1,0 +1,524 @@
+---
+// Reviewer guide: story-driven tour with bonus features and 22-language support, powered by Driver.js.
+import { EIGHTH_SCHEDULE_LANGUAGES } from '../lib/i18n';
+const user = Astro.locals.user;
+const LANGS = EIGHTH_SCHEDULE_LANGUAGES.map((l) => ({ code: l.code, nativeName: l.nativeName, dir: l.dir }));
+---
+
+<div class="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-2 no-print">
+  {
+    user && (
+      <div class="text-[11px] bg-white border border-slate-300 text-slate-700 rounded px-2.5 py-1 shadow-sm">
+        Demo mode: signed in as <strong class="text-[#0F2942]">{user.username}</strong>
+      </div>
+    )
+  }
+  <button
+    type="button"
+    id="btn-launch-tour"
+    class="flex items-center gap-2 bg-[#0F2942] hover:bg-[#1E3A8A] text-white text-sm font-bold px-4 py-2.5 rounded-full shadow-xl border-2 border-[#FF9933] cursor-pointer transition-colors"
+  >
+    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#FF9933] text-slate-950 text-xs font-black">?</span>
+    <span>Guide</span>
+  </button>
+</div>
+
+<style is:global>
+  .driver-popover.nsrvp {
+    border-radius: 10px;
+    padding: 20px 22px 16px;
+    max-width: 400px;
+    border: 1px solid #cbd5e1;
+    font-family: inherit;
+    box-shadow: 0 20px 40px -12px rgba(15, 41, 66, 0.45);
+  }
+  .driver-popover.nsrvp .driver-popover-title {
+    font-size: 17px;
+    font-weight: 800;
+    color: #0f2942;
+    line-height: 1.3;
+    padding-right: 22px;
+  }
+  .driver-popover.nsrvp .driver-popover-description {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #334155;
+    margin-top: 8px;
+  }
+  .driver-popover.nsrvp .driver-popover-progress-text {
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+  }
+  .driver-popover.nsrvp .driver-popover-footer button {
+    font-size: 13px;
+    font-weight: 700;
+    padding: 7px 14px;
+    border-radius: 6px;
+    text-shadow: none;
+  }
+  .driver-popover.nsrvp .driver-popover-next-btn {
+    background: #138808;
+    color: #fff;
+    border: 1px solid #0e6506;
+  }
+  .driver-popover.nsrvp .driver-popover-prev-btn {
+    background: #fff;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+  }
+  .nsrvp-story {
+    margin: 0 0 10px;
+    padding: 6px 0 6px 12px;
+    border-left: 3px solid #ff9933;
+    font-style: italic;
+    color: #475569;
+  }
+  .nsrvp-ghost {
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    font-weight: 700;
+  }
+  .nsrvp-ghost:hover {
+    background: #f1f5f9;
+  }
+  .nsrvp-select {
+    margin-top: 12px;
+    width: 100%;
+    padding: 9px 10px;
+    font-size: 14px;
+    font-weight: 700;
+    border: 2px solid #0f2942;
+    border-radius: 6px;
+    background: #fff;
+    color: #0f2942;
+    cursor: pointer;
+  }
+  .nsrvp-chip {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    color: #1e40af;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 4px;
+    padding: 1px 7px;
+    margin-bottom: 6px;
+  }
+  .nsrvp-try {
+    margin-top: 12px;
+    width: 100%;
+    padding: 9px 12px;
+    background: #ff9933;
+    color: #0f172a;
+    font-weight: 800;
+    font-size: 13px;
+    border-radius: 6px;
+    border: 0;
+    cursor: pointer;
+  }
+  .nsrvp-try:hover {
+    background: #f28500;
+  }
+  .nsrvp-try[disabled] {
+    background: #d1fae5;
+    color: #065f46;
+    cursor: default;
+  }
+  .nsrvp-checklist {
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 13px;
+  }
+  .nsrvp-checklist li {
+    padding: 2px 0;
+  }
+  .nsrvp-rate-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .nsrvp-star {
+    background: none;
+    border: 0;
+    padding: 0 1px;
+    font-size: 22px;
+    line-height: 1;
+    color: #cbd5e1;
+    cursor: pointer;
+  }
+  .nsrvp-star.on {
+    color: #ff9933;
+  }
+  .nsrvp-comment {
+    width: 100%;
+    margin-top: 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 13px;
+    resize: vertical;
+  }
+  .nsrvp-note {
+    margin-top: 6px;
+    font-size: 11px;
+    color: #64748b;
+  }
+</style>
+
+<script type="application/json" id="nsrvp-langs" set:html={JSON.stringify(LANGS)}></script>
+
+<script>
+  import { driver, type DriveStep } from 'driver.js';
+  import 'driver.js/dist/driver.css';
+  import en from '../locales/en.json';
+
+  type Phase = 'overview' | 'institution' | 'aicte' | 'university' | 'student' | 'verifier';
+  type Dict = Record<string, string>;
+  const ORDER: Phase[] = ['overview', 'institution', 'aicte', 'university', 'student', 'verifier'];
+  const PATH: Record<Phase, string> = {
+    overview: '/',
+    institution: '/institution',
+    aicte: '/aicte',
+    university: '/university',
+    student: '/student',
+    verifier: '/verifier',
+  };
+  const NEEDS_LOGIN: Phase[] = ['institution', 'aicte', 'university', 'student'];
+  const KEY = 'nsrvp_tour_phase';
+  const SEEN = 'nsrvp_tour_seen';
+  const LANG_KEY = 'nsrvp_tour_lang';
+  const TOTAL = 23;
+
+  const LANGS: { code: string; nativeName: string; dir: string }[] = JSON.parse(
+    document.getElementById('nsrvp-langs')?.textContent || '[]'
+  );
+  const loaders = import.meta.glob<{ default: Dict }>(['../locales/*.json', '!../locales/en.json']);
+  const FONTS: Record<string, string> = {
+    bn: 'Noto+Sans+Bengali',
+    as: 'Noto+Sans+Bengali',
+    mni: 'Noto+Sans+Bengali',
+    te: 'Noto+Sans+Telugu',
+    ta: 'Noto+Sans+Tamil',
+    ur: 'Noto+Nastaliq+Urdu',
+    gu: 'Noto+Sans+Gujarati',
+    kn: 'Noto+Sans+Kannada',
+    ml: 'Noto+Sans+Malayalam',
+    or: 'Noto+Sans+Oriya',
+    pa: 'Noto+Sans+Gurmukhi',
+    sat: 'Noto+Sans+Ol+Chiki',
+  };
+
+  let lang = 'en';
+  let T: Dict = en as Dict;
+  let activeDriver: ReturnType<typeof driver> | null = null;
+  let curPhase: Phase = 'overview';
+
+  const t = (k: string) => T[k] ?? (en as Dict)[k] ?? k;
+  const story = (k: string) => `<p class="nsrvp-story">${t(k)}</p>`;
+  const tryBtn = (id: string, k: string) => `<button type="button" class="nsrvp-try" data-try="${id}" data-done="${k}_done">${t(k)}</button>`;
+  const el = (fn: () => Element | null | undefined) => (() => (fn() ?? document.body) as Element);
+  const $ = (id: string) => document.getElementById(id);
+  const click = (id: string) => ($(id) as HTMLElement | null)?.click();
+
+  async function setLang(code: string) {
+    lang = LANGS.some((l) => l.code === code) ? code : 'en';
+    localStorage.setItem(LANG_KEY, lang);
+    const loader = loaders[`../locales/${lang}.json`];
+    T = lang === 'en' || !loader ? (en as Dict) : { ...(en as Dict), ...(await loader()).default };
+    const font = FONTS[lang];
+    if (font && !$(`nsrvp-font-${font}`)) {
+      const link = document.createElement('link');
+      link.id = `nsrvp-font-${font}`;
+      link.rel = 'stylesheet';
+      link.href = `https://fonts.googleapis.com/css2?family=${font}:wght@400;600;700&display=swap`;
+      document.head.appendChild(link);
+    }
+    const label = document.querySelector('#btn-launch-tour span:last-child');
+    if (label) label.textContent = t('ui_guide');
+  }
+
+  function initialLang(): string {
+    const saved = localStorage.getItem(LANG_KEY);
+    if (saved && LANGS.some((l) => l.code === saved)) return saved;
+    const seg = location.pathname.split('/').filter(Boolean)[0];
+    if (seg && LANGS.some((l) => l.code === seg)) return seg;
+    return 'en';
+  }
+
+  const TRY: Record<string, () => void> = {
+    overrun: () => click('loadOverrunSampleBtn'),
+    api: () => document.querySelector('details')?.setAttribute('open', ''),
+    merkle: () => click('verifyMerkleBtnUniv'),
+    mint: () => click('mintTokenBtn'),
+    verify: () => click('verifySubmitBtn'),
+    zk: () => {
+      const c = $('zkPredicateToggle') as HTMLInputElement | null;
+      if (c) {
+        c.checked = true;
+        c.dispatchEvent(new Event('change'));
+      }
+      click('verifySubmitBtn');
+    },
+    forged: () => click('btnGenTamperedScan'),
+  };
+
+  function ratingHtml(): string {
+    const rows = ['technical', 'scalability', 'innovation', 'presentation']
+      .map(
+        (k) =>
+          `<div class="nsrvp-rate-row"><span>${t('r_' + k)}</span><span>${[1, 2, 3, 4, 5]
+            .map((v) => `<button type="button" class="nsrvp-star" data-k="${k}" data-v="${v}" aria-label="${t('r_' + k)} ${v}/5">\u2605</button>`)
+            .join('')}</span></div>`
+      )
+      .join('');
+    return (
+      `<div style="margin-bottom:6px">${t('s23_body')}</div>` +
+      rows +
+      `<textarea class="nsrvp-comment" id="nsrvp-comment" rows="3" maxlength="500" placeholder="${t('r_placeholder')}"></textarea>` +
+      `<button type="button" class="nsrvp-try" id="nsrvp-submit" disabled>${t('r_submit')}</button>` +
+      `<div class="nsrvp-note" id="nsrvp-msg">${t('r_ip_note')}</div>`
+    );
+  }
+
+  function buildSteps(): Record<Phase, { n: number; step: DriveStep }[]> {
+    const P = (title: string, description: string, extra: Record<string, unknown> = {}) => ({
+      popover: { title, description, ...extra },
+    });
+    const S = (n: number, key: string, body: string, element?: DriveStep['element'], pop: Record<string, unknown> = {}) => ({
+      n,
+      step: {
+        ...(element ? { element } : {}),
+        popover: { title: t(`s${n}_title`), description: body, ...pop },
+      } as DriveStep,
+    });
+    const sb = (n: number) => story(`s${n}_story`) + t(`s${n}_body`);
+
+    return {
+      overview: [
+        {
+          n: 1,
+          step: P(
+            t('s2_title'),
+            t('s2_body') + `<button type="button" class="nsrvp-try nsrvp-ghost" data-act="explore">${t('ui_skip')}</button>`
+          ) as DriveStep,
+        },
+        {
+          n: 2,
+          step: {
+            element: '#gov-lang-select',
+            popover: { title: t('s1_title'), description: t('s1_body'), side: 'bottom', align: 'end' },
+          } as DriveStep,
+        },
+        { n: 3, step: P(t('s3_title'), story('s3_story') + t('s3_body')) as DriveStep },
+        S(4, '', t('s4_body'), '#btn-launch-tour', { side: 'left', align: 'end' }),
+      ],
+      institution: [
+        S(5, '', sb(5), el(() => $('catApprovedIntake')?.closest('.grid')), { side: 'bottom', align: 'center' }),
+        S(6, '', sb(6), el(() => document.querySelector('label[for="csvFileInput"]')), { side: 'right', align: 'start' }),
+        S(7, '', sb(7) + tryBtn('overrun', 's7_try'), el(() => $('countValid')?.closest('.grid')), { side: 'bottom', align: 'center' }),
+        S(8, '', sb(8) + tryBtn('api', 's8_try'), el(() => document.querySelector('details')), { side: 'right', align: 'start' }),
+        S(9, '', sb(9), el(() => $('meterProgressBar')?.parentElement?.parentElement), { side: 'bottom', align: 'center' }),
+      ],
+      aicte: [
+        S(10, '', sb(10), '#policyAccreditationSection', { side: 'bottom', align: 'center' }),
+        S(11, '', sb(11), '#anomalyCardsContainer', { side: 'top', align: 'center' }),
+        S(12, '', sb(12), '#downloadPolicyCsvBtn', { side: 'bottom', align: 'end' }),
+      ],
+      university: [S(13, '', sb(13) + tryBtn('merkle', 's13_try'), '#merkleRootTextUniv', { side: 'top', align: 'center' })],
+      student: [
+        S(14, '', sb(14) + tryBtn('mint', 's14_try'), '#mintTokenBtn', { side: 'right', align: 'center' }),
+        S(15, '', sb(15), '#passkeyBindingBadge', { side: 'bottom', align: 'end' }),
+        S(16, '', sb(16), el(() => $('abcProgressBar')?.parentElement?.parentElement), { side: 'top', align: 'center' }),
+      ],
+      verifier: [
+        S(17, '', sb(17) + tryBtn('verify', 's17_try'), '#verifierQueryForm', { side: 'bottom', align: 'center' }),
+        S(18, '', sb(18), el(() => $('resApaar')?.parentElement), { side: 'bottom', align: 'start' }),
+        S(19, '', sb(19) + tryBtn('zk', 's19_try'), el(() => $('zkPredicateToggle')?.closest('.rounded-lg')), { side: 'bottom', align: 'center' }),
+        S(20, '', sb(20) + tryBtn('forged', 's20_try'), '#vlmForensicsSection', { side: 'top', align: 'center' }),
+        S(21, '', sb(21), '#btnPrintSection63', { side: 'top', align: 'end' }),
+        {
+          n: 22,
+          step: P(
+            t('s22_title'),
+            story('s22_story') +
+              '<ul class="nsrvp-checklist">' +
+              Array.from({ length: 10 }, (_, i) => `<li>\u2705 ${i + 1}. ${t('s22_c' + (i + 1))}</li>`).join('') +
+              `</ul><div class="nsrvp-note">${t('s22_extras')}</div>`,
+            { nextBtnText: t('s22_next') }
+          ) as DriveStep,
+        },
+        { n: 23, step: P(t('s23_title'), ratingHtml(), { doneBtnText: t('ui_close') }) as DriveStep },
+      ],
+    };
+  }
+
+  function wireRating(root: HTMLElement) {
+    const scores: Record<string, number> = {};
+    const keys = ['technical', 'scalability', 'innovation', 'presentation'];
+    const submit = root.querySelector<HTMLButtonElement>('#nsrvp-submit');
+    const msg = root.querySelector<HTMLElement>('#nsrvp-msg');
+    root.querySelectorAll<HTMLButtonElement>('.nsrvp-star').forEach((b) => {
+      b.onclick = () => {
+        const k = b.dataset.k!;
+        const v = Number(b.dataset.v);
+        scores[k] = v;
+        root.querySelectorAll<HTMLButtonElement>(`.nsrvp-star[data-k="${k}"]`).forEach((s) => {
+          s.classList.toggle('on', Number(s.dataset.v) <= v);
+        });
+        if (submit) submit.disabled = keys.some((key) => !scores[key]);
+      };
+    });
+    if (!submit) return;
+    submit.onclick = async () => {
+      submit.disabled = true;
+      submit.textContent = t('r_sending');
+      const fail = (m: string) => {
+        submit.disabled = false;
+        submit.textContent = t('r_submit');
+        if (msg) msg.textContent = m;
+      };
+      try {
+        const res = await fetch('/api/reviews', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ratings: scores,
+            comment: (root.querySelector('#nsrvp-comment') as HTMLTextAreaElement | null)?.value || '',
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.success) {
+          submit.textContent = '\u2713 ' + t('r_thanks');
+          if (msg) msg.textContent = t('r_saved');
+        } else fail(res.status === 429 ? t('r_err_limit') : t('r_err'));
+      } catch {
+        fail(t('r_err'));
+      }
+    };
+  }
+
+  function currentPhase(): Phase {
+    const p = location.pathname;
+    return (ORDER.find((ph) => ph !== 'overview' && p.startsWith(PATH[ph])) as Phase) || 'overview';
+  }
+
+  function go(target: Phase) {
+    sessionStorage.setItem(KEY, target);
+    location.href = NEEDS_LOGIN.includes(target)
+      ? `/api/tour/switch?role=${target}&next=${encodeURIComponent(PATH[target])}`
+      : PATH[target];
+  }
+
+  function run(phase: Phase, startAt = 0) {
+    curPhase = phase;
+    sessionStorage.setItem(KEY, phase);
+    localStorage.setItem(SEEN, '1');
+    activeDriver?.destroy();
+
+    const items = buildSteps()[phase];
+    const idx = ORDER.indexOf(phase);
+    const prev = ORDER[idx - 1];
+    const next = ORDER[idx + 1];
+    const dir = LANGS.find((l) => l.code === lang)?.dir || 'ltr';
+
+    const steps: DriveStep[] = items.map(({ n, step }) => ({
+      ...step,
+      popover: { ...step.popover, progressText: t('ui_step_of').replace('{n}', String(n)).replace('{total}', String(TOTAL)) },
+    }));
+
+    const d = driver({
+      showProgress: true,
+      animate: true,
+      smoothScroll: true,
+      overlayClickBehavior: 'none',
+      stagePadding: 8,
+      stageRadius: 8,
+      popoverClass: 'nsrvp',
+      nextBtnText: t('ui_next'),
+      prevBtnText: t('ui_back'),
+      closeBtnLabel: t('ui_close'),
+      doneBtnText: next ? t('ui_next_chapter') : t('ui_finish'),
+      steps,
+      onPopoverRender: (pop, { state }) => {
+        const i = state.activeIndex ?? 0;
+        pop.wrapper.setAttribute('dir', dir);
+        if (i === 0 && prev) {
+          pop.previousButton.style.display = '';
+          pop.previousButton.disabled = false;
+        }
+        if (phase === 'overview' && i === steps.length - 1) pop.nextButton.textContent = t('ui_start');
+        pop.description.querySelectorAll<HTMLButtonElement>('[data-try]').forEach((b) => {
+          b.onclick = () => {
+            TRY[b.dataset.try || '']?.();
+            b.textContent = '\u2713 ' + t(b.dataset.done || 'ui_done');
+            b.disabled = true;
+          };
+        });
+        pop.description.querySelectorAll<HTMLElement>('[data-act="explore"]').forEach((b) => {
+          b.onclick = () => {
+            sessionStorage.removeItem(KEY);
+            d.destroy();
+          };
+        });
+        if (pop.description.querySelector('#nsrvp-submit')) wireRating(pop.description);
+      },
+      onNextClick: (_e, _s, { state }) => {
+        const last = (state.activeIndex ?? 0) === steps.length - 1;
+        if (!last) return d.moveNext();
+        if (next) go(next);
+        else {
+          sessionStorage.removeItem(KEY);
+          d.destroy();
+        }
+      },
+      onPrevClick: (_e, _s, { state }) => {
+        if ((state.activeIndex ?? 0) === 0 && prev) go(prev);
+        else d.movePrevious();
+      },
+      onCloseClick: () => {
+        sessionStorage.removeItem(KEY);
+        d.destroy();
+      },
+    });
+    activeDriver = d;
+    d.drive(startAt);
+  }
+
+  async function init() {
+    await setLang(initialLang());
+    // Header language menu drives the tour language while the tour is open (no page reload).
+    document.addEventListener(
+      'change',
+      async (e) => {
+        const sel = e.target as HTMLSelectElement | null;
+        if (sel?.id !== 'gov-lang-select') return;
+        if (activeDriver?.isActive()) {
+          e.stopImmediatePropagation();
+          const at = activeDriver.getActiveIndex() ?? 0;
+          await setLang(sel.value);
+          run(curPhase, at);
+        } else {
+          localStorage.setItem(LANG_KEY, sel.value);
+        }
+      },
+      true
+    );
+    const phase = currentPhase();
+    document.getElementById('btn-launch-tour')?.addEventListener('click', () => run(phase));
+    const saved = sessionStorage.getItem(KEY);
+    const firstVisit = phase === 'overview' && !localStorage.getItem(SEEN);
+    if (location.search.includes('tour=1') || saved === phase || firstVisit) {
+      setTimeout(() => run(phase), 600);
+    }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+</script>

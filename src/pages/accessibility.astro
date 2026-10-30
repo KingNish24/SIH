@@ -1,5 +1,9 @@
 ---
 import PolicyPage from '../components/PolicyPage.astro';
+import { getUIDictionary, isSupportedLang, type LangCode } from '../lib/i18n';
+
+const lang: LangCode = isSupportedLang(Astro.locals.lang) ? Astro.locals.lang : 'en';
+const t = getUIDictionary(lang);
 
 const sections = [
   {
@@ -44,7 +48,8 @@ const sections = [
 ---
 
 <PolicyPage
-  title="Accessibility Statement"
+  title={t.footerAccessibility}
+  lang={lang}
   updated="28 October 2026"
   intro="This statement tells you how accessible this portal is, what its known limits are and how to tell us about a problem."
   sections={sections}

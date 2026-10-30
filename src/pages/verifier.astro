@@ -1,5 +1,9 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { getUIDictionary, type LangCode, isSupportedLang } from '../lib/i18n';
+
+const lang: LangCode = isSupportedLang(Astro.locals.lang) ? Astro.locals.lang : 'en';
+const t = getUIDictionary(lang);
 
 const url = Astro.url;
 const queryApaar = url.searchParams.get('apaar')?.trim() || '';
@@ -11,9 +15,10 @@ const initialOrg = queryInst
 ---
 
 <Layout
-  title="National Academic Depository & DigiLocker Credential Verification | VIDYA Portal"
+  title={`SIH 2026 | ${t.verifier_page_title}`}
   activeRole="verifier"
-  breadcrumb="Public Credential Verification"
+  breadcrumb={t.crumb_verifier}
+  lang={lang}
 >
   <style is:global>
     @media print {
@@ -62,10 +67,10 @@ const initialOrg = queryInst
             )}
           </div>
           <h1 class="text-xl sm:text-2xl font-bold text-[#0F2942] mt-0.5">
-            Instant Academic Credential &amp; Admission Verification
+            {t.verifier_page_title}
           </h1>
           <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
-            Authorized public verification gateway for recruitment commissions (UPSC/SSC), corporate background verifiers, and higher education admissions.
+            {t.verifier_subtitle}
           </p>
         </div>
       </div>
@@ -83,7 +88,7 @@ const initialOrg = queryInst
       <form id="verifierQueryForm" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
         <div class="md:col-span-4">
           <label for="queryApaar" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-            Candidate 12-Digit APAAR ID *
+            {t.verifier_apaar_label} *
           </label>
           <input
             type="text"
@@ -91,7 +96,7 @@ const initialOrg = queryInst
             required
             pattern="[0-9]{12}"
             maxlength="12"
-            placeholder="e.g. 412398471029"
+            placeholder={t.verifier_apaar_placeholder}
             value={initialApaar}
             class="w-full h-11 bg-slate-50 border border-slate-300 rounded py-2.5 px-3.5 font-mono text-slate-900 text-sm tracking-wider focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F2942] transition-all"
           />
@@ -99,7 +104,7 @@ const initialOrg = queryInst
 
         <div class="md:col-span-5">
           <label for="verifierOrg" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-            Verifying Organization / Purpose *
+            {t.verifier_org_label} *
           </label>
           <input
             type="text"
@@ -111,16 +116,27 @@ const initialOrg = queryInst
           />
         </div>
 
-        <div class="md:col-span-3">
+        <div class="md:col-span-3 flex items-center gap-2">
           <button
             type="submit"
             id="verifySubmitBtn"
-            class="w-full h-11 py-2.5 px-3.5 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold text-sm transition-colors shadow-sm flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
+            class="flex-1 h-11 py-2.5 px-3.5 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold text-sm transition-colors shadow-sm flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
           >
             <svg class="w-4 h-4 text-[#FF9933] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <span id="verifyBtnLabel">Verify Record</span>
+            <span id="verifyBtnLabel">{t.verifier_btn}</span>
+          </button>
+          <button
+            type="button"
+            id="scanQrBtn"
+            class="h-11 px-3 rounded bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-semibold text-xs transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+            title="Scan QR Code"
+          >
+            <svg class="w-4 h-4 text-slate-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+            </svg>
+            <span>{t.verifier_scan_qr_btn}</span>
           </button>
         </div>
       </form>
@@ -227,7 +243,7 @@ const initialOrg = queryInst
           <svg class="w-4 h-4 text-[#FF9933] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
           </svg>
-          <span>Print / Save Official Section 63 BSA Certificate (PDF)</span>
+          <span>{t.verifier_print_btn}</span>
         </button>
       </div>
     </div>
@@ -279,9 +295,11 @@ const initialOrg = queryInst
               <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
               </svg>
-              <span>Ed25519 Signature Verified</span>
+              <span>{t.verifier_tamper_verified}</span>
             </div>
             <div id="resKeyId" class="text-[11px] font-mono text-slate-500 mt-0.5 truncate">Key ID: aicte-nad-2026</div>
+            <span id="i18nTamperVerified" class="hidden">{t.verifier_tamper_verified}</span>
+            <span id="i18nTamperFailed" class="hidden">{t.verifier_tamper_failed}</span>
           </div>
 
           <div class="p-3.5 bg-slate-50 rounded-md border border-slate-200">

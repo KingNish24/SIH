@@ -3,6 +3,10 @@ import Layout from '../layouts/Layout.astro';
 import { getDB } from '../lib/db';
 import type { Institution, Degree, Student } from '../lib/types';
 import { maskApaar, maskName } from '../lib/types';
+import { getUIDictionary, type LangCode, isSupportedLang } from '../lib/i18n';
+
+const lang: LangCode = isSupportedLang(Astro.locals.lang) ? Astro.locals.lang : 'en';
+const t = getUIDictionary(lang);
 
 const db = getDB(Astro.locals);
 
@@ -100,7 +104,7 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
 ];
 ---
 
-<Layout title="SIH 2026 | Affiliating University Degree Provenance" activeRole="university">
+<Layout title={`SIH 2026 | ${t.univ_page_title}`} activeRole="university" lang={lang} breadcrumb={t.crumb_university}>
   <div class="space-y-6">
     <!-- Header -->
     <div class="border-b border-slate-200 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -109,10 +113,10 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
           Affiliating University Module &bull; Code UNIV-03
         </div>
         <h1 class="text-xl sm:text-2xl font-bold text-[#0F2942]">
-          Academic Degree Provenance &amp; Revocation Ledger
+          {t.univ_page_title}
         </h1>
         <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
-          Permanent degree anchoring to student APAAR IDs with Ed25519 asymmetric signatures, NEP 2020 ABC Lateral-Entry credit validation &amp; Section 63 BSA Merkle audit.
+          {t.univ_subtitle}
         </p>
       </div>
 
@@ -153,7 +157,7 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
       <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider">
-            1. University Degree Registry ({degrees.length} Records in Central D1)
+            1. {t.univ_ledger_heading} ({degrees.length} Records in Central D1)
           </h2>
           <p class="text-xs text-slate-500 mt-0.5">
             Each degree is cryptographically bound to a 12-digit APAAR with an Ed25519 Signature &amp; SHA-256 Stamp.
@@ -169,8 +173,8 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
           <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
             <tr>
               <th class="py-3 px-4">Degree ID</th>
-              <th class="py-3 px-4">Candidate, 12-Digit APAAR &amp; Student Roll ID</th>
-              <th class="py-3 px-4">Degree &amp; Specialization</th>
+              <th class="py-3 px-4">{t.univ_student_name}, 12-Digit APAAR &amp; Student Roll ID</th>
+              <th class="py-3 px-4">{t.univ_degree_name} &amp; {t.univ_specialization}</th>
               <th class="py-3 px-4">Graduation</th>
               <th class="py-3 px-4">Registry Status</th>
               <th class="py-3 px-4">Ed25519 Signature &amp; SHA-256 Stamp</th>
@@ -435,15 +439,15 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
     <!-- Issue Degree Section -->
     <div id="issueDegreeSection" class="bg-white border border-slate-200 rounded p-6 shadow-sm">
       <h2 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider mb-1.5">
-        4. Issue New Degree Record
+        4. {t.univ_issue_heading}
       </h2>
       <p class="text-xs sm:text-sm text-slate-600 mb-5">
-        Bind academic degree to student 12-digit APAAR ID with cryptographic Ed25519 Signature &amp; SHA-256 Stamp.
+        {t.univ_issue_sub}
       </p>
 
       <form id="issueDegreeForm" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs sm:text-sm">
         <div>
-          <label for="degApaar" class="block font-semibold text-slate-700 mb-1.5">Candidate APAAR ID (12 Digits):</label>
+          <label for="degApaar" class="block font-semibold text-slate-700 mb-1.5">{t.univ_apaar_id}:</label>
           <input
             type="text"
             id="degApaar"
@@ -455,7 +459,7 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
         </div>
 
         <div>
-          <label for="degInst" class="block font-semibold text-slate-700 mb-1.5">Affiliated Institution:</label>
+          <label for="degInst" class="block font-semibold text-slate-700 mb-1.5">{t.univ_institution}:</label>
           <select id="degInst" class="w-full h-10 bg-slate-50 border border-slate-300 rounded px-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600">
             {institutions.map((i) => (
               <option value={i.id}>{i.name}</option>
@@ -464,7 +468,7 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
         </div>
 
         <div>
-          <label for="degName" class="block font-semibold text-slate-700 mb-1.5">Degree Title:</label>
+          <label for="degName" class="block font-semibold text-slate-700 mb-1.5">{t.univ_degree_name}:</label>
           <input
             type="text"
             id="degName"
@@ -474,7 +478,7 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
         </div>
 
         <div>
-          <label for="degSpec" class="block font-semibold text-slate-700 mb-1.5">Specialization Program:</label>
+          <label for="degSpec" class="block font-semibold text-slate-700 mb-1.5">{t.univ_specialization}:</label>
           <input
             type="text"
             id="degSpec"
@@ -484,7 +488,7 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
         </div>
 
         <div>
-          <label for="degCgpa" class="block font-semibold text-slate-700 mb-1.5">Cumulative CGPA (0.00 - 10.00):</label>
+          <label for="degCgpa" class="block font-semibold text-slate-700 mb-1.5">{t.univ_cgpa}:</label>
           <input
             type="number"
             id="degCgpa"
@@ -497,7 +501,7 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
         </div>
 
         <div>
-          <label for="degYear" class="block font-semibold text-slate-700 mb-1.5">Year of Passing:</label>
+          <label for="degYear" class="block font-semibold text-slate-700 mb-1.5">{t.univ_year}:</label>
           <input
             type="number"
             id="degYear"
@@ -506,13 +510,20 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
           />
         </div>
 
-        <div class="sm:col-span-2 md:col-span-3 pt-2">
+        <div class="sm:col-span-2 md:col-span-3 pt-2 flex flex-wrap items-center gap-3">
           <button
             type="submit"
             id="issueSubmitBtn"
             class="h-10 px-5 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-semibold text-xs sm:text-sm transition-colors shadow-sm"
           >
-            Authenticate &amp; Issue Degree to Central D1
+            {t.univ_sign_btn}
+          </button>
+          <button
+            type="button"
+            id="batchSignBtn"
+            class="h-10 px-4 rounded bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-semibold text-xs sm:text-sm transition-colors"
+          >
+            {t.univ_batch_sign_btn}
           </button>
         </div>
       </form>
@@ -532,7 +543,7 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
         <div class="flex items-center gap-2.5">
           <span class="w-2.5 h-2.5 rounded-full bg-red-600"></span>
           <h3 id="revokeModalTitle" class="text-sm sm:text-base font-bold text-red-950">
-            Statutory Degree Revocation Order
+            {t.univ_revocation_heading}
           </h3>
         </div>
         <button
@@ -548,7 +559,7 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
       <div class="p-5 space-y-4 text-xs sm:text-sm">
         <div class="bg-slate-50 border border-slate-200 rounded p-3 font-mono text-xs text-slate-700">
           <div>Target Degree ID: <strong id="revokeTargetId" class="text-slate-900">DEG-001</strong></div>
-          <div class="mt-0.5">Candidate Record: <strong id="revokeTargetCandidate" class="text-slate-900">Candidate</strong></div>
+          <div class="mt-0.5">{t.univ_student_name}: <strong id="revokeTargetCandidate" class="text-slate-900">Candidate</strong></div>
         </div>
 
         <div>
@@ -576,7 +587,7 @@ const univAbcLedger: UnivAbcLedgerRow[] = [
 
         <div>
           <label for="revokeReasonInput" class="block font-semibold text-slate-700 mb-1.5">
-            Formal Statutory Reason (Recorded on Ledger):
+            {t.univ_revocation_sub}
           </label>
           <textarea
             id="revokeReasonInput"

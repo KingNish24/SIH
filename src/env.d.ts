@@ -5,6 +5,7 @@ declare namespace App {
   interface Locals {
     user?: import('./lib/types').User | null;
     session?: import('./lib/types').Session | null;
+    lang?: import('./lib/i18n').LangCode;
     runtime?: {
       env?: {
         DB?: any;

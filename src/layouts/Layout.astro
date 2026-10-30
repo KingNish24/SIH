@@ -6,6 +6,7 @@ import {
   isSupportedLang,
   type LangCode,
 } from '../lib/i18n';
+import ReviewerTour from '../components/ReviewerTour.astro';
 
 interface Props {
   title?: string;
@@ -18,39 +19,37 @@ const {
   title = 'SIH 2026 | National Student Data Management & Verification Portal',
   activeRole = 'none',
   breadcrumb,
-  lang = 'en',
+  lang,
 } = Astro.props;
 const user = Astro.locals.user;
 
-const resolvedLang: LangCode = isSupportedLang(lang) ? lang : 'en';
+const resolvedLang: LangCode = isSupportedLang(lang)
+  ? lang
+  : (isSupportedLang(Astro.locals.lang) ? Astro.locals.lang : 'en');
 const langInfo = getLanguageInfo(resolvedLang);
 const t = getUIDictionary(resolvedLang);
 const isIndic = resolvedLang !== 'en';
 const isHindi = resolvedLang === 'hi';
 
-// Language switcher: pages that have a localized version under /[lang]
-const MULTILINGUAL_PATHS = ['/', '/privacy', '/terms', '/accessibility', '/hyperlinking-policy'];
+// Universal Language routing: supports all pages
 const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 const pathSegments = currentPath.split('/').filter(Boolean);
 const hasLangPrefix = pathSegments.length > 0 && isSupportedLang(pathSegments[0]) && pathSegments[0] !== 'en';
-const basePath = hasLangPrefix ? '/' + pathSegments.slice(1).join('/') : currentPath;
-const cleanBasePath = basePath === '' ? '/' : basePath;
-const isMultilingualPage = MULTILINGUAL_PATHS.includes(cleanBasePath);
+const cleanBasePath = hasLangPrefix ? '/' + pathSegments.slice(1).join('/') : currentPath;
 
 function getLangHref(targetCode: LangCode): string {
   if (targetCode === 'en') {
-    return isMultilingualPage ? cleanBasePath : '/';
+    return cleanBasePath === '' ? '/' : cleanBasePath;
   }
-  if (isMultilingualPage) {
-    return cleanBasePath === '/' ? `/${targetCode}` : `/${targetCode}${cleanBasePath}`;
-  }
-  return `/${targetCode}`;
+  const base = cleanBasePath === '/' ? '' : cleanBasePath;
+  return `/${targetCode}${base}`;
 }
 
 const hiHref = getLangHref('hi');
 const enHref = getLangHref('en');
 const policyBase = isIndic ? `/${resolvedLang}` : '';
 const homeHref = isIndic ? `/${resolvedLang}` : '/';
+const verifierHref = isIndic ? `/${resolvedLang}/verifier` : '/verifier';
 
 const roleLabels: Record<string, string> = isIndic
   ? {
@@ -76,11 +75,11 @@ interface NavItem {
 
 const rolePortalMap: Record<string, NavItem> = isIndic
   ? {
-      AICTE_ADMIN: { id: 'aicte', label: 'एआईसीटीई नियामक परिषद', path: '/aicte' },
-      INSTITUTE_ADMIN: { id: 'institution', label: 'संस्थान पोर्टल', path: '/institution' },
-      UNIVERSITY_ADMIN: { id: 'university', label: 'संबद्धता विश्वविद्यालय', path: '/university' },
-      STUDENT: { id: 'student', label: 'छात्र सहमति (डीपीडीपी)', path: '/student' },
-      VERIFIER: { id: 'verifier', label: t.navVerifier, path: '/verifier' },
+      AICTE_ADMIN: { id: 'aicte', label: 'एआईसीटीई नियामक परिषद', path: `/${resolvedLang}/aicte` },
+      INSTITUTE_ADMIN: { id: 'institution', label: 'संस्थान पोर्टल', path: `/${resolvedLang}/institution` },
+      UNIVERSITY_ADMIN: { id: 'university', label: 'संबद्धता विश्वविद्यालय', path: `/${resolvedLang}/university` },
+      STUDENT: { id: 'student', label: 'छात्र सहमति (डीपीडीपी)', path: `/${resolvedLang}/student` },
+      VERIFIER: { id: 'verifier', label: t.navVerifier, path: verifierHref },
     }
   : {
       AICTE_ADMIN: { id: 'aicte', label: 'AICTE Regulatory Council', path: '/aicte' },
@@ -95,7 +94,7 @@ let navItems: NavItem[] = [];
 if (!user) {
   navItems = [
     { id: 'overview', label: t.navOverview, path: homeHref },
-    { id: 'verifier', label: t.navVerifier, path: '/verifier' },
+    { id: 'verifier', label: t.navVerifier, path: verifierHref },
     { id: 'mandate', label: t.navMandate, path: `${homeHref}#aicte-mandate` },
   ];
 } else {
@@ -104,7 +103,7 @@ if (!user) {
     { id: 'overview', label: t.navOverview, path: homeHref },
     ...(userPortal ? [userPortal] : []),
     ...(user.role !== 'VERIFIER'
-      ? [{ id: 'verifier', label: t.navVerifier, path: '/verifier' }]
+      ? [{ id: 'verifier', label: t.navVerifier, path: verifierHref }]
       : []),
   ];
 }
@@ -677,6 +676,7 @@ const googleFontsHref = `https://fonts.googleapis.com/css2?family=Inter:wght@400
           const targetHref = selectedOption?.getAttribute('data-href');
           try {
             localStorage.setItem('gov_preferred_lang', langSelect.value);
+            document.cookie = 'gov_preferred_lang=' + encodeURIComponent(langSelect.value) + '; path=/; max-age=31536000; SameSite=Lax';
           } catch (e) {}
           if (targetHref) {
             window.location.href = targetHref;
@@ -746,5 +746,6 @@ const googleFontsHref = `https://fonts.googleapis.com/css2?family=Inter:wght@400
         window.showToast(msg, 'info', 5500);
       };
     </script>
+    <ReviewerTour isIndic={isIndic} />
   </body>
 </html>

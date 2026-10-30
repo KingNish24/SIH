@@ -3,6 +3,10 @@ import Layout from '../layouts/Layout.astro';
 import { getDB } from '../lib/db';
 import type { Student, Admission, Degree, VerificationRequest, Institution } from '../lib/types';
 import { maskApaar, maskName, maskEmail, maskPhone } from '../lib/types';
+import { getUIDictionary, type LangCode, isSupportedLang } from '../lib/i18n';
+
+const lang: LangCode = isSupportedLang(Astro.locals.lang) ? Astro.locals.lang : 'en';
+const t = getUIDictionary(lang);
 
 const db = getDB(Astro.locals);
 
@@ -151,7 +155,7 @@ const abcProfiles: Record<string, AbcCreditProfile> = {
 const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abcProfiles['739284019283'];
 ---
 
-<Layout title="SIH 2026 | Student Consent Authority (DPDP Act 2023)" activeRole="student">
+<Layout title={`SIH 2026 | ${t.student_page_title}`} activeRole="student" lang={lang} breadcrumb={t.crumb_student}>
   <div class="space-y-6">
     <!-- Header -->
     <div class="border-b border-slate-200 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -160,10 +164,10 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
           Candidate Consent Module &bull; Code STU-04
         </div>
         <h1 class="text-xl sm:text-2xl font-bold text-[#0F2942]">
-          Digital Personal Data Protection (DPDP) Consent Vault
+          {t.student_page_title}
         </h1>
         <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
-          Statutory student consent authority under Section 6 of India DPDP Act 2023 via W3C WebAuthn Biometric Passkeys &amp; Scoped One-Time Tokens.
+          {t.student_subtitle}
         </p>
       </div>
 
@@ -223,7 +227,7 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
           </div>
           <div>
             <div class="flex flex-wrap items-center gap-2 mb-1">
-              <span class="text-xs font-bold uppercase text-slate-500">APAAR VERIFIED PROFILE</span>
+              <span class="text-xs font-bold uppercase text-slate-500">{t.student_consent_label}</span>
               <span
                 id="consentBadge"
                 class={`text-[11px] font-bold px-2.5 py-0.5 rounded border ${
@@ -235,9 +239,9 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
                 }`}
               >
                 {initialConsent === 'GRANTED'
-                  ? 'DPDP CONSENT ACTIVE'
+                  ? t.student_consent_active
                   : initialConsent === 'REVOKED'
-                  ? 'DPDP CONSENT REVOKED'
+                  ? t.student_consent_revoked
                   : 'DPDP CONSENT PENDING'}
               </span>
             </div>
@@ -269,15 +273,15 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
                   <svg class="w-3 h-3 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Passkey Bound</span>
+                  <span>{t.student_passkey_active}</span>
                 </>
               ) : (
                 <span>No Passkey Bound — Click Below to Register</span>
               )}
             </span>
           </div>
-          <div id="passkeyDeviceDisplay" class="font-bold text-slate-900 mt-1">FIDO2 / WebAuthn Biometric Passkey</div>
-          <div class="text-[11px] text-emerald-700 font-medium mt-0.5">Hardware Bound (Windows Hello / Touch ID)</div>
+          <div id="passkeyDeviceDisplay" class="font-bold text-slate-900 mt-1">{t.student_passkey_heading}</div>
+          <div class="text-[11px] text-emerald-700 font-medium mt-0.5">{t.student_passkey_sub}</div>
         </div>
       </div>
     </div>
@@ -677,7 +681,7 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div class="bg-white border border-slate-200 rounded p-5 shadow-sm space-y-4">
         <h2 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider">
-          DPDP Statutory Global Consent Switch
+          {t.student_vault_heading}
         </h2>
         <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
           Under Section 6 of the DPDP Act 2023, employers, recruiters, and third parties cannot view or query your degree transcripts without your explicit hardware-authenticated consent.
@@ -685,7 +689,7 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
 
         <div class="flex items-center justify-between p-4 bg-slate-50 rounded border border-slate-200 text-xs sm:text-sm">
           <div>
-            <div class="font-bold text-slate-900">Global Third-Party Verification Consent</div>
+            <div class="font-bold text-slate-900">{t.student_consent_label}</div>
             <div class="text-xs text-slate-500 mt-0.5">Master switch for public verifier queries</div>
           </div>
           <button
@@ -697,7 +701,7 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
                 : 'bg-red-700 hover:bg-red-800'
             }`}
           >
-            {initialConsent === 'GRANTED' ? 'Consent Active (Revoke)' : 'Consent Revoked (Grant)'}
+            {initialConsent === 'GRANTED' ? t.student_revoke_btn : t.student_grant_btn}
           </button>
         </div>
 
@@ -710,7 +714,7 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
             </svg>
-            <span>Bind Hardware Biometric Passkey</span>
+            <span>{t.student_register_passkey_btn}</span>
           </button>
         </div>
       </div>
@@ -719,7 +723,7 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
       <div class="bg-white border border-slate-200 rounded p-5 shadow-sm">
         <div class="flex items-center justify-between mb-2">
           <h2 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider">
-            Third-Party Access Audit Log
+            {t.student_access_logs}
           </h2>
           <span class="text-[11px] font-mono text-slate-500">Filtered by Candidate APAAR</span>
         </div>
@@ -727,7 +731,12 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
           Real-time record of background verification queries received for this APAAR profile.
         </p>
 
-        <div id="auditTrailContainer" class="space-y-2.5 text-xs sm:text-sm">
+        <div class="flex items-center justify-between text-[11px] font-bold text-slate-500 uppercase px-3 pb-1 border-b border-slate-200">
+          <span>{t.student_log_requester} &bull; {t.student_log_purpose}</span>
+          <span>{t.student_log_date} &bull; {t.student_log_status}</span>
+        </div>
+
+        <div id="auditTrailContainer" class="space-y-2.5 text-xs sm:text-sm mt-2">
           {verificationRequests.map((vr) => (
             <div
               data-student-apaar={vr.apaar_id}
@@ -738,7 +747,7 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
               <div>
                 <div class="font-bold text-slate-900">{vr.verifier_name}</div>
                 <div class="text-xs text-slate-500 mt-0.5">
-                  {vr.purpose} &bull; <span class="font-mono">{vr.verified_at || 'Pending Verification'}</span>
+                  <span class="text-slate-400">{t.student_log_purpose}:</span> {vr.purpose} &bull; <span class="font-mono">{vr.verified_at || 'Pending Verification'}</span>
                 </div>
               </div>
               <span

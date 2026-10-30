@@ -3,6 +3,10 @@ import Layout from '../layouts/Layout.astro';
 import { getDB } from '../lib/db';
 import type { Institution, Admission, Student } from '../lib/types';
 import { maskApaar, maskName, maskEmail } from '../lib/types';
+import { getUIDictionary, type LangCode, isSupportedLang } from '../lib/i18n';
+
+const lang: LangCode = isSupportedLang(Astro.locals.lang) ? Astro.locals.lang : 'en';
+const t = getUIDictionary(lang);
 
 const db = getDB(Astro.locals);
 
@@ -150,7 +154,7 @@ if (duplicateStudents.length < 3) {
 }
 ---
 
-<Layout title="SIH 2026 | AICTE Regulatory Oversight & Surveillance" activeRole="aicte">
+<Layout title={`SIH 2026 | ${t.aicte_page_title}`} activeRole="aicte" lang={lang} breadcrumb={t.crumb_aicte}>
   <div class="space-y-6">
     <!-- Header Strip -->
     <div class="border-b border-slate-200 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -159,10 +163,10 @@ if (duplicateStudents.length < 3) {
           Regulatory Surveillance Module &bull; Code REG-02
         </div>
         <h1 class="text-xl sm:text-2xl font-bold text-[#0F2942]">
-          AICTE Central Audit &amp; Inspection Surveillance
+          {t.aicte_page_title}
         </h1>
         <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
-          Real-time intake cap enforcement, cross-council (AICTE / UGC / PCI / NSP) duplicate detection, and Section 63 BSA Merkle ledger verification.
+          {t.aicte_subtitle}
         </p>
       </div>
 
@@ -175,7 +179,7 @@ if (duplicateStudents.length < 3) {
           <svg class="w-4 h-4 text-[#FF9933] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
-          <span>Download Policy &amp; Accreditation Report (CSV)</span>
+          <span>{t.aicte_export_btn}</span>
         </button>
 
         <button
@@ -231,9 +235,17 @@ if (duplicateStudents.length < 3) {
     )}
 
     <!-- Risk Summary KPI Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
       <div class="bg-white p-5 rounded border border-slate-200 shadow-sm">
-        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Sanctioned Quota Overruns</div>
+        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.aicte_kpi_total_colleges}</div>
+        <div class="text-2xl font-bold text-[#0F2942] mt-1.5 font-mono">
+          {institutions.length}
+        </div>
+        <div class="text-xs text-slate-600 mt-1">{t.crumb_aicte}</div>
+      </div>
+
+      <div class="bg-white p-5 rounded border border-slate-200 shadow-sm">
+        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.aicte_kpi_overrun_count}</div>
         <div class="text-2xl font-bold text-red-600 mt-1.5 font-mono">
           {overrunColleges.length} {overrunColleges.length === 1 ? 'Institution' : 'Institutions'}
         </div>
@@ -249,13 +261,13 @@ if (duplicateStudents.length < 3) {
       </div>
 
       <div class="bg-white p-5 rounded border border-slate-200 shadow-sm">
-        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Regulatory Compliance Index</div>
+        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.aicte_kpi_compliance_index}</div>
         <div class="flex items-baseline gap-2 mt-1.5">
           <span class="text-2xl font-bold text-emerald-700 font-mono">{complianceIndex}%</span>
           <span class="text-xs font-mono text-slate-500">({compliantCount}/{institutions.length} Compliant)</span>
         </div>
         <div class="text-xs text-slate-600 mt-1">
-          Monitored Enrollment: <strong class="font-mono text-slate-800">{totalMonitoredEnrollment} / {totalSanctionedIntake}</strong> seats
+          {t.aicte_kpi_total_enrollment}: <strong class="font-mono text-slate-800">{totalMonitoredEnrollment} / {totalSanctionedIntake}</strong> seats
         </div>
       </div>
     </div>
@@ -290,13 +302,13 @@ if (duplicateStudents.length < 3) {
 
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
         <div class="p-3.5 rounded bg-slate-50 border border-slate-200">
-          <div class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Approved Intake</div>
+          <div class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">{t.aicte_kpi_total_sanctioned}</div>
           <div class="text-lg sm:text-xl font-bold font-mono text-[#0F2942] mt-1">{totalSanctionedIntake}</div>
           <div class="text-[10px] text-slate-500 mt-0.5">National Sanctioned Base</div>
         </div>
 
         <div class="p-3.5 rounded bg-slate-50 border border-slate-200">
-          <div class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Actual Enrolment</div>
+          <div class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">{t.aicte_kpi_total_enrollment}</div>
           <div class="text-lg sm:text-xl font-bold font-mono text-emerald-700 mt-1">{totalMonitoredEnrollment}</div>
           <div class="text-[10px] text-slate-500 mt-0.5">APAAR Verified Students</div>
         </div>
@@ -329,29 +341,49 @@ if (duplicateStudents.length < 3) {
 
     <!-- Section 1: Institution Risk Rankings Table -->
     <div class="bg-white border border-slate-200 rounded shadow-sm">
-      <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <h2 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider">
-            1. AICTE Approved Institutions: Inspection Risk Rankings
+            {t.aicte_surveillance_heading}
           </h2>
           <p class="text-xs text-slate-500 mt-0.5">
             Live seat utilization, statutory variance, and automated audit risk scoring across affiliated institutions.
           </p>
         </div>
-        <span class="text-xs font-mono font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded border border-slate-200">
-          {institutions.length} Monitored Campuses
-        </span>
+        <div class="flex flex-wrap items-center gap-2.5">
+          <input
+            type="text"
+            id="aicteSearchInput"
+            placeholder={t.aicte_search_placeholder}
+            class="h-9 px-3 text-xs bg-slate-50 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-600 w-48 sm:w-64"
+          />
+          <select id="stateFilter" class="h-9 px-2 text-xs bg-slate-50 border border-slate-300 rounded text-slate-700">
+            <option value="">{t.aicte_all_states}</option>
+            {Array.from(new Set(institutions.map(i => i.state))).map(st => (
+              <option value={st}>{st}</option>
+            ))}
+          </select>
+          <select id="statusFilter" class="h-9 px-2 text-xs bg-slate-50 border border-slate-300 rounded text-slate-700">
+            <option value="">{t.aicte_all_statuses}</option>
+            <option value="OVERRUN">Overrun</option>
+            <option value="COMPLIANT">Compliant</option>
+          </select>
+          <span class="text-xs font-mono font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded border border-slate-200">
+            {institutions.length} {t.aicte_kpi_total_colleges}
+          </span>
+        </div>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs sm:text-sm border-collapse">
           <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
             <tr>
-              <th class="py-3 px-4">AICTE Code</th>
-              <th class="py-3 px-4">Institution Name</th>
-              <th class="py-3 px-4">Quota Utilization</th>
-              <th class="py-3 px-4">Variance</th>
-              <th class="py-3 px-4">Audit Score</th>
-              <th class="py-3 px-4">Inspection Priority</th>
+              <th class="py-3 px-4">{t.aicte_col_code}</th>
+              <th class="py-3 px-4">{t.aicte_col_inst}</th>
+              <th class="py-3 px-4">{t.aicte_col_state}</th>
+              <th class="py-3 px-4">{t.aicte_col_sanctioned}</th>
+              <th class="py-3 px-4">{t.aicte_col_actual}</th>
+              <th class="py-3 px-4">{t.aicte_col_utilization}</th>
+              <th class="py-3 px-4">{t.aicte_col_status}</th>
               <th class="py-3 px-4 text-right">Regulatory Action</th>
             </tr>
           </thead>
@@ -362,16 +394,21 @@ if (duplicateStudents.length < 3) {
               const pct = ((i.current_enrollment / Math.max(1, i.sanctioned_intake)) * 100).toFixed(1);
               const barWidth = Math.min(100, (i.current_enrollment / Math.max(1, i.sanctioned_intake)) * 100).toFixed(1);
               return (
-                <tr class="hover:bg-slate-50">
+                <tr class="institution-row hover:bg-slate-50" data-state={i.state} data-status={isOverrun ? 'OVERRUN' : 'COMPLIANT'}>
                   <td class="py-3.5 px-4 font-mono font-bold text-slate-800">{i.code}</td>
                   <td class="py-3.5 px-4">
                     <div class="font-semibold text-slate-900">{i.name}</div>
-                    <div class="text-[11px] text-slate-500">{i.district}, {i.state}</div>
+                    <div class="text-[11px] text-slate-500">{i.district}</div>
                   </td>
-                  <td class="py-3.5 px-4 min-w-[180px]">
+                  <td class="py-3.5 px-4 text-xs text-slate-700 font-medium">{i.state}</td>
+                  <td class="py-3.5 px-4 font-mono font-bold text-slate-800">{i.sanctioned_intake}</td>
+                  <td class="py-3.5 px-4 font-mono font-bold text-slate-800">{i.current_enrollment}</td>
+                  <td class="py-3.5 px-4 min-w-[160px]">
                     <div class="flex justify-between text-xs font-mono mb-1">
-                      <span class="font-bold text-slate-900">{i.current_enrollment} / {i.sanctioned_intake}</span>
-                      <span class={isOverrun ? 'text-red-700 font-bold' : 'text-emerald-700 font-semibold'}>{pct}%</span>
+                      <span class="font-bold text-slate-900">{pct}%</span>
+                      <span class={isOverrun ? 'text-red-700 font-bold' : 'text-emerald-700 font-semibold'}>
+                        {isOverrun ? `+${diff} Excess` : `${diff} Under Cap`}
+                      </span>
                     </div>
                     <div class="w-full bg-slate-100 rounded h-2 border border-slate-200 overflow-hidden">
                       <div
@@ -380,18 +417,6 @@ if (duplicateStudents.length < 3) {
                       ></div>
                     </div>
                   </td>
-                  <td class="py-3.5 px-4 font-mono">
-                    {isOverrun ? (
-                      <span class="inline-flex items-center px-2 py-0.5 rounded bg-red-50 text-red-700 border border-red-200 font-bold text-xs">
-                        +{diff} Excess
-                      </span>
-                    ) : (
-                      <span class="inline-flex items-center px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium text-xs">
-                        {diff === 0 ? 'At Cap' : `${diff} Under Cap`}
-                      </span>
-                    )}
-                  </td>
-                  <td class="py-3.5 px-4 font-mono font-semibold text-slate-800">{i.risk_score.toFixed(1)}%</td>
                   <td class="py-3.5 px-4">
                     {isOverrun ? (
                       <span class="bg-red-100 text-red-800 font-bold px-2.5 py-0.5 rounded text-xs border border-red-200">
@@ -446,10 +471,10 @@ if (duplicateStudents.length < 3) {
             </span>
           </div>
           <h2 class="text-sm sm:text-base font-bold text-[#0F2942]">
-            2. Cross-Council &amp; National Scholarship (NSP) Duplicate Surveillance (AICTE | UGC | PCI | NSP)
+            {t.aicte_duplicate_heading}
           </h2>
           <p class="text-xs text-slate-500 mt-0.5">
-            Cross-matches 12-digit APAAR IDs across AICTE Technical, UGC General Degree, and PCI Pharmacy registries to block concurrent admissions and duplicate National Scholarship Portal (NSP) DBT disbursements.
+            {t.aicte_duplicate_sub}
           </p>
         </div>
 
@@ -640,6 +665,31 @@ if (duplicateStudents.length < 3) {
   </div>
 
   <script>
+    // Real-time Search & Filter for Institutions Table
+    const searchInput = document.getElementById('aicteSearchInput') as HTMLInputElement | null;
+    const stateSelect = document.getElementById('stateFilter') as HTMLSelectElement | null;
+    const statusSelect = document.getElementById('statusFilter') as HTMLSelectElement | null;
+    const instRows = document.querySelectorAll<HTMLTableRowElement>('.institution-row');
+
+    function filterInstTable() {
+      const q = searchInput?.value.toLowerCase().trim() || '';
+      const st = stateSelect?.value || '';
+      const stat = statusSelect?.value || '';
+      instRows.forEach((r) => {
+        const text = r.textContent?.toLowerCase() || '';
+        const rowState = r.getAttribute('data-state') || '';
+        const rowStatus = r.getAttribute('data-status') || '';
+        const matchesQ = !q || text.includes(q);
+        const matchesState = !st || rowState === st;
+        const matchesStatus = !stat || rowStatus === stat;
+        r.style.display = matchesQ && matchesState && matchesStatus ? '' : 'none';
+      });
+    }
+
+    searchInput?.addEventListener('input', filterInstTable);
+    stateSelect?.addEventListener('change', filterInstTable);
+    statusSelect?.addEventListener('change', filterInstTable);
+
     // Filter buttons for Cross-Council & NSP Anomalies
     const filterBtns = document.querySelectorAll<HTMLButtonElement>('.anomaly-filter-btn');
     const anomalyCards = document.querySelectorAll<HTMLElement>('.anomaly-card-item');

@@ -2,6 +2,10 @@
 import Layout from '../layouts/Layout.astro';
 import { getDB } from '../lib/db';
 import type { Institution } from '../lib/types';
+import { getUIDictionary, type LangCode, isSupportedLang } from '../lib/i18n';
+
+const lang: LangCode = isSupportedLang(Astro.locals.lang) ? Astro.locals.lang : 'en';
+const t = getUIDictionary(lang);
 
 const db = getDB(Astro.locals);
 const user = Astro.locals.user;
@@ -54,7 +58,7 @@ function computeCategoryBreakdown(sanctioned: number, current: number) {
 const initialCat = computeCategoryBreakdown(collegeA.sanctioned_intake, collegeA.current_enrollment);
 ---
 
-<Layout title="SIH 2026 | Approved Institution Portal" activeRole="institution">
+<Layout title={`SIH 2026 | ${t.inst_page_title}`} activeRole="institution" lang={lang} breadcrumb={t.crumb_institution}>
   <div class="space-y-6">
     <!-- Breadcrumb & Page Header -->
     <div class="border-b border-slate-200 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -63,16 +67,16 @@ const initialCat = computeCategoryBreakdown(collegeA.sanctioned_intake, collegeA
           Institution Administrative Module &bull; Code INST-01
         </div>
         <h1 class="text-xl sm:text-2xl font-bold text-[#0F2942]">
-          Student Admission Roster &amp; Quota Compliance
+          {t.inst_page_title}
         </h1>
         <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
-          Statutory student-level APAAR verification under AICTE Approval Process Handbook (2024–2027).
+          {t.inst_subtitle}
         </p>
       </div>
 
       <!-- Institution Selector with Tenant Isolation -->
       <div class="flex items-center gap-2.5 bg-white px-3.5 py-2 rounded border border-slate-200 shadow-sm text-xs sm:text-sm">
-        <label for="activeCollege" class="font-semibold text-slate-700 whitespace-nowrap">Institution:</label>
+        <label for="activeCollege" class="font-semibold text-slate-700 whitespace-nowrap">{t.inst_select_label}:</label>
         {isTenantLocked ? (
           <div class="flex items-center gap-2">
             <select
@@ -128,7 +132,7 @@ const initialCat = computeCategoryBreakdown(collegeA.sanctioned_intake, collegeA
       <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div class="space-y-1.5">
           <div class="flex items-center gap-2.5">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Sanctioned Intake Capacity</span>
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">{t.inst_kpi_status}</span>
             <span
               id="meterBadge"
               class={`text-[11px] font-bold px-2.5 py-0.5 rounded border ${
@@ -138,8 +142,8 @@ const initialCat = computeCategoryBreakdown(collegeA.sanctioned_intake, collegeA
               }`}
             >
               {initialIsOverrun
-                ? `OVERRUN DETECTED (+${initialDiff} EXCESS)`
-                : `QUOTA COMPLIANT (${collegeA.sanctioned_intake - collegeA.current_enrollment} AVAILABLE)`}
+                ? `${t.inst_status_overrun} (+${initialDiff} EXCESS)`
+                : `${t.inst_status_compliant} (${collegeA.sanctioned_intake - collegeA.current_enrollment} AVAILABLE)`}
             </span>
           </div>
           <h2 id="meterCollegeName" class="text-base sm:text-lg font-bold text-[#0F2942]">
@@ -147,13 +151,13 @@ const initialCat = computeCategoryBreakdown(collegeA.sanctioned_intake, collegeA
           </h2>
           <p class="text-xs sm:text-sm text-slate-600">
             AICTE Code: <span id="meterCollegeCode" class="font-mono font-semibold text-slate-800">{collegeA.code}</span> &bull; 
-            Sanctioned Cap: <span id="meterCap" class="font-bold text-slate-900">{collegeA.sanctioned_intake} Seats</span>
+            {t.inst_kpi_sanctioned}: <span id="meterCap" class="font-bold text-slate-900">{collegeA.sanctioned_intake} Seats</span>
           </p>
         </div>
 
         <div class="flex-1 max-w-xl">
           <div class="flex justify-between items-baseline mb-2 text-xs sm:text-sm">
-            <span class="font-semibold text-slate-700">Enrollment Utilization</span>
+            <span class="font-semibold text-slate-700">{t.inst_kpi_utilization}</span>
             <div class="text-right">
               <span
                 id="meterEnrolled"
@@ -183,12 +187,12 @@ const initialCat = computeCategoryBreakdown(collegeA.sanctioned_intake, collegeA
 
           <div class="flex justify-between text-[11px] sm:text-xs text-slate-500 mt-1.5 font-mono">
             <span>0 Seats</span>
-            <span id="meterSanctionedLabel" class="font-semibold text-slate-700">Sanctioned Limit: {collegeA.sanctioned_intake}</span>
+            <span id="meterSanctionedLabel" class="font-semibold text-slate-700">{t.inst_kpi_sanctioned}: {collegeA.sanctioned_intake}</span>
             <span
               id="meterPercent"
               class={`font-bold ${initialIsOverrun ? 'text-red-700' : 'text-emerald-700'}`}
             >
-              {initialPct}% ({initialIsOverrun ? 'Non-Compliant' : 'Compliant'})
+              {initialPct}% ({initialIsOverrun ? t.inst_status_overrun : t.inst_status_compliant})
             </span>
           </div>
         </div>
@@ -201,7 +205,7 @@ const initialCat = computeCategoryBreakdown(collegeA.sanctioned_intake, collegeA
             <svg class="w-4 h-4 text-[#1E40AF] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <span>Statutory Seat &amp; Admission Category Breakdown (AICTE APH Norms)</span>
+            <span>{t.inst_cat_heading}</span>
           </div>
           <span class="text-[11px] font-mono font-semibold bg-slate-100 text-slate-700 border border-slate-200 px-2.5 py-0.5 rounded">
             APH 2024–27 Chapter II &amp; VII Monitored Quotas
@@ -210,37 +214,37 @@ const initialCat = computeCategoryBreakdown(collegeA.sanctioned_intake, collegeA
 
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
           <div class="p-3 rounded bg-slate-50 border border-slate-200">
-            <div class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Approved Intake</div>
+            <div class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">{t.inst_kpi_sanctioned}</div>
             <div id="catApprovedIntake" class="text-base sm:text-lg font-bold font-mono text-[#0F2942] mt-1">{initialCat.approvedIntake}</div>
             <div class="text-[10px] text-slate-500 mt-0.5">Sanctioned Base Quota</div>
           </div>
 
           <div class="p-3 rounded bg-slate-50 border border-slate-200">
-            <div class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Actual Enrolment</div>
+            <div class="text-[10px] font-bold uppercase text-slate-500 tracking-wider">{t.inst_kpi_actual}</div>
             <div id="catActualEnrolment" class={`text-base sm:text-lg font-bold font-mono mt-1 ${initialIsOverrun ? 'text-red-600' : 'text-emerald-700'}`}>{initialCat.actualEnrolment}</div>
             <div class="text-[10px] text-slate-500 mt-0.5">Active APAAR Verified</div>
           </div>
 
           <div class="p-3 rounded bg-blue-50/50 border border-blue-200">
-            <div class="text-[10px] font-bold uppercase text-blue-800 tracking-wider">Supernumerary Seats</div>
+            <div class="text-[10px] font-bold uppercase text-blue-800 tracking-wider">{t.inst_cat_supernumerary}</div>
             <div id="catSupernumerary" class="text-base sm:text-lg font-bold font-mono text-blue-900 mt-1">{initialCat.supernumerary}</div>
             <div class="text-[10px] text-blue-700 mt-0.5">TFW (5%) / EWS (10%) / PMSSS</div>
           </div>
 
           <div class="p-3 rounded bg-amber-50/50 border border-amber-200">
-            <div class="text-[10px] font-bold uppercase text-amber-900 tracking-wider">NRI Category</div>
+            <div class="text-[10px] font-bold uppercase text-amber-900 tracking-wider">{t.inst_cat_nri}</div>
             <div id="catNri" class="text-base sm:text-lg font-bold font-mono text-amber-900 mt-1">{initialCat.nri}</div>
             <div class="text-[10px] text-amber-800 mt-0.5">Up to 5% Approved Cap</div>
           </div>
 
           <div class="p-3 rounded bg-indigo-50/50 border border-indigo-200">
-            <div class="text-[10px] font-bold uppercase text-indigo-900 tracking-wider">OCI Status</div>
+            <div class="text-[10px] font-bold uppercase text-indigo-900 tracking-wider">{t.inst_cat_oci}</div>
             <div id="catOci" class="text-base sm:text-lg font-bold font-mono text-indigo-900 mt-1">{initialCat.oci}</div>
             <div class="text-[10px] text-indigo-800 mt-0.5">Overseas Citizen of India</div>
           </div>
 
           <div class="p-3 rounded bg-emerald-50/50 border border-emerald-200">
-            <div class="text-[10px] font-bold uppercase text-emerald-900 tracking-wider">Foreign National (FN)</div>
+            <div class="text-[10px] font-bold uppercase text-emerald-900 tracking-wider">{t.inst_cat_fn}</div>
             <div id="catFn" class="text-base sm:text-lg font-bold font-mono text-emerald-900 mt-1">{initialCat.fn}</div>
             <div class="text-[10px] text-emerald-800 mt-0.5">PIO / FN / Gulf Quota</div>
           </div>
@@ -255,14 +259,14 @@ const initialCat = computeCategoryBreakdown(collegeA.sanctioned_intake, collegeA
         <div class="bg-white border border-slate-200 rounded p-5 shadow-sm">
           <div class="flex items-center justify-between mb-2">
             <h3 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider">
-              1. Roster File Ingestion
+              {t.inst_upload_heading}
             </h3>
             <span class="text-[10px] font-mono font-semibold bg-blue-50 text-blue-800 border border-blue-200 px-2 py-0.5 rounded">
               CSV Format
             </span>
           </div>
           <p class="text-xs sm:text-sm text-slate-600 mb-4 leading-relaxed">
-            Upload institutional student admission register in CSV format. Pre-upload client triage enforces DPDP data masking.
+            {t.inst_upload_sub}
           </p>
 
           <label
@@ -274,7 +278,7 @@ const initialCat = computeCategoryBreakdown(collegeA.sanctioned_intake, collegeA
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
             </div>
-            <span class="text-xs sm:text-sm font-bold text-[#0F2942] group-hover:text-blue-800">Select CSV Roster File to Upload</span>
+            <span class="text-xs sm:text-sm font-bold text-[#0F2942] group-hover:text-blue-800">{t.inst_upload_dropzone}</span>
             <span class="text-[11px] font-mono text-slate-500 mt-1">apaar_id, student_roll_id, full_name, program, batch_year, admission_category</span>
             <input type="file" id="csvFileInput" accept=".csv" class="hidden" />
           </label>
@@ -312,7 +316,7 @@ const initialCat = computeCategoryBreakdown(collegeA.sanctioned_intake, collegeA
                 <div class="text-[11px] sm:text-xs text-slate-600 mt-0.5">+7 above 180 cap; includes malformed &amp; missing IDs</div>
               </div>
               <span class="text-[10px] font-mono font-bold bg-red-100 text-red-800 px-2 py-0.5 rounded border border-red-200 shrink-0">
-                LOAD
+                {t.inst_upload_demo_btn}
               </span>
             </button>
             <button
@@ -325,7 +329,7 @@ const initialCat = computeCategoryBreakdown(collegeA.sanctioned_intake, collegeA
                 <div class="text-[11px] sm:text-xs text-slate-600 mt-0.5">100% valid APAAR IDs within sanctioned capacity limit</div>
               </div>
               <span class="text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded border border-emerald-200 shrink-0">
-                LOAD
+                {t.inst_upload_demo_btn}
               </span>
             </button>
           </div>
@@ -380,7 +384,7 @@ Content-Type: application/json
           <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider">
-                2. In-Browser Roster Verification (Zero PII Leakage)
+                {t.inst_triage_heading}
               </h3>
               <p class="text-xs text-slate-500 mt-0.5">
                 Validated in client memory with statutory DPDP masking before committing to Central Registry.
@@ -392,22 +396,22 @@ Content-Type: application/json
               disabled
               class="h-10 px-4 rounded bg-[#0F2942] hover:bg-[#1E3A8A] disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-not-allowed text-white text-xs sm:text-sm font-semibold transition-colors shadow-sm"
             >
-              Commit Verified Roster to Central D1
+              {t.inst_sync_btn}
             </button>
           </div>
 
           <!-- Triage Summary Pill Strip -->
           <div class="grid grid-cols-3 divide-x divide-slate-200 border-b border-slate-200 text-center py-3 bg-slate-50 text-xs sm:text-sm">
             <div>
-              <span class="text-slate-600 font-medium">Valid Records:</span>
+              <span class="text-slate-600 font-medium">{t.inst_triage_valid}:</span>
               <strong id="countValid" class="ml-1.5 text-emerald-700 font-mono text-sm sm:text-base">0</strong>
             </div>
             <div>
-              <span class="text-slate-600 font-medium">Malformed APAAR:</span>
+              <span class="text-slate-600 font-medium">{t.inst_triage_malformed}:</span>
               <strong id="countMalformed" class="ml-1.5 text-red-700 font-mono text-sm sm:text-base">0</strong>
             </div>
             <div>
-              <span class="text-slate-600 font-medium">Missing APAAR:</span>
+              <span class="text-slate-600 font-medium">{t.inst_triage_missing}:</span>
               <strong id="countMissing" class="ml-1.5 text-amber-700 font-mono text-sm sm:text-base">0</strong>
             </div>
           </div>

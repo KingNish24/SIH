@@ -3,6 +3,7 @@ import { getDB } from './lib/db';
 import { getSession } from './lib/auth';
 import { checkRateLimit } from './lib/ratelimit';
 import { logRequest, logJSON } from './lib/log';
+import { isSupportedLang, type LangCode } from './lib/i18n';
 
 // Static assets and internal routes that should always bypass auth
 const PUBLIC_FILE_EXTENSIONS = /\.(ico|svg|png|jpg|jpeg|webp|gif|css|js|map|woff|woff2|ttf|eot|txt|json)$/i;
@@ -20,6 +21,35 @@ const route = async (context: Parameters<Parameters<typeof defineMiddleware>[0]>
     return next();
   }
 
+  // 1.5. Multilingual URL Resolution
+  const segments = pathname.split('/').filter(Boolean);
+  const potentialLang = segments[0];
+  let resolvedLang: LangCode = 'en';
+  let normalizedPath = pathname;
+  let isLangPrefixed = false;
+
+  if (isSupportedLang(potentialLang)) {
+    isLangPrefixed = true;
+    resolvedLang = potentialLang;
+    const remaining = segments.slice(1).join('/');
+    normalizedPath = remaining ? `/${remaining}` : '/';
+
+    // Canonical redirect for /en prefix to root path
+    if (resolvedLang === 'en') {
+      const search = context.url.search;
+      return context.redirect(`${normalizedPath}${search}`, 302);
+    }
+  } else {
+    // Resolve from cookie if present
+    const cookieHeader = context.request.headers.get('cookie') || '';
+    const match = cookieHeader.match(/(?:^|;\s*)gov_preferred_lang=([a-z]{2,3})/);
+    if (match && isSupportedLang(match[1])) {
+      resolvedLang = match[1] as LangCode;
+    }
+  }
+
+  context.locals.lang = resolvedLang;
+
   // 2. Resolve database and active session
   const db = getDB(context.locals);
   const sessionData = await getSession(context.request, db);
@@ -35,50 +65,68 @@ const route = async (context: Parameters<Parameters<typeof defineMiddleware>[0]>
   const user = context.locals.user;
 
   // 3. Public pages & auth endpoints
-  // Verifier portal (/verifier) is open to all citizens, recruiters & verifiers
   if (
-    pathname === '/' ||
-    pathname === '/login' ||
-    pathname === '/verifier' ||
-    pathname.startsWith('/verifier/') ||
-    pathname.startsWith('/api/auth/')
+    normalizedPath === '/' ||
+    normalizedPath === '/login' ||
+    normalizedPath === '/verifier' ||
+    normalizedPath.startsWith('/verifier/') ||
+    normalizedPath.startsWith('/api/auth/') ||
+    normalizedPath === '/privacy' ||
+    normalizedPath === '/terms' ||
+    normalizedPath === '/accessibility' ||
+    normalizedPath === '/hyperlinking-policy'
   ) {
+    if (isLangPrefixed) {
+      return context.rewrite(normalizedPath);
+    }
     return next();
   }
 
   // 4. Role-based Protected Page Routes
   // AICTE Regulatory Council
-  if (pathname === '/aicte' || pathname.startsWith('/aicte/')) {
+  if (normalizedPath === '/aicte' || normalizedPath.startsWith('/aicte/')) {
     if (!user || user.role !== 'AICTE_ADMIN') {
       const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
       return context.redirect(redirectUrl, 302);
+    }
+    if (isLangPrefixed) {
+      return context.rewrite(normalizedPath);
     }
     return next();
   }
 
   // Institute Admin Portal
-  if (pathname === '/institution' || pathname.startsWith('/institution/')) {
+  if (normalizedPath === '/institution' || normalizedPath.startsWith('/institution/')) {
     if (!user || user.role !== 'INSTITUTE_ADMIN') {
       const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
       return context.redirect(redirectUrl, 302);
+    }
+    if (isLangPrefixed) {
+      return context.rewrite(normalizedPath);
     }
     return next();
   }
 
   // Affiliating University Degree Ledger
-  if (pathname === '/university' || pathname.startsWith('/university/')) {
+  if (normalizedPath === '/university' || normalizedPath.startsWith('/university/')) {
     if (!user || user.role !== 'UNIVERSITY_ADMIN') {
       const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
       return context.redirect(redirectUrl, 302);
+    }
+    if (isLangPrefixed) {
+      return context.rewrite(normalizedPath);
     }
     return next();
   }
 
   // Student DPDP Consent Portal
-  if (pathname === '/student' || pathname.startsWith('/student/')) {
+  if (normalizedPath === '/student' || normalizedPath.startsWith('/student/')) {
     if (!user || user.role !== 'STUDENT') {
       const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
       return context.redirect(redirectUrl, 302);
+    }
+    if (isLangPrefixed) {
+      return context.rewrite(normalizedPath);
     }
     return next();
   }
@@ -129,80 +177,20 @@ const route = async (context: Parameters<Parameters<typeof defineMiddleware>[0]>
     }
   }
 
-  if (pathname === '/api/student/consent') {
-    if (!user) {
-      return new Response(JSON.stringify({ success: false, error: 'Unauthorized: Authentication required' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-    if (user.role !== 'STUDENT' && user.role !== 'AICTE_ADMIN') {
-      return new Response(JSON.stringify({ success: false, error: 'Forbidden: STUDENT role required' }), {
-        status: 403,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+  // 6. Security Headers (GIGW 3.0 / OWASP Standards)
+  if (isLangPrefixed) {
+    return context.rewrite(normalizedPath);
   }
-
-  return next();
+  const response = await next();
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-XSS-Protection', '1; mode=block');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set(
+    'Permissions-Policy',
+    'camera=(self), microphone=(), geolocation=(), interest-cohort=()'
+  );
+  return response;
 };
 
-const CSP = [
-  "default-src 'self'",
-  // Astro may inline small hoisted scripts/styles, and @huggingface/transformers ONNX/WASM runtime requires 'wasm-unsafe-eval'
-  "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://huggingface.co https://*.hf.co https://*.huggingface.co",
-  "worker-src 'self' blob:",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com data:",
-  "img-src 'self' data: blob:",
-  `connect-src 'self' https://huggingface.co https://*.hf.co https://*.huggingface.co https://cdn.jsdelivr.net blob: data:${import.meta.env.DEV ? ' ws: wss:' : ''}`,
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-].join('; ');
-
-const SECURITY_HEADERS: Record<string, string> = {
-  'Content-Security-Policy': CSP,
-  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-  'X-Content-Type-Options': 'nosniff',
-  'X-Frame-Options': 'DENY',
-  'Referrer-Policy': 'strict-origin-when-cross-origin',
-  'Permissions-Policy':
-    'publickey-credentials-get=(self), publickey-credentials-create=(self), camera=(), microphone=(), geolocation=(), payment=()',
-};
-
-function withHeaders(res: Response, reqId: string): Response {
-  let out = res;
-  try {
-    out.headers.set('X-Request-Id', reqId);
-  } catch {
-    // Immutable headers (e.g. passthrough responses): clone into a mutable Response
-    out = new Response(res.body, res);
-    out.headers.set('X-Request-Id', reqId);
-  }
-  for (const [k, v] of Object.entries(SECURITY_HEADERS)) out.headers.set(k, v);
-  return out;
-}
-
-export const onRequest = defineMiddleware(async (context, next) => {
-  const start = Date.now();
-  const reqId = crypto.randomUUID();
-  const { pathname } = context.url;
-  const method = context.request.method;
-
-  let res: Response;
-  try {
-    res = (await checkRateLimit(context.request, pathname)) ?? (await route(context, next));
-  } catch (err: any) {
-    logJSON('error', { msg: 'unhandled', reqId, method, path: pathname, error: err?.message });
-    res = new Response(JSON.stringify({ success: false, error: 'Internal Server Error', reqId }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  res = withHeaders(res, reqId);
-  logRequest({ method, path: pathname, status: res.status, ms: Date.now() - start, reqId });
-  return res;
-});
+export const onRequest = defineMiddleware(route);
