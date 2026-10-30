@@ -1,0 +1,55 @@
+---
+import { isSupportedLang, type LangCode } from '../../lib/i18n';
+import InstitutionPage from '../institution.astro';
+import AictePage from '../aicte.astro';
+import UniversityPage from '../university.astro';
+import StudentPage from '../student.astro';
+import VerifierPage from '../verifier.astro';
+import LoginPage from '../login.astro';
+import PrivacyPage from '../privacy.astro';
+import TermsPage from '../terms.astro';
+import AccessibilityPage from '../accessibility.astro';
+import HyperlinkPage from '../hyperlinking-policy.astro';
+
+const { lang, page } = Astro.params;
+
+if (!isSupportedLang(lang)) {
+  return new Response('Not Found', { status: 404 });
+}
+
+const targetPage = page ? page.replace(/^\/+|\/+$/g, '') : '';
+
+if (lang === 'en') {
+  return Astro.redirect(targetPage ? `/${targetPage}` : '/', 302);
+}
+
+Astro.locals.lang = lang as LangCode;
+
+const VALID_PAGES = [
+  'institution',
+  'aicte',
+  'university',
+  'student',
+  'verifier',
+  'login',
+  'privacy',
+  'terms',
+  'accessibility',
+  'hyperlinking-policy',
+];
+
+if (!VALID_PAGES.includes(targetPage)) {
+  return new Response('Not Found', { status: 404 });
+}
+---
+
+{targetPage === 'institution' && <InstitutionPage />}
+{targetPage === 'aicte' && <AictePage />}
+{targetPage === 'university' && <UniversityPage />}
+{targetPage === 'student' && <StudentPage />}
+{targetPage === 'verifier' && <VerifierPage />}
+{targetPage === 'login' && <LoginPage />}
+{targetPage === 'privacy' && <PrivacyPage />}
+{targetPage === 'terms' && <TermsPage />}
+{targetPage === 'accessibility' && <AccessibilityPage />}
+{targetPage === 'hyperlinking-policy' && <HyperlinkPage />}

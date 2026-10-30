@@ -26,10 +26,8 @@ const route = async (context: Parameters<Parameters<typeof defineMiddleware>[0]>
   const potentialLang = segments[0];
   let resolvedLang: LangCode = 'en';
   let normalizedPath = pathname;
-  let isLangPrefixed = false;
 
   if (isSupportedLang(potentialLang)) {
-    isLangPrefixed = true;
     resolvedLang = potentialLang;
     const remaining = segments.slice(1).join('/');
     normalizedPath = remaining ? `/${remaining}` : '/';
@@ -65,7 +63,7 @@ const route = async (context: Parameters<Parameters<typeof defineMiddleware>[0]>
   const user = context.locals.user;
 
   // 3. Public pages & auth endpoints
-  if (
+  const isPublicPage =
     normalizedPath === '/' ||
     normalizedPath === '/login' ||
     normalizedPath === '/verifier' ||
@@ -74,61 +72,41 @@ const route = async (context: Parameters<Parameters<typeof defineMiddleware>[0]>
     normalizedPath === '/privacy' ||
     normalizedPath === '/terms' ||
     normalizedPath === '/accessibility' ||
-    normalizedPath === '/hyperlinking-policy'
-  ) {
-    if (isLangPrefixed) {
-      return context.rewrite(normalizedPath);
-    }
-    return next();
-  }
+    normalizedPath === '/hyperlinking-policy';
 
-  // 4. Role-based Protected Page Routes
-  // AICTE Regulatory Council
-  if (normalizedPath === '/aicte' || normalizedPath.startsWith('/aicte/')) {
-    if (!user || user.role !== 'AICTE_ADMIN') {
-      const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
-      return context.redirect(redirectUrl, 302);
+  if (!isPublicPage) {
+    // 4. Role-based Protected Page Routes
+    // AICTE Regulatory Council
+    if (normalizedPath === '/aicte' || normalizedPath.startsWith('/aicte/')) {
+      if (!user || user.role !== 'AICTE_ADMIN') {
+        const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
+        return context.redirect(redirectUrl, 302);
+      }
     }
-    if (isLangPrefixed) {
-      return context.rewrite(normalizedPath);
-    }
-    return next();
-  }
 
-  // Institute Admin Portal
-  if (normalizedPath === '/institution' || normalizedPath.startsWith('/institution/')) {
-    if (!user || user.role !== 'INSTITUTE_ADMIN') {
-      const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
-      return context.redirect(redirectUrl, 302);
+    // Institute Admin Portal
+    if (normalizedPath === '/institution' || normalizedPath.startsWith('/institution/')) {
+      if (!user || user.role !== 'INSTITUTE_ADMIN') {
+        const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
+        return context.redirect(redirectUrl, 302);
+      }
     }
-    if (isLangPrefixed) {
-      return context.rewrite(normalizedPath);
-    }
-    return next();
-  }
 
-  // Affiliating University Degree Ledger
-  if (normalizedPath === '/university' || normalizedPath.startsWith('/university/')) {
-    if (!user || user.role !== 'UNIVERSITY_ADMIN') {
-      const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
-      return context.redirect(redirectUrl, 302);
+    // Affiliating University Degree Ledger
+    if (normalizedPath === '/university' || normalizedPath.startsWith('/university/')) {
+      if (!user || user.role !== 'UNIVERSITY_ADMIN') {
+        const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
+        return context.redirect(redirectUrl, 302);
+      }
     }
-    if (isLangPrefixed) {
-      return context.rewrite(normalizedPath);
-    }
-    return next();
-  }
 
-  // Student DPDP Consent Portal
-  if (normalizedPath === '/student' || normalizedPath.startsWith('/student/')) {
-    if (!user || user.role !== 'STUDENT') {
-      const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
-      return context.redirect(redirectUrl, 302);
+    // Student DPDP Consent Portal
+    if (normalizedPath === '/student' || normalizedPath.startsWith('/student/')) {
+      if (!user || user.role !== 'STUDENT') {
+        const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
+        return context.redirect(redirectUrl, 302);
+      }
     }
-    if (isLangPrefixed) {
-      return context.rewrite(normalizedPath);
-    }
-    return next();
   }
 
   // 5. Protected Mutating API Routes
@@ -178,9 +156,6 @@ const route = async (context: Parameters<Parameters<typeof defineMiddleware>[0]>
   }
 
   // 6. Security Headers (GIGW 3.0 / OWASP Standards)
-  if (isLangPrefixed) {
-    return context.rewrite(normalizedPath);
-  }
   const response = await next();
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
