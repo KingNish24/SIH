@@ -26,8 +26,8 @@ const compliantCount = totalMonitored - overrunCount;
 const totalSanctioned = institutions.reduce((sum, i) => sum + (i.sanctioned_intake || 0), 0);
 const totalEnrollment = institutions.reduce((sum, i) => sum + (i.current_enrollment || 0), 0);
 const compliancePct = totalMonitored > 0 ? ((compliantCount / totalMonitored) * 100).toFixed(1) : '100.0';
-const verifiedDegreesRow = await db.prepare('SELECT COUNT(*) as cnt FROM degrees WHERE revoked = 0').bind().first<{ cnt: number }>();
-const verifiedDegreesCount = verifiedDegreesRow?.cnt ?? 0;
+const degRes = await db.prepare('SELECT * FROM degrees').bind().all<{ status?: string }>();
+const verifiedDegreesCount = (degRes.results || []).filter((d) => d.status === 'ISSUED').length;
 
 const portals = [
   {
