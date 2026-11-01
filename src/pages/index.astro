@@ -251,121 +251,96 @@ const langPrefix = resolvedLang === 'en' ? '' : `/${resolvedLang}`;
       </div>
     </section>
 
-    <!-- 3. NAD-STYLE BENEFITS SECTION WITH YELLOW CIRCLE LOGOS (3 Cards) -->
+    <!-- 3. BALANCED 3-CARD BENEFITS SECTION WITH CLEAN YELLOW CIRCLE LOGOS -->
     <section id="how-it-works" class="max-w-7xl mx-auto px-4 sm:px-8 py-14">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-        <!-- Left 5 Cols: Top-Aligned Heading, Text & Clean Vector Illustration (Exact NAD 'Benefits of NAD' Style) -->
-        <div class="lg:col-span-5 space-y-4 lg:pt-4">
-          <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-tight" data-i18n="home_steps_heading">
-            {t.home_steps_heading}
-          </h2>
-          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed" data-i18n="home_steps_sub">
-            {t.home_steps_sub}
-          </p>
-          <p class="text-xs text-slate-600 leading-relaxed">
-            <span data-i18n="home_rule1_desc">{t.home_rule1_desc}</span>{' '}
-            <span data-i18n="home_rule2_desc">{t.home_rule2_desc}</span>
-          </p>
+      <div class="max-w-2xl mb-9">
+        <div class="text-xs font-bold uppercase tracking-widest text-[#0B4EA2] mb-1.5" data-i18n="home_steps_eyebrow">
+          {t.home_steps_eyebrow}
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight" data-i18n="home_steps_heading">
+          {t.home_steps_heading}
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-600 mt-1.5 leading-relaxed" data-i18n="home_steps_sub">
+          {t.home_steps_sub}
+        </p>
+      </div>
 
-          <!-- NAD-Style Clean Vector Academic Illustration Below Text -->
-          <div class="pt-4 flex justify-center lg:justify-start">
-            <svg viewBox="0 0 280 210" class="w-64 h-auto select-none" fill="none" aria-hidden="true">
-              <!-- Soft Background Blob -->
-              <circle cx="140" cy="110" r="82" fill="#F3F5FB" />
-              <!-- Floating Academic Elements -->
-              <circle cx="72" cy="52" r="14" fill="#FFAE19" fill-opacity="0.2" />
-              <circle cx="72" cy="52" r="7" fill="#FFAE19" />
-              <rect x="190" y="38" width="46" height="34" rx="6" fill="#fff" stroke="#CBD5E1" stroke-width="2" />
-              <line x1="198" y1="49" x2="226" y2="49" stroke="#0B4EA2" stroke-width="2.5" stroke-linecap="round" />
-              <line x1="198" y1="58" x2="218" y2="58" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" />
-              <!-- Central Certificate / Shield Card -->
-              <rect x="85" y="68" width="110" height="86" rx="12" fill="#FFFFFF" stroke="#0B4EA2" stroke-width="2.5" />
-              <rect x="100" y="84" width="50" height="6" rx="3" fill="#0B1E48" />
-              <rect x="100" y="96" width="76" height="5" rx="2.5" fill="#CBD5E1" />
-              <rect x="100" y="106" width="64" height="5" rx="2.5" fill="#CBD5E1" />
-              <!-- Green Verified Seal -->
-              <circle cx="168" cy="130" r="14" fill="#138808" />
-              <path d="M162 130l4 4 8-8" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-              <!-- Graduation Cap Accent -->
-              <path d="M62 135l24-10 24 10-24 10-24-10z" fill="#0B4EA2" />
-            </svg>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+        <!-- Card 1: Seat Limit & Quota Check -->
+        <div class="bg-white rounded-2xl p-7 shadow-[0_8px_30px_rgba(11,30,72,0.08)] border border-slate-200/80 flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-full bg-[#FFAE19] text-slate-950 flex items-center justify-center mb-5 shadow-xs">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 class="text-base sm:text-lg font-extrabold text-[#0B1E48] mb-2" data-i18n="home_hero_promise_2">
+              {t.home_hero_promise_2}
+            </h3>
+            <p class="text-xs sm:text-sm text-slate-600 leading-relaxed mb-3" data-i18n="home_step1_desc">
+              {t.home_step1_desc}
+            </p>
+            <p class="text-xs text-slate-500 leading-relaxed" data-i18n="home_step2_desc">
+              {t.home_step2_desc}
+            </p>
+          </div>
+          <div class="pt-6 mt-6 border-t border-slate-100">
+            <a href={`${langPrefix}/institution`} class="inline-flex items-center gap-1.5 text-xs font-bold text-[#0B4EA2] hover:text-[#0B1E48] transition-colors">
+              <span data-i18n="nav_institution">{t.nav_institution}</span>
+              <span aria-hidden="true">&rarr;</span>
+            </a>
           </div>
         </div>
 
-        <!-- Right 7 Cols: NAD Staggered 3-Card Layout with Yellow Circle Logos -->
-        <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
-          <!-- Left Column: Institutions + Students -->
-          <div class="space-y-6">
-            <!-- Card 1: Institutions -->
-            <div class="bg-white rounded-2xl p-6 shadow-[0_10px_35px_-10px_rgba(11,30,72,0.14)] border border-slate-100">
-              <div class="w-12 h-12 rounded-full bg-[#FFAE19] flex items-center justify-center mb-4 shadow-xs">
-                <div class="w-6 h-6 rounded bg-sky-600 text-white flex items-center justify-center">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5" />
-                  </svg>
-                </div>
-              </div>
-              <h3 class="text-base font-extrabold text-slate-900 mb-2" data-i18n="portal1Title">
-                {t.portal1Title}
-              </h3>
-              <p class="text-xs text-slate-600 leading-relaxed mb-1.5" data-i18n="home_step1_desc">
-                {t.home_step1_desc}
-              </p>
-              <p class="text-xs text-slate-600 leading-relaxed mb-4" data-i18n="home_step2_desc">
-                {t.home_step2_desc}
-              </p>
-              <a href={`${langPrefix}/institution`} class="text-xs font-bold text-[#0B4EA2] hover:underline">
-                Know More
-              </a>
-            </div>
-
-            <!-- Card 2: Students -->
-            <div class="bg-white rounded-2xl p-6 shadow-[0_10px_35px_-10px_rgba(11,30,72,0.14)] border border-slate-100">
-              <div class="w-12 h-12 rounded-full bg-[#FFAE19] flex items-center justify-center mb-4 shadow-xs">
-                <div class="w-6 h-6 rounded bg-sky-600 text-white flex items-center justify-center">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 14l9-5-9-5-9 5 9 5z" />
-                  </svg>
-                </div>
-              </div>
-              <h3 class="text-base font-extrabold text-slate-900 mb-2" data-i18n="portal4Title">
-                {t.portal4Title}
-              </h3>
-              <p class="text-xs text-slate-600 leading-relaxed mb-1.5" data-i18n="home_step3_desc">
-                {t.home_step3_desc}
-              </p>
-              <p class="text-xs text-slate-600 leading-relaxed mb-4" data-i18n="portal4Desc">
-                {t.portal4Desc}
-              </p>
-              <a href={`${langPrefix}/student`} class="text-xs font-bold text-[#0B4EA2] hover:underline">
-                Know More
-              </a>
-            </div>
-          </div>
-
-          <!-- Right Column: Verifiers (Centered Vertically — Exact NAD Stagger) -->
+        <!-- Card 2: Verified Digital Degrees -->
+        <div class="bg-white rounded-2xl p-7 shadow-[0_8px_30px_rgba(11,30,72,0.08)] border border-slate-200/80 flex flex-col justify-between">
           <div>
-            <div class="bg-white rounded-2xl p-6 shadow-[0_10px_35px_-10px_rgba(11,30,72,0.14)] border border-slate-100">
-              <div class="w-12 h-12 rounded-full bg-[#FFAE19] flex items-center justify-center mb-4 shadow-xs">
-                <div class="w-6 h-6 rounded bg-emerald-600 text-white flex items-center justify-center">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                </div>
-              </div>
-              <h3 class="text-base font-extrabold text-slate-900 mb-2" data-i18n="portal5Title">
-                {t.portal5Title}
-              </h3>
-              <p class="text-xs text-slate-600 leading-relaxed mb-1.5" data-i18n="home_step4_desc">
-                {t.home_step4_desc}
-              </p>
-              <p class="text-xs text-slate-600 leading-relaxed mb-4" data-i18n="portal5Desc">
-                {t.portal5Desc}
-              </p>
-              <a href={`${langPrefix}/verifier`} class="text-xs font-bold text-[#0B4EA2] hover:underline">
-                Know More
-              </a>
+            <div class="w-12 h-12 rounded-full bg-[#FFAE19] text-slate-950 flex items-center justify-center mb-5 shadow-xs">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+              </svg>
             </div>
+            <h3 class="text-base sm:text-lg font-extrabold text-[#0B1E48] mb-2" data-i18n="home_hero_promise_1">
+              {t.home_hero_promise_1}
+            </h3>
+            <p class="text-xs sm:text-sm text-slate-600 leading-relaxed mb-3" data-i18n="home_step3_desc">
+              {t.home_step3_desc}
+            </p>
+            <p class="text-xs text-slate-500 leading-relaxed" data-i18n="home_rule2_desc">
+              {t.home_rule2_desc}
+            </p>
+          </div>
+          <div class="pt-6 mt-6 border-t border-slate-100">
+            <a href={`${langPrefix}/university`} class="inline-flex items-center gap-1.5 text-xs font-bold text-[#0B4EA2] hover:text-[#0B1E48] transition-colors">
+              <span data-i18n="nav_university">{t.nav_university}</span>
+              <span aria-hidden="true">&rarr;</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Card 3: Free Employer & Public Check -->
+        <div class="bg-white rounded-2xl p-7 shadow-[0_8px_30px_rgba(11,30,72,0.08)] border border-slate-200/80 flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-full bg-[#FFAE19] text-slate-950 flex items-center justify-center mb-5 shadow-xs">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <h3 class="text-base sm:text-lg font-extrabold text-[#0B1E48] mb-2" data-i18n="home_hero_promise_3">
+              {t.home_hero_promise_3}
+            </h3>
+            <p class="text-xs sm:text-sm text-slate-600 leading-relaxed mb-3" data-i18n="home_step4_desc">
+              {t.home_step4_desc}
+            </p>
+            <p class="text-xs text-slate-500 leading-relaxed" data-i18n="portal5Desc">
+              {t.portal5Desc}
+            </p>
+          </div>
+          <div class="pt-6 mt-6 border-t border-slate-100">
+            <a href={`${langPrefix}/verifier`} class="inline-flex items-center gap-1.5 text-xs font-bold text-[#138808] hover:text-[#0E6506] transition-colors">
+              <span data-i18n="navVerifier">{t.navVerifier}</span>
+              <span aria-hidden="true">&rarr;</span>
+            </a>
           </div>
         </div>
       </div>
@@ -373,7 +348,7 @@ const langPrefix = resolvedLang === 'en' ? '' : `/${resolvedLang}`;
 
     <!-- 4. NAD-STYLE FULL-WIDTH BLUE VIDEO CONFERENCE BANNER -->
     <section class="w-full bg-[#09569B] text-white py-10 px-4 sm:px-8">
-      <div class="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
+      <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
         <div>
           <h3 class="text-lg sm:text-2xl font-extrabold text-white" data-i18n="home_helpdesk_title">
             {t.home_helpdesk_title}
