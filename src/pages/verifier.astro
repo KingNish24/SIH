@@ -8,6 +8,7 @@ const t = getUIDictionary(lang);
 const url = Astro.url;
 const queryApaar = url.searchParams.get('apaar')?.trim() || '';
 const queryInst = url.searchParams.get('institution')?.trim() || '';
+const queryToken = url.searchParams.get('token')?.trim() || '';
 const initialApaar = /^\d{12}$/.test(queryApaar) ? queryApaar : '';
 const initialOrg = queryInst
   ? `Institutional Audit (${queryInst}) — National Recruitment / Admissions`
@@ -141,8 +142,8 @@ const initialOrg = queryInst
         </div>
       </form>
 
-      <!-- Feature #8: Zero-Knowledge Selective Attribute Disclosure (Predicate Proof Mode) Bar -->
-      <div class="p-3.5 rounded-lg bg-slate-50 border border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+      <!-- Yes / No Eligibility Check (Hide Exact Marks) -->
+      <div class="pt-3 border-t border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div class="flex items-start sm:items-center gap-3">
           <input
             type="checkbox"
@@ -151,18 +152,15 @@ const initialOrg = queryInst
           />
           <div>
             <label for="zkPredicateToggle" class="text-xs font-bold text-[#0F2942] cursor-pointer flex flex-wrap items-center gap-2">
-              <span>Zero-Knowledge Eligibility Predicate Mode (DPDP Sec. 6 Selective Attribute Disclosure)</span>
-              <span class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-900 border border-indigo-300 font-mono text-[10px] font-bold uppercase">
-                Ed25519 Signed Inequality Attestation
-              </span>
+              <span>Yes / No Eligibility Check (Hide Exact Marks)</span>
             </label>
             <p class="text-[11px] text-slate-600 mt-0.5">
-              Cryptographically proves candidate meets minimum CGPA &amp; passing year cutoffs without disclosing exact grades or raw PII to third-party recruiters.
+              Confirms whether the student meets your minimum CGPA and graduation year without showing exact marks.
             </p>
           </div>
         </div>
 
-        <div id="zkPredicateControls" class="flex flex-wrap items-center gap-3 text-xs pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-200">
+        <div id="zkPredicateControls" class="flex flex-wrap items-center gap-3 text-xs pt-2 lg:pt-0">
           <button
             type="button"
             id="zkPresetCutoffBtn"
@@ -201,18 +199,19 @@ const initialOrg = queryInst
             <input
               type="text"
               id="zkConsentToken"
-              placeholder="Optional DPDP Token"
-              class="w-36 h-8 bg-white border border-slate-300 rounded px-2 font-mono text-slate-800 text-xs"
+              value={queryToken}
+              placeholder="Optional DPDP Pass"
+              class="w-44 h-8 bg-white border border-slate-300 rounded px-2 font-mono text-slate-800 text-xs"
             />
           </div>
         </div>
       </div>
 
       <!-- Pre-Set Interactive Quick-Test Scenario Pills -->
-      <div class="pt-2 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+      <div class="pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs">
         <div class="flex flex-wrap items-center gap-2">
           <span class="text-slate-600 font-bold uppercase tracking-wider text-[11px] mr-1">
-            Quick-Test Registry Scenarios:
+            Sample Records:
           </span>
           <button
             type="button"
@@ -222,7 +221,7 @@ const initialOrg = queryInst
           >
             <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
             <span class="font-mono font-bold">412398471029</span>
-            <span>&mdash; Valid Degree (Ed25519 Signed)</span>
+            <span>&mdash; Valid Degree</span>
           </button>
           <button
             type="button"
@@ -232,7 +231,7 @@ const initialOrg = queryInst
           >
             <span class="w-2 h-2 rounded-full bg-red-600"></span>
             <span class="font-mono font-bold">601928374819</span>
-            <span>&mdash; Revoked Credential</span>
+            <span>&mdash; Revoked Degree</span>
           </button>
           <button
             type="button"
@@ -242,11 +241,10 @@ const initialOrg = queryInst
           >
             <span class="w-2 h-2 rounded-full bg-amber-600"></span>
             <span class="font-mono font-bold">739284019283</span>
-            <span>&mdash; Cross-Campus Duplicate</span>
+            <span>&mdash; Duplicate Enrollment</span>
           </button>
         </div>
 
-        <!-- Feature #9: Instant Printable Section 63 BSA / DigiLocker Attestation Certificate Button -->
         <button
           type="button"
           id="btnPrintSection63"
@@ -260,9 +258,8 @@ const initialOrg = queryInst
       </div>
     </div>
 
-    <!-- Official Digital Credential Verification Certificate Card -->
-    <div id="resultContainer" aria-live="polite" class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-      <!-- Top Certificate Banner -->
+    <!-- Verification Certificate Result -->
+    <section id="resultContainer" aria-live="polite" class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
       <div id="resBanner" class="bg-[#0F2942] text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-[#FF9933]">
         <div class="flex items-center gap-3">
           <div class="bg-white rounded p-1.5 shrink-0">
@@ -270,10 +267,10 @@ const initialOrg = queryInst
           </div>
           <div>
             <div class="text-[10px] font-bold uppercase tracking-widest text-[#FF9933]">
-              Official Digital Credential Verification Certificate &bull; NAD / DigiLocker Standard
+              Official Digital Verification Certificate &bull; NAD / DigiLocker
             </div>
             <h2 id="resTitle" class="text-base sm:text-lg font-bold text-white mt-0.5">
-              Ready to Verify Academic Credential Against Cloudflare D1 Registry
+              Ready to Check Academic Record
             </h2>
           </div>
         </div>
@@ -284,251 +281,199 @@ const initialOrg = queryInst
         </div>
       </div>
 
-      <!-- Certificate Metadata Telemetry Strip -->
       <div class="p-6 space-y-5">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 text-xs">
-          <div class="p-3.5 bg-slate-50 rounded-md border border-slate-200">
-            <div class="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Candidate Name</div>
-            <div id="resName" class="font-bold text-slate-900 text-sm mt-1 truncate">Select or Enter Candidate</div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 pb-4 border-b border-slate-200 text-xs">
+          <div>
+            <div class="text-slate-500 text-[11px] font-semibold uppercase">Student Name</div>
+            <div id="resName" class="font-bold text-slate-900 text-sm mt-1 truncate">Select or Enter Student</div>
             <div id="resConsentPill" class="text-[11px] text-slate-600 font-medium mt-0.5 flex items-center gap-1">
               <span>DPDP Consent: Pending Lookup</span>
             </div>
           </div>
 
-          <div class="p-3.5 bg-slate-50 rounded-md border border-slate-200">
-            <div class="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">12-Digit APAAR &amp; Student ID</div>
+          <div>
+            <div class="text-slate-500 text-[11px] font-semibold uppercase">12-Digit APAAR &amp; Roll ID</div>
             <div id="resApaar" class="font-bold font-mono text-slate-900 text-sm mt-1">{initialApaar ? `XXXX-XXXX-${initialApaar.slice(-4)}` : 'XXXX-XXXX-••••'}</div>
             <div id="resStudentRollId" class="text-[11px] font-mono font-bold text-[#1E40AF] mt-0.5">{initialApaar ? `Roll ID: STU-TCA-2020-${initialApaar.slice(-4)}` : 'Roll ID: Awaiting Query'}</div>
           </div>
 
-          <div class="p-3.5 bg-slate-50 rounded-md border border-slate-200">
-            <div class="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Cryptographic Proof</div>
+          <div>
+            <div class="text-slate-500 text-[11px] font-semibold uppercase">Digital Signature</div>
             <div id="resCryptoStatus" class="font-bold text-slate-700 text-sm mt-1 flex items-center gap-1">
-              <span>Awaiting Ed25519 Check</span>
+              <span>Awaiting Check</span>
             </div>
             <div id="resKeyId" class="text-[11px] font-mono text-slate-500 mt-0.5 truncate">Key ID: aicte-nad-2026</div>
             <span id="i18nTamperVerified" class="hidden">{t.verifier_tamper_verified}</span>
             <span id="i18nTamperFailed" class="hidden">{t.verifier_tamper_failed}</span>
           </div>
 
-          <div class="p-3.5 bg-slate-50 rounded-md border border-slate-200">
-            <div class="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Audit Request ID</div>
+          <div>
+            <div class="text-slate-500 text-[11px] font-semibold uppercase">Audit Request ID</div>
             <div id="resRequestId" class="font-bold font-mono text-slate-900 text-xs mt-1 truncate">REQ-READY</div>
-            <div class="text-[11px] text-slate-500 mt-0.5">Logged in D1 Audit Trail</div>
+            <div class="text-[11px] text-slate-500 mt-0.5">Saved in Audit Log</div>
           </div>
 
-          <div class="p-3.5 bg-slate-50 rounded-md border border-slate-200">
-            <div class="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Edge Response Time</div>
+          <div>
+            <div class="text-slate-500 text-[11px] font-semibold uppercase">Response Time</div>
             <div id="resLatency" class="font-bold font-mono text-emerald-700 text-sm mt-1">-- ms</div>
-            <div class="text-[11px] text-slate-500 mt-0.5">Cloudflare Worker Edge</div>
+            <div class="text-[11px] text-slate-500 mt-0.5">National Registry</div>
           </div>
         </div>
 
-        <!-- Zero-Knowledge Predicate Attestation Banner (shown when Predicate Mode is enabled) -->
+        <!-- Eligibility Check Banner -->
         <div id="resPredicateBanner" class="hidden p-4 rounded-lg border bg-indigo-50/80 border-indigo-200 text-xs space-y-2"></div>
 
         <!-- Degree & Enrollment Certificate Body -->
         <div id="resDegrees" class="space-y-4">
-          <div class="p-5 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-600 flex items-center justify-between gap-3">
-            <span>Enter a 12-digit APAAR ID above or click one of the <strong>Quick-Test Registry Scenarios</strong> to verify Ed25519 cryptographic signatures and D1 revocation status in real time.</span>
+          <div class="py-3 text-xs text-slate-600">
+            Enter a 12-digit APAAR ID above or click one of the <strong>Sample Records</strong> to check degree status and digital signatures.
           </div>
         </div>
 
-        <!-- Feature #9: Statutory Section 63 Bharatiya Sakshya Adhiniyam (BSA) 2023 Electronic Evidence Declaration -->
-        <div class="pt-4 border-t border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 text-[11px] text-slate-600 bg-slate-50/70 p-4 rounded-lg border border-slate-200/80">
+        <!-- Legal Evidence Note (Section 63 BSA 2023) -->
+        <div class="pt-4 border-t border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 text-[11px] text-slate-600">
           <div class="space-y-1 max-w-3xl">
-            <div class="font-bold text-[#0F2942] uppercase tracking-wider flex items-center gap-1.5">
-              <svg class="w-4 h-4 text-[#1E40AF] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>Statutory Electronic Record Attestation &bull; Section 63, Bharatiya Sakshya Adhiniyam (BSA), 2023</span>
+            <div class="font-bold text-[#0F2942] uppercase tracking-wider">
+              Electronic Evidence Certificate &bull; Section 63, Bharatiya Sakshya Adhiniyam (BSA), 2023
             </div>
             <p class="leading-relaxed">
-              This computer-generated output is cryptographically signed using asymmetric Ed25519 keys issued by the National Academic Depository (NAD) &amp; AICTE Sovereign Ledger. Under Section 63 of the Bharatiya Sakshya Adhiniyam, 2023 (formerly Section 65B of the Indian Evidence Act) and Section 4 &amp; 5 of the Information Technology Act, 2000, this verifiable credential is legally admissible without physical seal or ink signature.
+              Signed with National Academic Depository (NAD) Ed25519 keys. Valid as an electronic record under Section 63 of the Bharatiya Sakshya Adhiniyam, 2023 and Sections 4 &amp; 5 of the Information Technology Act, 2000 without a physical stamp.
             </p>
           </div>
-          <div class="shrink-0 flex flex-col items-start md:items-end justify-center font-mono text-[10px] text-slate-500 space-y-0.5">
+          <div class="shrink-0 font-mono text-[10px] text-slate-500 md:text-right">
             <div class="font-bold text-slate-800">ISSUER: AICTE-NAD-D1-AUTHORITY</div>
             <div id="bsaTimestamp">ATTESTED: {new Date().toISOString().slice(0, 19).replace('T', ' ')} UTC</div>
-            <div class="text-emerald-700 font-bold">RFC 8032 Ed25519 + SHA-256</div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- =========================================================================================
-         TASK 1: In-Browser VLM Document Forensics & Tamper Detection
-         (@huggingface/transformers v4.3.0 + onnx-community/LFM2.5-VL-450M-ONNX • q4f16 • Structured Output)
-         ========================================================================================= -->
-    <div id="vlmForensicsSection" class="no-print bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-      <div class="bg-[#0F2942] text-white px-6 py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b-2 border-[#FF9933]">
-        <div class="flex items-start sm:items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center shrink-0">
-            <svg class="w-5 h-5 text-[#FF9933]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
+    <!-- Check a Scanned Marksheet or Degree Image -->
+    <section id="vlmForensicsSection" class="no-print bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-6">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+        <div>
+          <h2 class="text-base sm:text-lg font-bold text-[#0F2942]">
+            Check a Scanned Marksheet or Degree Image
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
+            Upload a photo or PDF of a certificate to check if the name, marks, or year were edited.
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+          <button
+            type="button"
+            id="btnGenAuthenticScan"
+            class="inline-flex items-center gap-2 px-3.5 py-2 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-950 border border-emerald-300 font-bold text-xs transition-colors cursor-pointer"
+          >
+            <span>Load Genuine Sample (CGPA 9.42)</span>
+          </button>
+
+          <button
+            type="button"
+            id="btnGenTamperedScan"
+            class="inline-flex items-center gap-2 px-3.5 py-2 rounded bg-red-50 hover:bg-red-100 text-red-950 border border-red-300 font-bold text-xs transition-colors cursor-pointer"
+          >
+            <span>Load Edited Sample (CGPA Changed to 9.85)</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- Left 7 Cols: Document Preview & Actions -->
+        <div class="lg:col-span-7 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="text-xs font-bold text-slate-700 flex items-center gap-2">
+              <span>Certificate Preview</span>
+              <span id="forensicDocModePill" class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 border border-emerald-300 font-mono text-[10px]">
+                AUTHENTIC SCAN LOADED
+              </span>
+            </div>
+
+            <label
+              for="forensicFileInput"
+              class="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 text-xs font-semibold cursor-pointer transition-colors"
+            >
+              <span>Upload Certificate File (.png, .jpg, .pdf, .json)</span>
+              <input
+                type="file"
+                id="forensicFileInput"
+                accept=".png,.jpg,.jpeg,.webp,.json,.pdf"
+                class="sr-only"
+              />
+            </label>
           </div>
+
+          <div class="bg-slate-900 p-3 rounded border border-slate-700 flex items-center justify-center overflow-hidden">
+            <canvas
+              id="forensicCanvas"
+              width="820"
+              height="480"
+              class="w-full h-auto max-h-[340px] object-contain rounded bg-white"
+            ></canvas>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              type="button"
+              id="btnRunVlmInference"
+              class="py-2.5 px-4 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span id="vlmBtnLabel">Read Certificate Image &amp; Compare</span>
+            </button>
+
+            <button
+              type="button"
+              id="btnFastCanvasPrecheck"
+              class="py-2.5 px-4 rounded bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>Instant Field Check</span>
+            </button>
+          </div>
+
+          <div id="vlmProgressBox" class="pt-2 text-xs space-y-1.5">
+            <div class="flex items-center justify-between gap-2">
+              <span id="vlmStatusLabel" class="font-semibold text-slate-700 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span>Ready to check certificate image in your browser</span>
+              </span>
+              <span id="vlmProgressPct" class="font-mono font-bold text-[#1E40AF]">100%</span>
+            </div>
+            <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+              <div
+                id="vlmProgressBar"
+                role="progressbar"
+                aria-valuenow="100"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-label="Certificate Check Progress"
+                class="h-full bg-[#1E40AF] transition-all duration-200"
+                style="width: 100%"
+              ></div>
+            </div>
+            <div id="vlmFileDetail" class="font-mono text-[11px] text-slate-500 truncate">
+              Runs locally in your browser &bull; No image data leaves your device
+            </div>
+          </div>
+        </div>
+
+        <!-- Right 5 Cols: Extracted Text Output -->
+        <div class="lg:col-span-5 space-y-4">
           <div>
-            <div class="text-[10px] font-bold uppercase tracking-widest text-[#FF9933]">
-              Zero-PII Edge AI Document Forensics &bull; WebGPU / WASM Vision-Language Model
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs font-bold text-[#0F2942]">
+                Details Read from Certificate
+              </span>
+              <span id="vlmEngineBadge" class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-mono text-[10px] font-bold">
+                READY
+              </span>
             </div>
-            <h2 class="text-base sm:text-lg font-bold text-white mt-0.5">
-              In-Browser VLM Document Forensics &amp; Tamper Detection (LFM2.5-VL-450M-ONNX &bull; q4f16 &bull; Structured Output)
-            </h2>
-          </div>
-        </div>
-
-        <!-- Model Architecture Badges -->
-        <div class="flex flex-wrap items-center gap-2 text-[11px] font-mono">
-          <span class="px-2.5 py-1 rounded bg-slate-800 text-amber-300 border border-slate-600 font-bold">
-            onnx-community/LFM2.5-VL-450M-ONNX
-          </span>
-          <span class="px-2.5 py-1 rounded bg-emerald-950 text-emerald-300 border border-emerald-700 font-bold">
-            dtype: q4f16
-          </span>
-          <span class="px-2.5 py-1 rounded bg-blue-950 text-blue-200 border border-blue-700 font-bold">
-            Transformers.js v4.3.0 Structured JSON Schema
-          </span>
-          <span class="px-2.5 py-1 rounded bg-indigo-950 text-indigo-200 border border-indigo-700 font-bold">
-            Zero-PII Client-Side Execution
-          </span>
-        </div>
-      </div>
-
-      <div class="p-6 space-y-6">
-        <!-- Top Description & 1-Click Live Canvas Marksheet Generators -->
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200">
-          <div class="text-xs text-slate-600 max-w-2xl leading-relaxed">
-            Upload a scanned university degree or marksheet image (<code class="font-mono text-slate-800">.png, .jpg, .webp, .json</code>) or generate a live high-resolution certificate scan on the HTML5 forensic canvas. The Vision-Language Model (<code class="font-mono font-bold text-[#0F2942]">onnx-community/LFM2.5-VL-450M-ONNX</code> with <code class="font-mono font-bold text-[#0F2942]">q4f16</code> quantization) extracts structured JSON attributes in-browser and cross-verifies every field against the Ed25519-signed Cloudflare D1 ledger.
+            <pre id="vlmExtractedJson" class="p-3 rounded bg-slate-950 text-emerald-300 font-mono text-[11px] leading-relaxed overflow-x-auto max-h-56"></pre>
           </div>
 
-          <div class="flex flex-wrap items-center gap-2.5 shrink-0">
-            <button
-              type="button"
-              id="btnGenAuthenticScan"
-              class="inline-flex items-center gap-2 px-3.5 py-2 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-950 border border-emerald-300 font-bold text-xs transition-colors cursor-pointer shadow-xs"
-            >
-              <svg class="w-4 h-4 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>Load Authentic Degree Scan (CGPA 9.42)</span>
-            </button>
-
-            <button
-              type="button"
-              id="btnGenTamperedScan"
-              class="inline-flex items-center gap-2 px-3.5 py-2 rounded bg-red-50 hover:bg-red-100 text-red-950 border border-red-300 font-bold text-xs transition-colors cursor-pointer shadow-xs"
-            >
-              <svg class="w-4 h-4 text-red-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <span>Load Tampered Marksheet Scan (Forged CGPA 9.85 vs Ledger 9.42)</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- 2-Column Forensic Workspace: Left = Canvas / File Dropzone + Inference Controls, Right = Structured Output & Schema -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          <!-- Left 7 Cols: Document Canvas Preview & Upload Dropzone -->
-          <div class="lg:col-span-7 space-y-4">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                <span>Forensic Document Inspection Surface (HTML5 Canvas)</span>
-                <span id="forensicDocModePill" class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 border border-emerald-300 font-mono text-[10px]">
-                  AUTHENTIC SCAN LOADED
-                </span>
-              </div>
-
-              <label
-                for="forensicFileInput"
-                class="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 text-xs font-semibold cursor-pointer transition-colors"
-              >
-                <svg class="w-3.5 h-3.5 text-[#0F2942]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                </svg>
-                <span>Upload Custom Image / JSON (.png, .jpg, .webp, .json)</span>
-                <input
-                  type="file"
-                  id="forensicFileInput"
-                  accept=".png,.jpg,.jpeg,.webp,.json,.pdf"
-                  class="sr-only"
-                />
-              </label>
-            </div>
-
-            <div class="bg-slate-900 p-3 rounded-lg border border-slate-700 shadow-inner flex items-center justify-center overflow-hidden">
-              <canvas
-                id="forensicCanvas"
-                width="820"
-                height="480"
-                class="w-full h-auto max-h-[340px] object-contain rounded bg-white shadow"
-              ></canvas>
-            </div>
-
-            <!-- Action Buttons: Full LFM2.5-VL-450M (q4f16) Inference + Fast Pre-Check -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button
-                type="button"
-                id="btnRunVlmInference"
-                class="py-2.5 px-4 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold text-xs transition-colors shadow-sm flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <svg class="w-4 h-4 text-[#FF9933] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                <span id="vlmBtnLabel">Run LFM2.5-VL-450M (q4f16) VLM Inference</span>
-              </button>
-
-              <button
-                type="button"
-                id="btnFastCanvasPrecheck"
-                class="py-2.5 px-4 rounded bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs transition-colors shadow-sm flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <svg class="w-4 h-4 text-emerald-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-                <span>Fast Canvas/VC Metadata Pre-Check (Instant)</span>
-              </button>
-            </div>
-
-            <!-- Real-Time ONNX Weight Download & VLM Execution Progress Bar -->
-            <div id="vlmProgressBox" class="p-3.5 rounded-lg bg-slate-50 border border-slate-200 text-xs space-y-2">
-              <div class="flex items-center justify-between gap-2">
-                <span id="vlmStatusLabel" class="font-bold text-slate-800 flex items-center gap-1.5">
-                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  <span>Ready: @huggingface/transformers v4.3.0 &bull; onnx-community/LFM2.5-VL-450M-ONNX (q4f16)</span>
-                </span>
-                <span id="vlmProgressPct" class="font-mono font-bold text-[#1E40AF]">100%</span>
-              </div>
-              <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                <div
-                  id="vlmProgressBar"
-                  role="progressbar"
-                  aria-valuenow="100"
-                  aria-valuemin="0"
-                  aria-valuemax="100"
-                  aria-label="VLM Model Execution Progress"
-                  class="h-full bg-[#1E40AF] transition-all duration-200"
-                  style="width: 100%"
-                ></div>
-              </div>
-              <div id="vlmFileDetail" class="font-mono text-[11px] text-slate-500 truncate">
-                Device Backend: WebGPU / WASM Auto-Detect &bull; Strict JSON Schema Constrained Generation
-              </div>
-            </div>
-          </div>
-
-          <!-- Right 5 Cols: Structured JSON Schema + Extracted Credential JSON Output -->
-          <div class="lg:col-span-5 space-y-4">
-            <div class="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-2.5">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-bold uppercase tracking-wider text-[#0F2942]">
-                  Structured Output JSON Schema (v4.3.0)
-                </span>
-                <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-900 font-mono text-[10px] font-bold">
-                  response_format: json_schema
-                </span>
-              </div>
-              <pre id="vlmSchemaPreview" class="p-3 rounded bg-slate-900 text-slate-200 font-mono text-[10px] leading-relaxed overflow-x-auto max-h-40">{`{
+          <details class="text-xs text-slate-600">
+            <summary class="cursor-pointer font-semibold text-slate-700">Expected Certificate Fields (JSON Format)</summary>
+            <pre id="vlmSchemaPreview" class="mt-2 p-3 rounded bg-slate-900 text-slate-200 font-mono text-[10px] leading-relaxed overflow-x-auto max-h-40">{`{
   "type": "object",
   "properties": {
     "apaar_id": { "type": "string" },
@@ -538,80 +483,61 @@ const initialOrg = queryInst
     "cgpa": { "type": "number" },
     "year_of_passing": { "type": "integer" },
     "issuing_authority": { "type": "string" }
-  },
-  "required": [
-    "apaar_id", "candidate_name", "degree_name",
-    "specialization", "cgpa", "year_of_passing"
-  ]
+  }
 }`}</pre>
-            </div>
-
-            <div class="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-2.5">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-bold uppercase tracking-wider text-[#0F2942]">
-                  Extracted Structured JSON Output
-                </span>
-                <span id="vlmEngineBadge" class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-mono text-[10px] font-bold">
-                  SCHEMA VALIDATED
-                </span>
-              </div>
-              <pre id="vlmExtractedJson" class="p-3 rounded bg-slate-950 text-emerald-300 font-mono text-[11px] leading-relaxed overflow-x-auto max-h-48"></pre>
-            </div>
-          </div>
-        </div>
-
-        <!-- Field-by-Field Forensic Comparison Table -->
-        <div class="space-y-3 pt-2 border-t border-slate-200">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h3 class="text-sm sm:text-base font-bold text-[#0F2942]">
-                Field-by-Field Forensic Comparison Table (Document vs. Central D1 Ed25519 Ledger)
-              </h3>
-              <p class="text-xs text-slate-600">
-                Every attribute extracted from the uploaded certificate is compared against the immutable National Academic Depository D1 record.
-              </p>
-            </div>
-            <div id="forensicOverallVerdict" class="shrink-0"></div>
-          </div>
-
-          <div class="overflow-x-auto border border-slate-200 rounded-lg">
-            <table class="w-full text-left border-collapse text-xs">
-              <caption class="sr-only">Field-by-Field Forensic Comparison Table (Document vs. Central D1 Ed25519 Ledger)</caption>
-              <thead>
-                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 uppercase text-[11px] font-bold tracking-wider">
-                  <th scope="col" class="py-3 px-4">Credential Attribute</th>
-                  <th scope="col" class="py-3 px-4">Extracted from Uploaded Document (LFM2.5-VL Structured Output)</th>
-                  <th scope="col" class="py-3 px-4">Central D1 Ledger (Ed25519 Signed Truth)</th>
-                  <th scope="col" class="py-3 px-4 text-right">Forensic Verdict</th>
-                </tr>
-              </thead>
-              <tbody id="forensicComparisonTbody" class="divide-y divide-slate-200 bg-white">
-                <tr>
-                  <td colspan="4" class="py-4 px-4 text-center text-slate-500">
-                    Initializing forensic comparison...
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          </details>
         </div>
       </div>
-    </div>
 
-    <!-- =========================================================================================
-         FEATURE #1: Offline Cryptographic QR / Payload Verifier (Zero-Server WebCrypto Ed25519)
-         ========================================================================================= -->
-    <div id="offlineVerifierSection" class="no-print bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-4">
+      <!-- Field-by-Field Comparison Table -->
+      <div class="space-y-3 pt-4 border-t border-slate-200">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 class="text-sm sm:text-base font-bold text-[#0F2942]">
+              Certificate vs. Official Registry Comparison
+            </h3>
+            <p class="text-xs text-slate-600">
+              Each field read from the certificate is compared with the official record.
+            </p>
+          </div>
+          <div id="forensicOverallVerdict" class="shrink-0"></div>
+        </div>
+
+        <div class="overflow-x-auto border border-slate-200 rounded">
+          <table class="w-full text-left border-collapse text-xs">
+            <caption class="sr-only">Certificate vs. Official Registry Comparison</caption>
+            <thead>
+              <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 uppercase text-[11px] font-bold tracking-wider">
+                <th scope="col" class="py-3 px-4">Field</th>
+                <th scope="col" class="py-3 px-4">Value on Certificate</th>
+                <th scope="col" class="py-3 px-4">Official Registry Record</th>
+                <th scope="col" class="py-3 px-4 text-right">Result</th>
+              </tr>
+            </thead>
+            <tbody id="forensicComparisonTbody" class="divide-y divide-slate-200 bg-white">
+              <tr>
+                <td colspan="4" class="py-4 px-4 text-center text-slate-500">
+                  Loading comparison...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Offline QR Code Check -->
+    <section id="offlineVerifierSection" class="no-print bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-200">
         <div>
           <div class="text-xs font-bold uppercase tracking-wider text-[#1E40AF]">
-            Air-Gapped &bull; Zero-Database Verification Mode (RFC 8032 WebCrypto)
+            Offline QR Code Check
           </div>
           <h2 class="text-base sm:text-lg font-bold text-[#0F2942] mt-0.5">
-            Offline Cryptographic QR / Payload Verifier (Zero-Server WebCrypto Ed25519)
+            Offline QR Code Check
           </h2>
           <p class="text-xs text-slate-600 mt-0.5">
-            Verify any W3C Verifiable Credential QR JSON payload purely in-browser using the cached National Academic Depository Ed25519 public key (<code class="font-mono">/api/keys/degree</code>) with <strong>0 database queries</strong>.
+            Paste QR code data below to verify its digital signature in your browser without an internet connection.
           </p>
         </div>
         <div class="flex items-center gap-2 shrink-0">
@@ -620,14 +546,14 @@ const initialOrg = queryInst
             id="btnLoadCurrentQrPayload"
             class="px-3 py-1.5 rounded bg-slate-100 hover:bg-slate-200 text-[#0F2942] border border-slate-300 text-xs font-bold transition-colors cursor-pointer"
           >
-            Load Active Degree QR Payload
+            Load Current QR Data
           </button>
           <button
             type="button"
             id="btnTamperOfflinePayload"
             class="px-3 py-1.5 rounded bg-red-50 hover:bg-red-100 text-red-900 border border-red-300 text-xs font-bold transition-colors cursor-pointer"
           >
-            Simulate Offline CGPA Tampering
+            Test Edited Marks
           </button>
         </div>
       </div>
@@ -635,7 +561,7 @@ const initialOrg = queryInst
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         <div class="lg:col-span-7 space-y-2">
           <label for="offlinePayloadInput" class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-            Signed QR Credential JSON Payload (Canonical Fields + Base64 Signature)
+            QR Code Data (JSON + Digital Signature)
           </label>
           <textarea
             id="offlinePayloadInput"
@@ -646,9 +572,9 @@ const initialOrg = queryInst
         </div>
 
         <div class="lg:col-span-5 space-y-3">
-          <div class="p-3.5 rounded bg-slate-50 border border-slate-200 text-xs space-y-1.5">
+          <div class="text-xs space-y-1">
             <div class="flex items-center justify-between">
-              <span class="font-bold text-slate-700 uppercase tracking-wider text-[11px]">Cached Ed25519 Public Key (JWK)</span>
+              <span class="font-bold text-slate-700 uppercase text-[11px]">Official Public Key</span>
               <span id="offlineKeyCachedBadge" class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-mono text-[10px] font-bold">
                 FETCHING KEY...
               </span>
@@ -661,113 +587,63 @@ const initialOrg = queryInst
           <button
             type="button"
             id="btnVerifyOfflineCrypto"
-            class="w-full py-2.5 px-4 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold text-xs transition-colors shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+            class="w-full py-2.5 px-4 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
           >
-            <svg class="w-4 h-4 text-[#FF9933] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-            <span>Verify Ed25519 Signature Offline (0 Server Calls)</span>
+            <span>Check QR Signature Offline</span>
           </button>
 
           <div id="offlineVerifyResultBox" class="p-3.5 rounded border border-slate-200 bg-slate-50 text-xs text-slate-700">
-            Click <strong>Verify Ed25519 Signature Offline</strong> to run browser <code class="font-mono">crypto.subtle.verify('Ed25519', ...)</code>.
+            Click <strong>Check QR Signature Offline</strong> to verify the QR code in your browser.
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- 3-Column How Cryptographic Verification Works (DPDP & Ed25519 Standard) -->
-    <div class="no-print bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+    <!-- How Verification Works -->
+    <section class="no-print bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 mb-5 border-b border-slate-200">
-        <div>
-          <div class="text-xs font-bold uppercase tracking-wider text-[#1E40AF]">
-            Zero-Trust Verification Architecture
-          </div>
-          <h2 class="text-base sm:text-lg font-bold text-[#0F2942] mt-0.5">
-            How Cryptographic Verification Works (DPDP &amp; Ed25519 Standard)
-          </h2>
-        </div>
+        <h2 class="text-base sm:text-lg font-bold text-[#0F2942]">
+          How Verification Works
+        </h2>
         <a
           href="/api/keys/degree"
           target="_blank"
           rel="noopener"
           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-slate-100 hover:bg-slate-200 text-[#0F2942] border border-slate-300 font-mono text-xs font-semibold transition-colors self-start sm:self-auto"
         >
-          <span>Inspect Public JWK (/api/keys/degree)</span>
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-          </svg>
+          <span>View Public Key (/api/keys/degree)</span>
         </a>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs">
-        <!-- Step 1 -->
-        <div class="p-4 rounded-lg bg-slate-50 border border-slate-200 flex flex-col justify-between">
-          <div>
-            <div class="flex items-center justify-between mb-2.5">
-              <span class="px-2.5 py-0.5 rounded bg-blue-100 text-blue-900 font-bold text-[11px] uppercase tracking-wider">
-                Step 1 &bull; Privacy Gate
-              </span>
-              <span class="font-mono text-slate-400 font-bold">DPDP Sec. 6</span>
-            </div>
-            <h3 class="font-bold text-slate-900 text-sm mb-1.5">
-              1. Student Biometric Consent Check
-            </h3>
-            <p class="text-slate-600 leading-relaxed">
-              Before disclosing full academic PII, the gateway checks the candidate's explicit consent state under Section 6 of the Digital Personal Data Protection Act, 2023. If consent is pending, sensitive attributes are masked while still reporting revocation/duplicate alerts.
-            </p>
-          </div>
-          <div class="mt-3 pt-2.5 border-t border-slate-200/80 text-[11px] text-slate-500 font-medium">
-            FIDO2 / WebAuthn Passkey Hardware Backed
-          </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
+        <div>
+          <h3 class="font-bold text-slate-900 text-sm mb-1">
+            1. Student Consent Check
+          </h3>
+          <p class="text-slate-600 leading-relaxed">
+            Personal details are shown only when the student has granted consent or shared an active one-time access pass under the DPDP Act 2023.
+          </p>
         </div>
 
-        <!-- Step 2 -->
-        <div class="p-4 rounded-lg bg-slate-50 border border-slate-200 flex flex-col justify-between">
-          <div>
-            <div class="flex items-center justify-between mb-2.5">
-              <span class="px-2.5 py-0.5 rounded bg-amber-100 text-amber-900 font-bold text-[11px] uppercase tracking-wider">
-                Step 2 &bull; Ledger Audit
-              </span>
-              <span class="font-mono text-slate-400 font-bold">Cloudflare D1</span>
-            </div>
-            <h3 class="font-bold text-slate-900 text-sm mb-1.5">
-              2. Central D1 Registry &amp; Revocation Check
-            </h3>
-            <p class="text-slate-600 leading-relaxed">
-              Queries the national D1 database in real time to verify that the degree has not been revoked by the affiliating university and checks cross-campus admission records for simultaneous duplicate APAAR enrollments.
-            </p>
-          </div>
-          <div class="mt-3 pt-2.5 border-t border-slate-200/80 text-[11px] text-slate-500 font-medium">
-            Every lookup writes an immutable <code class="font-mono">REQ-*</code> audit row
-          </div>
+        <div>
+          <h3 class="font-bold text-slate-900 text-sm mb-1">
+            2. Live Registry &amp; Revocation Check
+          </h3>
+          <p class="text-slate-600 leading-relaxed">
+            Checks the central database to confirm the degree was not cancelled and checks for duplicate admissions across colleges.
+          </p>
         </div>
 
-        <!-- Step 3 -->
-        <div class="p-4 rounded-lg bg-slate-50 border border-slate-200 flex flex-col justify-between">
-          <div>
-            <div class="flex items-center justify-between mb-2.5">
-              <span class="px-2.5 py-0.5 rounded bg-emerald-100 text-emerald-900 font-bold text-[11px] uppercase tracking-wider">
-                Step 3 &bull; Math Proof
-              </span>
-              <span class="font-mono text-slate-400 font-bold">RFC 8032</span>
-            </div>
-            <h3 class="font-bold text-slate-900 text-sm mb-1.5">
-              3. Ed25519 Asymmetric Signature Proof
-            </h3>
-            <p class="text-slate-600 leading-relaxed">
-              Canonical degree fields (<code class="font-mono text-[11px]">apaar_id, cgpa, degree_name, institution_id, year_of_passing</code>) are verified using Web Crypto <code class="font-mono text-[11px]">Ed25519</code> against the National Academic Depository public key.
-            </p>
-          </div>
-          <div class="mt-3 pt-2.5 border-t border-slate-200/80 flex items-center justify-between text-[11px]">
-            <span class="text-slate-500 font-medium">Public Key Endpoint:</span>
-            <a href="/api/keys/degree" target="_blank" rel="noopener" class="font-mono font-bold text-[#1E40AF] hover:underline">
-              /api/keys/degree
-            </a>
-          </div>
+        <div>
+          <h3 class="font-bold text-slate-900 text-sm mb-1">
+            3. Digital Signature Check
+          </h3>
+          <p class="text-slate-600 leading-relaxed">
+            Verifies the degree's Ed25519 digital signature against the official public key so edited marks or fake certificates are caught immediately.
+          </p>
         </div>
       </div>
-    </div>
+    </section>
   </div>
 
   <!-- Client-Side Verification, Offline Ed25519 WebCrypto, & Local VLM Forensics (@huggingface/transformers v4.3.0) -->
@@ -865,6 +741,16 @@ const initialOrg = queryInst
     const urlParams = new URLSearchParams(window.location.search);
     const queryApaarParam = urlParams.get('apaar');
     const queryInstParam = urlParams.get('institution');
+    const queryTokenParam = urlParams.get('token');
+
+    if (queryTokenParam && queryTokenParam.trim()) {
+      const cleanTok = queryTokenParam.trim();
+      if (zkConsentToken) zkConsentToken.value = cleanTok;
+      if (zkPredicateToggle) zkPredicateToggle.checked = true;
+      if (zkMinCgpa && !zkMinCgpa.value) zkMinCgpa.value = '7.5';
+      if (zkMinYear && !zkMinYear.value) zkMinYear.value = '2022';
+      document.getElementById('zkPredicateControls')?.classList.remove('hidden');
+    }
 
     if (queryApaarParam && /^\d{12}$/.test(queryApaarParam.trim())) {
       const input = document.getElementById('queryApaar') as HTMLInputElement | null;
@@ -874,6 +760,16 @@ const initialOrg = queryInst
         orgInput.value = queryInstParam?.trim()
           ? `Institutional Audit (${queryInstParam.trim()}) — National Recruitment / Admissions`
           : 'Union Public Service Commission (UPSC) / Corporate Verification Gateway';
+      }
+      setTimeout(() => {
+        form?.dispatchEvent(new Event('submit'));
+      }, 100);
+    } else if (queryTokenParam && queryTokenParam.trim()) {
+      const input = document.getElementById('queryApaar') as HTMLInputElement | null;
+      const orgInput = document.getElementById('verifierOrg') as HTMLInputElement | null;
+      if (input && !input.value.trim()) input.value = '739284019283';
+      if (orgInput && !orgInput.value.trim()) {
+        orgInput.value = 'Union Public Service Commission (UPSC) / Corporate Verification Gateway';
       }
       setTimeout(() => {
         form?.dispatchEvent(new Event('submit'));
@@ -959,7 +855,10 @@ const initialOrg = queryInst
 
         if (resConsentPill) {
           if (info.consentGranted) {
-            resConsentPill.innerHTML = `${SVG_CHECK} <span>DPDP Consent: GRANTED</span>`;
+            const label = info.consentStatus === 'GRANTED_VIA_TOKEN'
+              ? 'DPDP Consent: GRANTED (One-Time Pass Verified)'
+              : 'DPDP Consent: GRANTED';
+            resConsentPill.innerHTML = `${SVG_CHECK} <span>${label}</span>`;
             resConsentPill.className = 'text-[11px] text-emerald-700 font-semibold mt-0.5 flex items-center gap-1';
           } else {
             resConsentPill.textContent = `DPDP Consent: ${info.consentStatus || 'PII MASKED'}`;

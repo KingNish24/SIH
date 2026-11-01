@@ -166,3 +166,55 @@ export const GET: APIRoute = async ({ locals, url }) => {
     return json({ success: false, error: error.message }, 500);
   }
 };
+
+export const POST: APIRoute = async ({ request, locals }) => {
+  try {
+    const db = getDB(locals);
+    const body = await request.json();
+    const action = String(body.action || '').trim().toUpperCase();
+
+    if (action === 'ISSUE_SHOW_CAUSE') {
+      const targetIdOrCode = String(body.institution_id || body.code || '').trim();
+      if (!targetIdOrCode) {
+        return json({ success: false, error: 'institution_id or code is required for ISSUE_SHOW_CAUSE' }, 400);
+      }
+
+      await db
+        .prepare('UPDATE institutions SET status = ? WHERE id = ? OR code = ?')
+        .bind('SHOW_CAUSE_ISSUED', targetIdOrCode, targetIdOrCode)
+        .run();
+
+      return json({
+        success: true,
+        action: 'ISSUE_SHOW_CAUSE',
+        target: targetIdOrCode,
+        status: 'SHOW_CAUSE_ISSUED',
+        message: `Show-Cause Notice persisted in D1 for ${targetIdOrCode} (APH 2024-27 Clause 7.14).`,
+      });
+    }
+
+    if (action === 'FREEZE_DUPLICATE_SEAT') {
+      const apaarId = String(body.apaar_id || '').trim();
+      if (!/^\d{12}$/.test(apaarId)) {
+        return json({ success: false, error: 'Valid 12-digit apaar_id is required for FREEZE_DUPLICATE_SEAT' }, 400);
+      }
+
+      await db
+        .prepare('UPDATE admissions SET status = ? WHERE apaar_id = ?')
+        .bind('PFMS_FROZEN', apaarId)
+        .run();
+
+      return json({
+        success: true,
+        action: 'FREEZE_DUPLICATE_SEAT',
+        apaar_id: apaarId,
+        status: 'PFMS_FROZEN',
+        message: `PFMS / NSP Scholarship Hold and Seat Freeze persisted in D1 for APAAR ${apaarId}.`,
+      });
+    }
+
+    return json({ success: false, error: 'Invalid action. Use ISSUE_SHOW_CAUSE or FREEZE_DUPLICATE_SEAT' }, 400);
+  } catch (error: any) {
+    return json({ success: false, error: error.message || 'Failed to execute AICTE enforcement action' }, 500);
+  }
+};

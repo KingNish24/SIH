@@ -32,7 +32,7 @@ export interface Institution {
   code: string;
   sanctioned_intake: number;
   current_enrollment: number;
-  status: 'NORMAL' | 'WARNING' | 'OVERRUN_RISK';
+  status: 'NORMAL' | 'WARNING' | 'OVERRUN_RISK' | 'SHOW_CAUSE_ISSUED';
   risk_score: number;
   state: string;
   district: string;
@@ -58,7 +58,7 @@ export interface Admission {
   program: string;
   batch_year: number;
   enrollment_date: string;
-  status: 'ENROLLED' | 'PROVISIONAL' | 'FLAGGED_DUPLICATE';
+  status: 'ENROLLED' | 'PROVISIONAL' | 'FLAGGED_DUPLICATE' | 'PFMS_FROZEN';
   is_duplicate: number;
   created_at?: string;
   // joined fields
@@ -102,7 +102,38 @@ export interface PasskeyCredential {
   public_key: string;
   counter: number;
   device_type: string;
+  transports?: string | null;
   created_at?: string;
+}
+
+export interface ScopedConsentTokenRow {
+  token_id: string;
+  apaar_id: string;
+  verifier_org: string;
+  purpose: string;
+  disclosed_fields: string;
+  ttl_label: string;
+  single_use: number;
+  status: 'ACTIVE' | 'CONSUMED' | 'USED' | 'REVOKED' | 'EXPIRED';
+  created_at: string;
+  expires_at: string;
+  signature_digest: string;
+}
+
+export interface SemesterCreditRow {
+  apaar_id: string;
+  program: string;
+  accumulated_credits: number;
+  max_credits: number;
+  nep_exit_stage: string;
+  semester_breakdown: string;
+  is_lateral_entry: number;
+  entry_mode: string;
+  prior_diploma_board: string;
+  transferred_credits: number;
+  lateral_status: 'VERIFIED_ANCHORED' | 'STANDARD_ENTRY' | 'DISCREPANCY_FLAGGED';
+  lateral_note: string;
+  updated_at?: string;
 }
 
 export interface AnomalyReport {

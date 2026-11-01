@@ -1,11 +1,12 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { getDB } from '../lib/db';
-import type { Institution, Degree, Student } from '../lib/types';
+import type { Institution, Degree, Student, Admission, SemesterCreditRow } from '../lib/types';
 import { maskApaar, maskName } from '../lib/types';
 import { getUIDictionary, type LangCode, isSupportedLang } from '../lib/i18n';
 
 const lang: LangCode = isSupportedLang(Astro.locals.lang) ? Astro.locals.lang : 'en';
+const langPrefix = lang === 'en' ? '' : `/${lang}`;
 const t = getUIDictionary(lang);
 
 const db = getDB(Astro.locals);
@@ -18,6 +19,12 @@ const rawDegrees = degRes.results || [];
 
 const stuRes = await db.prepare('SELECT * FROM students').bind().all<Student>();
 const students = stuRes.results || [];
+
+const admRes = await db.prepare('SELECT * FROM admissions').bind().all<Admission>();
+const admissions = admRes.results || [];
+
+const creditsRes = await db.prepare('SELECT * FROM semester_credits').bind().all<SemesterCreditRow>();
+const dbCreditRows = creditsRes.results || [];
 
 const degrees = rawDegrees.map((d) => {
   const st = students.find((s) => s.apaar_id === d.apaar_id);
@@ -45,62 +52,100 @@ interface UnivAbcLedgerRow {
   verification_status: 'VERIFIED_ANCHORED' | 'STANDARD_DIRECT' | 'FRAUD_REVOKED';
 }
 
+const presetAbcLedger: UnivAbcLedgerRow[] = dbCreditRows.map((row) => {
+  const st = students.find((s) => s.apaar_id === row.apaar_id);
+  const verStatus: 'VERIFIED_ANCHORED' | 'STANDARD_DIRECT' | 'FRAUD_REVOKED' =
+    row.lateral_status === 'VERIFIED_ANCHORED'
+      ? 'VERIFIED_ANCHORED'
+      : row.lateral_status === 'DISCREPANCY_FLAGGED'
+      ? 'FRAUD_REVOKED'
+      : 'STANDARD_DIRECT';
+  return {
+    apaar_id: row.apaar_id,
+    student_name: st?.full_name ? maskName(st.full_name) : `Candidate ${row.apaar_id.slice(-4)}`,
+    program: row.program,
+    accumulated_credits: Number(row.accumulated_credits) || 0,
+    nep_threshold_badge: row.nep_exit_stage,
+    entry_mode: row.entry_mode,
+    prior_diploma_board: row.prior_diploma_board,
+    transferred_credits: Number(row.transferred_credits) || 0,
+    verification_status: verStatus,
+  };
+});
+
+function computeFallbackCreditProfile(apaarId: string): UnivAbcLedgerRow {
+  const st = students.find((s) => s.apaar_id === apaarId);
+  const adm = admissions.find((a) => a.apaar_id === apaarId);
+  const deg = rawDegrees.find((d) => d.apaar_id === apaarId);
+  const instId = deg?.institution_id || adm?.institution_id || 'INST-001';
+  const studentName = st?.full_name ? maskName(st.full_name) : `Candidate ${apaarId.slice(-4)}`;
+  const program = deg
+    ? `${deg.degree_name} (${deg.specialization})`
+    : adm?.program || 'B.Tech Computer Science & Engineering';
+
+  if (deg?.status === 'REVOKED') {
+    return {
+      apaar_id: apaarId,
+      student_name: studentName,
+      program,
+      accumulated_credits: 120,
+      nep_threshold_badge: 'REVOKED — Degree Canceled',
+      entry_mode: '1st-Year Regular (10+2 PCM)',
+      prior_diploma_board: `Degree Canceled at ${instId}`,
+      transferred_credits: 0,
+      verification_status: 'FRAUD_REVOKED',
+    };
+  }
+
+  if (deg?.status === 'ISSUED') {
+    return {
+      apaar_id: apaarId,
+      student_name: studentName,
+      program,
+      accumulated_credits: 160,
+      nep_threshold_badge: '160 Cr — 4-Yr B.Tech Honours (Exit Year 4)',
+      entry_mode: '1st-Year Regular (10+2 PCM)',
+      prior_diploma_board: `N/A (All 8 Semesters Earned at ${instId})`,
+      transferred_credits: 0,
+      verification_status: 'STANDARD_DIRECT',
+    };
+  }
+
+  const batchYear = adm?.batch_year || 2024;
+  const yearsCompleted = Math.max(1, Math.min(4, 2026 - batchYear));
+  const credits = yearsCompleted * 40;
+  const badgeMap: Record<number, string> = {
+    40: '40 Cr — UG Certificate Eligible (Exit Year 1)',
+    80: '80 Cr — UG Diploma Eligible (Exit Year 2)',
+    120: "120 Cr — 3-Yr Bachelor's Eligible (Exit Year 3)",
+    160: '160 Cr — 4-Yr B.Tech Honours (Exit Year 4)',
+  };
+
+  return {
+    apaar_id: apaarId,
+    student_name: studentName,
+    program,
+    accumulated_credits: credits,
+    nep_threshold_badge: badgeMap[credits] || `${credits} Cr — Active Enrollment`,
+    entry_mode: '1st-Year Regular (10+2 PCM)',
+    prior_diploma_board: `N/A (Semesters 1–${yearsCompleted * 2} Completed at ${instId})`,
+    transferred_credits: 0,
+    verification_status: 'STANDARD_DIRECT',
+  };
+}
+
+const presetApaarSet = new Set(presetAbcLedger.map((r) => r.apaar_id));
+const extraApaarIds = Array.from(
+  new Set([
+    ...students.map((s) => s.apaar_id),
+    ...admissions.map((a) => a.apaar_id),
+    ...rawDegrees.map((d) => d.apaar_id),
+  ])
+).filter((id) => id && !presetApaarSet.has(id));
+
 const univAbcLedger: UnivAbcLedgerRow[] = [
-  {
-    apaar_id: '412398471029',
-    student_name: maskName('Sneha Sundaram'),
-    program: 'B.Tech Computer Science & Engineering',
-    accumulated_credits: 160,
-    nep_threshold_badge: '160 Cr — 4-Yr B.Tech Honours (Exit Year 4)',
-    entry_mode: '1st-Year Regular (10+2 PCM)',
-    prior_diploma_board: 'N/A (All 8 Semesters Earned at INST-001)',
-    transferred_credits: 0,
-    verification_status: 'STANDARD_DIRECT',
-  },
-  {
-    apaar_id: '739284019283',
-    student_name: maskName('Rahul Sharma'),
-    program: 'B.Tech Computer Science & Engineering',
-    accumulated_credits: 120,
-    nep_threshold_badge: "120 Cr — 3-Yr Bachelor's Eligible (Exit Year 3)",
-    entry_mode: '2nd-Year Lateral Entry (Sem 3 Direct)',
-    prior_diploma_board: 'MSBTE State Polytechnic Diploma (80 ABC Credits Anchored)',
-    transferred_credits: 80,
-    verification_status: 'VERIFIED_ANCHORED',
-  },
-  {
-    apaar_id: '582910384729',
-    student_name: maskName('Priya Verma'),
-    program: 'B.Tech Electronics & Comm.',
-    accumulated_credits: 80,
-    nep_threshold_badge: '80 Cr — UG Diploma / Lateral Entry Eligible (Exit Year 2)',
-    entry_mode: '2nd-Year Lateral Entry (Sem 3 Direct)',
-    prior_diploma_board: 'DTE Karnataka Polytechnic Diploma (80 ABC Credits Anchored)',
-    transferred_credits: 80,
-    verification_status: 'VERIFIED_ANCHORED',
-  },
-  {
-    apaar_id: '901238471920',
-    student_name: maskName('Aaditya Patel'),
-    program: 'B.Tech Mechanical Engineering',
-    accumulated_credits: 40,
-    nep_threshold_badge: '40 Cr — UG Certificate Eligible (Exit Year 1)',
-    entry_mode: '1st-Year Regular (10+2 PCM)',
-    prior_diploma_board: 'N/A (Semesters 1–2 Completed at INST-001)',
-    transferred_credits: 0,
-    verification_status: 'STANDARD_DIRECT',
-  },
-  {
-    apaar_id: '601928374819',
-    student_name: maskName('Vikram Malhotra'),
-    program: 'B.Tech Civil Engineering',
-    accumulated_credits: 120,
-    nep_threshold_badge: 'REVOKED — Unverified Lateral Entry Credit Transfer',
-    entry_mode: '2nd-Year Lateral Entry (Disputed)',
-    prior_diploma_board: 'Unverified Private Diploma (Missing APAAR / ABC Anchor)',
-    transferred_credits: 80,
-    verification_status: 'FRAUD_REVOKED',
-  },
+  ...presetAbcLedger,
+  ...extraApaarIds.map((id) => computeFallbackCreditProfile(id)),
 ];
 
 // Example candidate presets (Form inputs stay empty until clicked)
@@ -136,7 +181,7 @@ const candidateExamples = [
 ---
 
 <Layout title={`SIH 2026 | ${t.univ_page_title}`} activeRole="university" lang={lang} breadcrumb={t.crumb_university}>
-  <div class="space-y-6">
+  <div class="space-y-6" id="univPageRoot" data-lang-prefix={langPrefix}>
     <!-- Header -->
     <div class="border-b border-slate-200 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
@@ -195,7 +240,7 @@ const candidateExamples = [
           </p>
         </div>
         <span class="text-xs font-mono font-semibold bg-blue-50 text-blue-800 border border-blue-200 px-2.5 py-1 rounded">
-          Ed25519 + SHA-256
+          Digital Signature
         </span>
       </div>
 
@@ -209,7 +254,7 @@ const candidateExamples = [
               <th scope="col" class="py-3 px-4">{t.univ_degree_name} &bull; {t.univ_specialization}</th>
               <th scope="col" class="py-3 px-4">{t.univ_cgpa} / {t.univ_year}</th>
               <th scope="col" class="py-3 px-4">{t.aicte_col_status}</th>
-              <th scope="col" class="py-3 px-4">Ed25519 + SHA-256</th>
+              <th scope="col" class="py-3 px-4">Digital Signature</th>
               <th scope="col" class="py-3 px-4 text-right">{t.univ_revocation_heading}</th>
             </tr>
           </thead>
@@ -327,17 +372,17 @@ const candidateExamples = [
               <th scope="col" class="py-3 px-4">{t.univ_student_name} &bull; {t.univ_apaar_id}</th>
               <th scope="col" class="py-3 px-4">ABC Credits (0–160 Cr)</th>
               <th scope="col" class="py-3 px-4">NEP 2020 Award / Exit</th>
-              <th scope="col" class="py-3 px-4">Lateral-Entry Credit Provenance</th>
+              <th scope="col" class="py-3 px-4">Diploma to Degree Credit Transfer</th>
               <th scope="col" class="py-3 px-4 text-right">{t.aicte_col_status}</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-200 text-slate-800">
+          <tbody id="abcLedgerTableBody" class="divide-y divide-slate-200 text-slate-800">
             {univAbcLedger.map((row) => {
               const pct = Math.min(100, Math.round((row.accumulated_credits / 160) * 100));
               const isFraud = row.verification_status === 'FRAUD_REVOKED';
               const isLateralVerified = row.verification_status === 'VERIFIED_ANCHORED';
               return (
-                <tr class={isFraud ? 'bg-red-50/40 hover:bg-red-50/70' : 'hover:bg-slate-50'}>
+                <tr data-abc-apaar={row.apaar_id} class={isFraud ? 'bg-red-50/40 hover:bg-red-50/70' : 'hover:bg-slate-50'}>
                   <td class="py-3.5 px-4">
                     <div class="font-bold text-slate-900">{row.student_name}</div>
                     <div class="text-xs font-mono text-slate-500">{maskApaar(row.apaar_id)} &bull; {row.program}</div>
@@ -410,77 +455,32 @@ const candidateExamples = [
       </div>
     </div>
 
-    <!-- FEATURE #5: Section 63 BSA Cryptographic Hash-Chain & Merkle Audit Verifier -->
-    <div class="bg-white border border-slate-200 border-t-4 border-t-[#0F2942] rounded p-5 sm:p-6 shadow-sm">
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 pb-4 mb-4">
-        <div>
-          <div class="flex flex-wrap items-center gap-2 mb-1">
-            <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-900 border border-indigo-200 px-2.5 py-0.5 rounded">
-              <svg class="w-3.5 h-3.5 text-indigo-700 shrink-0" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-              <span>Bharatiya Sakshya Adhiniyam (BSA) 2023 Sec. 63</span>
-            </span>
-          </div>
-          <h2 class="text-sm sm:text-base font-bold text-[#0F2942]">
-            3. {t.s13_title} &bull; SHA-256 Merkle Audit Verifier
-          </h2>
-          <p class="text-xs text-slate-600 mt-0.5">
-            {t.s13_body} (<code class="font-mono text-[11px] bg-slate-100 px-1 py-0.5 rounded">SHA256(prev_hash + ":" + canonical_payload)</code>)
-          </p>
-        </div>
-
-        <button
-          type="button"
-          id="verifyMerkleBtnUniv"
-          class="shrink-0 h-10 px-4 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold text-xs sm:text-sm transition-colors inline-flex items-center gap-2 shadow-xs cursor-pointer"
-        >
-          <svg class="w-4 h-4 text-emerald-300 shrink-0" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span>{t.s13_try}</span>
-        </button>
+    <!-- Compact 1-Row Check Degree Ledger Integrity Bar -->
+    <div id="merkleSummaryStripUniv" role="status" aria-live="polite" class="bg-white border border-slate-200 rounded px-4 py-3 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="font-bold text-[#0F2942] text-xs sm:text-sm">3. Check Degree Ledger Integrity</span>
+        <span class="text-slate-400">&bull;</span>
+        <span id="merkleStatusTextUniv" class="font-semibold text-slate-700">{t.s13_try}</span>
+        <span class="text-slate-400 hidden sm:inline">&bull;</span>
+        <span class="font-mono text-slate-500">Root: <strong id="merkleRootTextUniv" class="text-[#0F2942]">--</strong></span>
+        <span class="font-mono text-emerald-700 font-bold" id="merkleBlockCountUniv"></span>
       </div>
-
-      <!-- Summary Status Strip -->
-      <div
-        id="merkleSummaryStripUniv"
-        role="status"
-        aria-live="polite"
-        class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 text-xs"
+      <button
+        type="button"
+        id="verifyMerkleBtnUniv"
+        class="shrink-0 h-9 px-3.5 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-semibold text-xs transition-colors inline-flex items-center gap-1.5 cursor-pointer"
       >
-        <div class="p-3.5 bg-slate-50 rounded border border-slate-200">
-          <div class="text-[10px] font-bold uppercase text-slate-500">{t.aicte_col_status}</div>
-          <div id="merkleStatusTextUniv" class="font-bold text-slate-800 mt-1 flex items-center gap-1.5">
-            <span>{t.s13_try}</span>
-          </div>
-        </div>
-        <div class="p-3.5 bg-slate-50 rounded border border-slate-200">
-          <div class="text-[10px] font-bold uppercase text-slate-500">Merkle Root (SHA-256)</div>
-          <div id="merkleRootTextUniv" class="font-mono font-bold text-[#0F2942] mt-1 truncate">
-            --
-          </div>
-        </div>
-        <div class="p-3.5 bg-slate-50 rounded border border-slate-200">
-          <div class="text-[10px] font-bold uppercase text-slate-500">Ledger Blocks</div>
-          <div id="merkleBlockCountUniv" class="font-mono font-bold text-emerald-700 mt-1">
-            --
-          </div>
-        </div>
-      </div>
-
-      <!-- Individual Block Links Table -->
-      <div id="merkleBlocksContainerUniv" class="hidden border border-slate-200 rounded overflow-hidden">
-        <div class="bg-slate-100 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between text-xs font-bold text-slate-700">
-          <span>SHA-256 Block Chain Links (prev_hash &rarr; block_hash)</span>
-          <span class="font-mono text-[11px] text-emerald-800">crypto.subtle.digest('SHA-256')</span>
-        </div>
-        <div class="max-h-64 overflow-y-auto divide-y divide-slate-200 text-xs font-mono" id="merkleBlocksListUniv"></div>
-      </div>
+        <svg class="w-3.5 h-3.5 text-emerald-300 shrink-0" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>Check Degree Ledger Integrity</span>
+      </button>
+      <div id="merkleBlocksContainerUniv" class="hidden"><div id="merkleBlocksListUniv"></div></div>
     </div>
 
     <!-- Issue Degree Section (No Prefilled Inputs; Clickable Example Candidates Provided) -->
     <div id="issueDegreeSection" class="bg-white border border-slate-200 rounded p-6 shadow-sm">
+      <div id="degreeIssueConfirmationBanner" class="hidden rounded border border-emerald-300 bg-emerald-50 text-emerald-950 p-4 shadow-xs text-xs sm:text-sm mb-5" role="status" aria-live="polite"></div>
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 mb-5 border-b border-slate-200">
         <div>
           <h2 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider mb-1">
@@ -931,6 +931,86 @@ const candidateExamples = [
       }
     });
 
+    const univRootEl = document.getElementById('univPageRoot');
+    const langPrefixClient = univRootEl?.getAttribute('data-lang-prefix') || '';
+    const confirmBanner = document.getElementById('degreeIssueConfirmationBanner');
+    const abcLedgerTableBody = document.getElementById('abcLedgerTableBody');
+
+    function ensureStudentInAbcLedger(apaarId: string, instId: string, degreeName: string, spec: string) {
+      if (!abcLedgerTableBody || !/^[0-9]{12}$/.test(apaarId)) return;
+      const existingRow = abcLedgerTableBody.querySelector(`tr[data-abc-apaar="${apaarId}"]`);
+      if (existingRow) return;
+
+      const maskedApaar = `XXXX-XXXX-${apaarId.slice(-4)}`;
+      const candidateLabel = `Candidate ${apaarId.slice(-4)}`;
+      const programLabel = `${degreeName || 'B.Tech'} (${spec || 'Engineering'})`;
+      const tr = document.createElement('tr');
+      tr.setAttribute('data-abc-apaar', apaarId);
+      tr.className = 'hover:bg-slate-50 bg-emerald-50/30';
+      tr.innerHTML = `
+        <td class="py-3.5 px-4">
+          <div class="font-bold text-slate-900">${escapeHtml(candidateLabel)}</div>
+          <div class="text-xs font-mono text-slate-500">${escapeHtml(maskedApaar)} &bull; ${escapeHtml(programLabel)}</div>
+        </td>
+        <td class="py-3.5 px-4 min-w-[200px]">
+          <div class="flex justify-between text-xs font-mono mb-1">
+            <span class="font-bold text-[#0F2942]">160 / 160 Cr</span>
+            <span class="text-slate-500">100%</span>
+          </div>
+          <div class="w-full bg-slate-200 rounded-full h-2.5 border border-slate-300 overflow-hidden" role="progressbar" aria-valuenow="160" aria-valuemin="0" aria-valuemax="160">
+            <div class="h-full bg-emerald-600" style="width: 100%;"></div>
+          </div>
+        </td>
+        <td class="py-3.5 px-4">
+          <span class="inline-block font-mono font-bold text-xs px-2.5 py-1 rounded border bg-slate-100 text-[#0F2942] border-slate-300">
+            160 Cr — 4-Yr B.Tech Honours (Exit Year 4)
+          </span>
+        </td>
+        <td class="py-3.5 px-4">
+          <div class="font-semibold text-slate-900">1st-Year Regular (10+2 PCM)</div>
+          <div class="text-xs text-slate-600 mt-0.5">N/A (All 8 Semesters Earned at ${escapeHtml(instId || 'INST-001')})</div>
+        </td>
+        <td class="py-3.5 px-4 text-right">
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-blue-50 text-blue-900 border border-blue-200 font-bold text-xs">
+            <span>Direct Entry</span>
+          </span>
+        </td>
+      `;
+      abcLedgerTableBody.prepend(tr);
+    }
+
+    function showDegreeConfirmationBanner(apaarId: string, summaryText: string) {
+      if (!confirmBanner) return;
+      const verifierHref = `${langPrefixClient}/verifier?apaar=${encodeURIComponent(apaarId)}`;
+      confirmBanner.classList.remove('hidden');
+      confirmBanner.innerHTML = `
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div class="font-bold text-emerald-950">Digital Degree Signed &amp; Issued</div>
+            <div class="text-emerald-900 text-xs mt-0.5">${summaryText}</div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <a
+              href="${verifierHref}"
+              class="px-3.5 py-1.5 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-semibold text-xs transition-colors shadow-2xs"
+            >
+              Verify This Degree Now →
+            </a>
+            <button
+              type="button"
+              id="refreshLedgerConfirmBtn"
+              class="px-3 py-1.5 rounded bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 font-semibold text-xs transition-colors cursor-pointer"
+            >
+              Refresh Ledger
+            </button>
+          </div>
+        </div>
+      `;
+      document.getElementById('refreshLedgerConfirmBtn')?.addEventListener('click', () => {
+        window.location.reload();
+      });
+    }
+
     // Single Degree Issuance Form
     const issueSubmitBtn = document.getElementById('issueSubmitBtn') as HTMLButtonElement | null;
     document.getElementById('issueDegreeForm')?.addEventListener('submit', async (e) => {
@@ -961,8 +1041,12 @@ const candidateExamples = [
 
         const data = await res.json();
         if (data.success) {
-          (window as any).showToast('Degree issued with Ed25519 Signature & SHA-256 Stamp.', 'success');
-          setTimeout(() => window.location.reload(), 1200);
+          ensureStudentInAbcLedger(apaar, inst, name, spec);
+          showDegreeConfirmationBanner(
+            apaar,
+            `APAAR <strong>${escapeHtml(apaar)}</strong> (${escapeHtml(name)} — ${escapeHtml(spec)}) signed and recorded.`
+          );
+          (window as any).showToast('Degree issued with Digital Signature.', 'success');
         } else {
           (window as any).showToast('Issuance error: ' + (data.error || 'Server error'), 'error');
         }
@@ -1007,11 +1091,17 @@ const candidateExamples = [
             body: JSON.stringify(cand),
           });
           const data = await res.json();
-          if (data.success) issuedCount++;
+          if (data.success) {
+            issuedCount++;
+            ensureStudentInAbcLedger(cand.apaar_id, cand.institution_id, cand.degree_name, cand.specialization);
+          }
         }
         if (issuedCount > 0) {
-          (window as any).showToast(`Batch signed & issued ${issuedCount} Ed25519 degree records to D1.`, 'success');
-          setTimeout(() => window.location.reload(), 1200);
+          showDegreeConfirmationBanner(
+            batchCandidates[0].apaar_id,
+            `Batch signed and issued <strong>${issuedCount}</strong> digital degree record(s).`
+          );
+          (window as any).showToast(`Batch signed & issued ${issuedCount} digital degree records.`, 'success');
         } else {
           (window as any).showToast('Batch signing failed or no eligible records.', 'warning');
         }

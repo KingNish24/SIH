@@ -1,6 +1,8 @@
 -- VIDYA D1 SQLite Schema
 -- Project: VIDYA (AICTE / SIH Problem Statement SIH26263)
 
+DROP TABLE IF EXISTS scoped_consent_tokens;
+DROP TABLE IF EXISTS semester_credits;
 DROP TABLE IF EXISTS sessions;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS passkey_credentials;
@@ -63,6 +65,8 @@ CREATE TABLE degrees (
   revoked_at TEXT,
   revocation_reason TEXT,
   digital_signature_hash TEXT,
+  signature TEXT,
+  signing_key_id TEXT,
   FOREIGN KEY (apaar_id) REFERENCES students(apaar_id),
   FOREIGN KEY (institution_id) REFERENCES institutions(id)
 );
@@ -85,7 +89,40 @@ CREATE TABLE passkey_credentials (
   public_key TEXT NOT NULL,
   counter INTEGER DEFAULT 0,
   device_type TEXT DEFAULT 'Windows Hello / Biometric',
+  transports TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (apaar_id) REFERENCES students(apaar_id)
+);
+
+CREATE TABLE scoped_consent_tokens (
+  token_id TEXT PRIMARY KEY,
+  apaar_id TEXT NOT NULL,
+  verifier_org TEXT NOT NULL,
+  purpose TEXT NOT NULL,
+  disclosed_fields TEXT NOT NULL,
+  ttl_label TEXT NOT NULL,
+  single_use INTEGER DEFAULT 1,
+  status TEXT DEFAULT 'ACTIVE',
+  created_at TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  signature_digest TEXT NOT NULL,
+  FOREIGN KEY (apaar_id) REFERENCES students(apaar_id)
+);
+
+CREATE TABLE semester_credits (
+  apaar_id TEXT PRIMARY KEY,
+  program TEXT NOT NULL,
+  accumulated_credits INTEGER NOT NULL,
+  max_credits INTEGER DEFAULT 160,
+  nep_exit_stage TEXT NOT NULL,
+  semester_breakdown TEXT NOT NULL,
+  is_lateral_entry INTEGER DEFAULT 0,
+  entry_mode TEXT NOT NULL,
+  prior_diploma_board TEXT NOT NULL,
+  transferred_credits INTEGER DEFAULT 0,
+  lateral_status TEXT DEFAULT 'STANDARD_ENTRY',
+  lateral_note TEXT NOT NULL,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (apaar_id) REFERENCES students(apaar_id)
 );
 

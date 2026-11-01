@@ -14,6 +14,10 @@
     {
       "binding": "CHALLENGES",
       "id": "f5b1ba688be84ec3aef7a89bca85117b"
+    },
+    {
+      "binding": "SESSION",
+      "id": "f5b1ba688be84ec3aef7a89bca85117b"
     }
   ],
   // Workers Rate Limiting API (period must be 10 or 60 seconds; namespace_id is any account-unique integer string)

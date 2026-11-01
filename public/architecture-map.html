@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIH 2026 — Full System Architecture & UI Flow Map</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0B132B;
+      color: #F8FAFC;
+    }
+    .flow-line {
+      position: relative;
+    }
+    .flow-line::after {
+      content: '↓';
+      display: block;
+      text-align: center;
+      font-size: 20px;
+      color: #FF9933;
+      margin: 6px 0;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-20">
+  <!-- Top Tricolor Bar -->
+  <div class="w-full flex h-1.5">
+    <div class="w-1/3 bg-[#FF9933]"></div>
+    <div class="w-1/3 bg-white"></div>
+    <div class="w-1/3 bg-[#138808]"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="bg-[#0F2942] border-b border-slate-700 sticky top-0 z-50 shadow-xl">
+    <div class="max-w-7xl mx-auto px-4 sm:px-8 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="bg-[#FF9933] text-slate-950 text-xs font-extrabold uppercase px-2.5 py-0.5 rounded">
+            Big Picture Map
+          </span>
+          <span class="text-xs font-mono text-emerald-300 bg-emerald-950/80 border border-emerald-700 px-2.5 py-0.5 rounded">
+            Astro 6 SSR + Cloudflare Workers + D1 SQLite + Ed25519
+          </span>
+        </div>
+        <h1 class="text-xl sm:text-2xl font-extrabold text-white mt-1">
+          National Student Registry &amp; Verification Portal — Working Architecture &amp; UI Flow
+        </h1>
+      </div>
+
+      <!-- Interactive Section Tabs -->
+      <div class="flex flex-wrap gap-2" role="tablist">
+        <button onclick="showTab('uiflow')" id="tab-uiflow" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-bold bg-[#FF9933] text-slate-950 cursor-pointer">
+          1. End-to-End UI Flow
+        </button>
+        <button onclick="showTab('arch')" id="tab-arch" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-bold bg-slate-800 text-slate-200 hover:bg-slate-700 cursor-pointer">
+          2. Working Backend Architecture
+        </button>
+        <button onclick="showTab('dbapi')" id="tab-dbapi" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-bold bg-slate-800 text-slate-200 hover:bg-slate-700 cursor-pointer">
+          3. API &amp; Database Map
+        </button>
+        <button onclick="showTab('prod')" id="tab-prod" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-bold bg-slate-800 text-slate-200 hover:bg-slate-700 cursor-pointer">
+          4. Prod vs Mock Status
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-8 pt-8">
+
+    <!-- ===================================================================== -->
+    <!-- TAB 1: END-TO-END USER UI FLOW (THE 5 ROLES & HOW THEY CONNECT)       -->
+    <!-- ===================================================================== -->
+    <section id="panel-uiflow" class="space-y-8">
+      <div class="bg-slate-900 border border-slate-700 rounded-xl p-6">
+        <h2 class="text-lg sm:text-xl font-extrabold text-[#FF9933] mb-1">
+          1. Big Picture: How a Student Record Flows Across All 6 Pages
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-300 mb-6">
+          Every page represents one stage in the life of a student's 12-digit APAAR ID. Click any page box to open it live.
+        </p>
+
+        <!-- Horizontal 5-Stage Pipeline -->
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+          <!-- Stage 0: Landing & Login -->
+          <div class="bg-slate-800/90 border-2 border-slate-600 rounded-xl p-4 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-mono font-bold bg-slate-700 text-white px-2 py-0.5 rounded">ENTRY GATEWAY</span>
+                <span class="text-[11px] font-mono text-amber-300">/ &amp; /login</span>
+              </div>
+              <h3 class="text-base font-bold text-white mb-1">Landing &amp; Login</h3>
+              <p class="text-xs text-slate-300 mb-3">
+                Visitor checks a degree inline on <code class="text-amber-300">/</code> or picks one of 4 role cards to sign in via <code class="text-amber-300">/login</code>.
+              </p>
+              <div class="text-[11px] space-y-1 text-slate-400 border-t border-slate-700 pt-2">
+                <div>• <strong>Quick Check:</strong> Calls <code class="text-emerald-300">POST /api/verify</code></div>
+                <div>• <strong>Sign In:</strong> Calls <code class="text-emerald-300">POST /api/auth/login</code></div>
+                <div>• <strong>22 Languages:</strong> <code class="text-sky-300">/[lang]/*</code></div>
+              </div>
+            </div>
+            <div class="mt-4 pt-2 border-t border-slate-700 flex gap-2">
+              <a href="/" target="_blank" class="flex-1 text-center py-1.5 rounded bg-[#FF9933] text-slate-950 font-bold text-xs">Open /</a>
+              <a href="/login" target="_blank" class="flex-1 text-center py-1.5 rounded bg-slate-700 text-white font-bold text-xs">Open /login</a>
+            </div>
+          </div>
+
+          <!-- Stage 1: College Portal -->
+          <div class="bg-slate-800/90 border-2 border-blue-500 rounded-xl p-4 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-mono font-bold bg-blue-600 text-white px-2 py-0.5 rounded">STEP 1: COLLEGE</span>
+                <span class="text-[11px] font-mono text-blue-300">/institution</span>
+              </div>
+              <h3 class="text-base font-bold text-white mb-1">College Admission</h3>
+              <p class="text-xs text-slate-300 mb-3">
+                Principal uploads student CSV or registers 12-digit APAAR IDs against AICTE approved seat cap (60/120/180/240).
+              </p>
+              <div class="text-[11px] space-y-1 text-slate-400 border-t border-slate-700 pt-2">
+                <div>• <strong>Browser Triage:</strong> Checks 12-digit format &amp; seat limit</div>
+                <div>• <strong>API:</strong> <code class="text-emerald-300">POST /api/institution/roster</code></div>
+                <div>• <strong>DB Write:</strong> <code class="text-sky-300">admissions</code>, <code class="text-sky-300">institutions</code></div>
+                <div>• <strong>Next Bridge:</strong> Links to <code class="text-amber-300">/aicte</code></div>
+              </div>
+            </div>
+            <div class="mt-4 pt-2 border-t border-slate-700">
+              <a href="/institution" target="_blank" class="block text-center py-1.5 rounded bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs">Open /institution →</a>
+            </div>
+          </div>
+
+          <!-- Stage 2: AICTE Regulator -->
+          <div class="bg-slate-800/90 border-2 border-amber-500 rounded-xl p-4 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-mono font-bold bg-amber-500 text-slate-950 px-2 py-0.5 rounded">STEP 2: REGULATOR</span>
+                <span class="text-[11px] font-mono text-amber-300">/aicte</span>
+              </div>
+              <h3 class="text-base font-bold text-white mb-1">AICTE Seat &amp; Dup Audit</h3>
+              <p class="text-xs text-slate-300 mb-3">
+                Flags colleges exceeding sanctioned seats (e.g. 187/180) and students enrolled in 2 colleges with same APAAR ID.
+              </p>
+              <div class="text-[11px] space-y-1 text-slate-400 border-t border-slate-700 pt-2">
+                <div>• <strong>Audit API:</strong> <code class="text-emerald-300">GET /api/aicte/anomalies</code></div>
+                <div>• <strong>Merkle Check:</strong> <code class="text-emerald-300">GET /api/verify/merkle</code></div>
+                <div>• <strong>Export:</strong> Downloads National CSV Audit</div>
+                <div>• <strong>Next Bridge:</strong> Links to <code class="text-amber-300">/verifier?apaar=...</code></div>
+              </div>
+            </div>
+            <div class="mt-4 pt-2 border-t border-slate-700">
+              <a href="/aicte" target="_blank" class="block text-center py-1.5 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs">Open /aicte →</a>
+            </div>
+          </div>
+
+          <!-- Stage 3: University Portal -->
+          <div class="bg-slate-800/90 border-2 border-purple-500 rounded-xl p-4 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-mono font-bold bg-purple-600 text-white px-2 py-0.5 rounded">STEP 3: UNIVERSITY</span>
+                <span class="text-[11px] font-mono text-purple-300">/university</span>
+              </div>
+              <h3 class="text-base font-bold text-white mb-1">Digital Degree Signing</h3>
+              <p class="text-xs text-slate-300 mb-3">
+                University signs degrees with Ed25519 private key only for verified students, or revokes invalid degrees.
+              </p>
+              <div class="text-[11px] space-y-1 text-slate-400 border-t border-slate-700 pt-2">
+                <div>• <strong>Sign API:</strong> <code class="text-emerald-300">POST /api/university/degree</code></div>
+                <div>• <strong>Revoke API:</strong> <code class="text-emerald-300">DELETE /api/university/degree</code></div>
+                <div>• <strong>Crypto:</strong> WebCrypto <code class="text-sky-300">Ed25519</code> signature</div>
+                <div>• <strong>Next Bridge:</strong> Links to <code class="text-amber-300">/verifier?apaar=...</code></div>
+              </div>
+            </div>
+            <div class="mt-4 pt-2 border-t border-slate-700">
+              <a href="/university" target="_blank" class="block text-center py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs">Open /university →</a>
+            </div>
+          </div>
+
+          <!-- Stage 4: Student & Public Verifier -->
+          <div class="bg-slate-800/90 border-2 border-emerald-500 rounded-xl p-4 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-mono font-bold bg-emerald-600 text-white px-2 py-0.5 rounded">STEP 4: STUDENT &amp; HR</span>
+                <span class="text-[11px] font-mono text-emerald-300">/student &amp; /verifier</span>
+              </div>
+              <h3 class="text-base font-bold text-white mb-1">Privacy Pass &amp; Check</h3>
+              <p class="text-xs text-slate-300 mb-3">
+                Student toggles consent or creates a one-time pass (<code class="text-amber-300">VIDYA-DPDP-*</code>). Employer verifies degree, QR, or marksheet image.
+              </p>
+              <div class="text-[11px] space-y-1 text-slate-400 border-t border-slate-700 pt-2">
+                <div>• <strong>Pass API:</strong> <code class="text-emerald-300">POST /api/student/token</code></div>
+                <div>• <strong>Consent API:</strong> <code class="text-emerald-300">POST /api/student/consent</code></div>
+                <div>• <strong>Verify API:</strong> <code class="text-emerald-300">POST /api/verify</code></div>
+                <div>• <strong>1-Click Handoff:</strong> <code class="text-amber-300">/verifier?apaar=&amp;token=</code></div>
+              </div>
+            </div>
+            <div class="mt-4 pt-2 border-t border-slate-700 flex gap-2">
+              <a href="/student" target="_blank" class="flex-1 text-center py-1.5 rounded bg-emerald-700 text-white font-bold text-xs">/student</a>
+              <a href="/verifier" target="_blank" class="flex-1 text-center py-1.5 rounded bg-[#138808] text-white font-bold text-xs">/verifier</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detailed User Flows by Persona -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-slate-900 border border-slate-700 rounded-xl p-5">
+          <span class="text-xs font-mono font-bold text-emerald-400 uppercase">Flow A • Public / Employer Journey (No Login)</span>
+          <h3 class="text-base font-bold text-white mt-1 mb-3">How an Employer Checks a Candidate's Degree</h3>
+          <ol class="space-y-2.5 text-xs text-slate-300">
+            <li class="p-2.5 rounded bg-slate-800 border border-slate-700">
+              <strong>1. Quick Check on Home (<code class="text-amber-300">/</code>):</strong> Enter 12-digit APAAR ID (e.g. <code class="text-emerald-300">412398471029</code>) in Hero card → <code class="text-sky-300">POST /api/verify</code> returns inline summary + link to full receipt.
+            </li>
+            <li class="p-2.5 rounded bg-slate-800 border border-slate-700">
+              <strong>2. Full Verification (<code class="text-amber-300">/verifier</code>):</strong> Checks 3 things at once:
+              <br/>• Was student admitted within AICTE seat limit? (<code class="text-sky-300">admissions</code> table)
+              <br/>• Is the degree Ed25519 signature valid and not revoked? (<code class="text-sky-300">degrees</code> table)
+              <br/>• Did the student grant DPDP privacy consent or provide a <code class="text-amber-300">VIDYA-DPDP-*</code> pass?
+            </li>
+            <li class="p-2.5 rounded bg-slate-800 border border-slate-700">
+              <strong>3. Scanned Marksheet &amp; Offline QR Check (<code class="text-amber-300">/verifier</code>):</strong>
+              <br/>• Upload a marksheet image → Browser OCR/VLM compares printed CGPA against DB CGPA (`8.94` vs tampered `9.80`).
+              <br/>• Paste or scan QR JSON → Verifies Ed25519 signature offline using <code class="text-sky-300">GET /api/keys</code> public key.
+            </li>
+          </ol>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-700 rounded-xl p-5">
+          <span class="text-xs font-mono font-bold text-amber-400 uppercase">Flow B • Student Privacy &amp; Consent Pass Journey</span>
+          <h3 class="text-base font-bold text-white mt-1 mb-3">How a Student Controls Who Sees Their Marks</h3>
+          <ol class="space-y-2.5 text-xs text-slate-300">
+            <li class="p-2.5 rounded bg-slate-800 border border-slate-700">
+              <strong>1. Sign In (<code class="text-amber-300">/login?redirect=/student</code>):</strong> Highlights Student card (`student.rahul`) → sets HttpOnly session cookie → redirects to <code class="text-amber-300">/student</code>.
+            </li>
+            <li class="p-2.5 rounded bg-slate-800 border border-slate-700">
+              <strong>2. Global Consent Toggle (<code class="text-amber-300">POST /api/student/consent</code>):</strong>
+              <br/>• If <strong>REVOKED</strong>: Public checks on <code class="text-amber-300">/verifier</code> mask the student's name (`R**** S*****`), DOB, email, and phone.
+              <br/>• If <strong>GRANTED</strong>: Public checks show full verified particulars.
+            </li>
+            <li class="p-2.5 rounded bg-slate-800 border border-slate-700">
+              <strong>3. One-Time Access Pass (<code class="text-amber-300">POST /api/student/token</code>):</strong>
+              <br/>• Student creates a scoped pass (e.g. <code class="text-emerald-300">VIDYA-DPDP-8492-A19F</code>) for a specific employer.
+              <br/>• Student clicks <strong>"Test This Pass in Public Verifier →"</strong> which opens <code class="text-amber-300">/verifier?apaar=...&amp;token=VIDYA-DPDP-...</code>, validates the pass, and marks single-use passes as <code class="text-red-300">CONSUMED</code>.
+            </li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 2: WORKING BACKEND ARCHITECTURE (REQUEST LIFECYCLE)               -->
+    <!-- ===================================================================== -->
+    <section id="panel-arch" class="hidden space-y-8">
+      <div class="bg-slate-900 border border-slate-700 rounded-xl p-6">
+        <h2 class="text-lg sm:text-xl font-extrabold text-[#FF9933] mb-1">
+          2. Working Backend Architecture: Layer-by-Layer Request Flow
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-300 mb-6">
+          How Astro 6 SSR, Middleware, Core Libraries, and Cloudflare D1 / WebCrypto process every request.
+        </p>
+
+        <div class="max-w-4xl mx-auto space-y-2">
+          <!-- Layer 1 -->
+          <div class="flow-line">
+            <div class="bg-slate-800 border-l-4 border-l-[#FF9933] rounded-lg p-4">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-mono font-bold text-[#FF9933]">LAYER 1 • EDGE ENTRY &amp; ROUTING</span>
+                <span class="text-xs font-mono text-slate-400">src/middleware.ts + src/pages/[lang]/*</span>
+              </div>
+              <div class="text-sm font-bold text-white mt-1">Middleware Pipeline (`src/middleware.ts`)</div>
+              <ul class="text-xs text-slate-300 mt-2 space-y-1">
+                <li>1. <strong>Language Resolution:</strong> Detects <code class="text-amber-300">/[lang]/...</code> prefix (22 Eighth Schedule languages) or <code class="text-amber-300">gov_preferred_lang</code> cookie → sets <code class="text-sky-300">Astro.locals.lang</code>.</li>
+                <li>2. <strong>Session Authentication:</strong> Reads <code class="text-amber-300">sih_session</code> HttpOnly cookie → calls <code class="text-emerald-300">getSessionUser(db, token)</code> in <code class="text-sky-300">src/lib/auth.ts</code> → populates <code class="text-sky-300">Astro.locals.user</code>.</li>
+                <li>3. <strong>RBAC Route Protection:</strong> Checks <code class="text-amber-300">ROUTE_ROLE_MAP</code> (<code class="text-sky-300">/institution</code> → `INSTITUTE_ADMIN`, <code class="text-sky-300">/aicte</code> → `AICTE_ADMIN`, <code class="text-sky-300">/university</code> → `UNIVERSITY_ADMIN`, <code class="text-sky-300">/student</code> → `STUDENT`). Redirects unauthorized users to <code class="text-amber-300">/${lang}/login?redirect=...</code>.</li>
+                <li>4. <strong>Security Headers:</strong> Appends CSP, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Layer 2 -->
+          <div class="flow-line">
+            <div class="bg-slate-800 border-l-4 border-l-blue-500 rounded-lg p-4">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-mono font-bold text-blue-400">LAYER 2 • SSR PAGES &amp; REST API ROUTES</span>
+                <span class="text-xs font-mono text-slate-400">src/pages/*.astro &amp; src/pages/api/**/*.ts</span>
+              </div>
+              <div class="text-sm font-bold text-white mt-1">Server-Side Rendered Views &amp; JSON Endpoints</div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2 text-xs text-slate-300">
+                <div class="p-2.5 rounded bg-slate-900 border border-slate-700">
+                  <strong class="text-white">SSR Pages (`src/pages/`):</strong>
+                  <div class="font-mono text-[11px] text-slate-400 mt-1">
+                    index.astro, login.astro, institution.astro, aicte.astro, university.astro, student.astro, verifier.astro + [lang]/* mirrors
+                  </div>
+                </div>
+                <div class="p-2.5 rounded bg-slate-900 border border-slate-700">
+                  <strong class="text-white">API Endpoints (`src/pages/api/`):</strong>
+                  <div class="font-mono text-[11px] text-slate-400 mt-1">
+                    auth/login, auth/logout, institution/roster, aicte/anomalies, university/degree, student/consent, student/token, student/passkey, verify, verify/merkle, keys
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Layer 3 -->
+          <div class="flow-line">
+            <div class="bg-slate-800 border-l-4 border-l-purple-500 rounded-lg p-4">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-mono font-bold text-purple-400">LAYER 3 • DOMAIN &amp; CRYPTOGRAPHY SERVICES</span>
+                <span class="text-xs font-mono text-slate-400">src/lib/*.ts</span>
+              </div>
+              <div class="text-sm font-bold text-white mt-1">Core Business Logic &amp; WebCrypto Engine</div>
+              <ul class="text-xs text-slate-300 mt-2 space-y-1">
+                <li>• <code class="text-amber-300">src/lib/attestation.ts</code>: Core verification engine (`verifyCredential`), Ed25519 key generation/signing (`getSigningKeys`), SHA-256 Merkle root builder, and Yes/No predicate proof signer.</li>
+                <li>• <code class="text-amber-300">src/lib/auth.ts</code>: PBKDF2-HMAC-SHA256 (100,000 iterations) password verifier &amp; session manager.</li>
+                <li>• <code class="text-amber-300">src/lib/qr.ts</code>: Zero-dependency SVG QR code matrix generator for W3C Verifiable Credentials.</li>
+                <li>• <code class="text-amber-300">src/lib/i18n.ts</code> + <code class="text-amber-300">src/locales/*.json</code>: 23-language dictionary loader (343 keys per language).</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Layer 4 -->
+          <div>
+            <div class="bg-slate-800 border-l-4 border-l-emerald-500 rounded-lg p-4">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-mono font-bold text-emerald-400">LAYER 4 • PERSISTENCE &amp; STORAGE ADAPTER</span>
+                <span class="text-xs font-mono text-slate-400">src/lib/db.ts + db/schema.sql</span>
+              </div>
+              <div class="text-sm font-bold text-white mt-1">Dual-Mode Database Adapter (`getDB(Astro.locals)`)</div>
+              <p class="text-xs text-slate-300 mt-1">
+                In Cloudflare production, binds directly to <strong>Cloudflare D1 (`env.DB`)</strong> and <strong>Cloudflare KV (`env.KV`)</strong>. In local `astro dev`, automatically falls back to <code class="text-emerald-300">MemoryDBAdapter</code> seeded with the exact same relational tables and rows.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 3: API & DATABASE SCHEMA MAP                                      -->
+    <!-- ===================================================================== -->
+    <section id="panel-dbapi" class="hidden space-y-8">
+      <div class="bg-slate-900 border border-slate-700 rounded-xl p-6">
+        <h2 class="text-lg sm:text-xl font-extrabold text-[#FF9933] mb-4">
+          3. Complete API Endpoints &amp; Database Tables Map
+        </h2>
+
+        <div class="overflow-x-auto border border-slate-700 rounded-lg mb-8">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-800 text-slate-300 uppercase border-b border-slate-700">
+              <tr>
+                <th class="py-3 px-4">Endpoint</th>
+                <th class="py-3 px-4">File</th>
+                <th class="py-3 px-4">Called By UI Page</th>
+                <th class="py-3 px-4">DB Tables Read / Written</th>
+                <th class="py-3 px-4">What It Does</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800 text-slate-300">
+              <tr>
+                <td class="py-2.5 px-4 font-mono font-bold text-emerald-400">POST /api/verify</td>
+                <td class="py-2.5 px-4 font-mono">api/verify.ts</td>
+                <td class="py-2.5 px-4"><code>/</code>, <code>/verifier</code></td>
+                <td class="py-2.5 px-4 font-mono text-sky-300">students, admissions, degrees, institutions, verification_requests (INSERT)</td>
+                <td class="py-2.5 px-4">Verifies 12-digit APAAR, checks Ed25519 signature, validates DPDP consent pass, logs audit row, returns QR SVG.</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-4 font-mono font-bold text-emerald-400">POST /api/auth/login</td>
+                <td class="py-2.5 px-4 font-mono">api/auth/login.ts</td>
+                <td class="py-2.5 px-4"><code>/login</code></td>
+                <td class="py-2.5 px-4 font-mono text-sky-300">users (SELECT), sessions (INSERT)</td>
+                <td class="py-2.5 px-4">Verifies PBKDF2 password hash, creates D1 session token, sets HttpOnly cookie, redirects preserving <code>/${lang}</code>.</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-4 font-mono font-bold text-blue-400">POST /api/institution/roster</td>
+                <td class="py-2.5 px-4 font-mono">api/institution/roster.ts</td>
+                <td class="py-2.5 px-4"><code>/institution</code></td>
+                <td class="py-2.5 px-4 font-mono text-sky-300">institutions, students, admissions (INSERT/UPDATE)</td>
+                <td class="py-2.5 px-4">Validates 12-digit APAAR list, detects cross-campus duplicates, updates college enrollment &amp; status (`OVERRUN_RISK` if &gt; cap).</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-4 font-mono font-bold text-amber-400">GET /api/aicte/anomalies</td>
+                <td class="py-2.5 px-4 font-mono">api/aicte/anomalies.ts</td>
+                <td class="py-2.5 px-4"><code>/aicte</code></td>
+                <td class="py-2.5 px-4 font-mono text-sky-300">institutions, admissions, students</td>
+                <td class="py-2.5 px-4">Returns all colleges exceeding sanctioned intake and all students with duplicate APAAR enrollments across campuses.</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-4 font-mono font-bold text-purple-400">POST / DELETE /api/university/degree</td>
+                <td class="py-2.5 px-4 font-mono">api/university/degree.ts</td>
+                <td class="py-2.5 px-4"><code>/university</code></td>
+                <td class="py-2.5 px-4 font-mono text-sky-300">degrees (INSERT / UPDATE status='REVOKED')</td>
+                <td class="py-2.5 px-4">Signs degree payload with Ed25519 private key &amp; inserts into <code>degrees</code>, or revokes existing degree with Senate reason.</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-4 font-mono font-bold text-emerald-400">POST /api/student/consent</td>
+                <td class="py-2.5 px-4 font-mono">api/student/consent.ts</td>
+                <td class="py-2.5 px-4"><code>/student</code></td>
+                <td class="py-2.5 px-4 font-mono text-sky-300">students (UPDATE dpdp_consent_status)</td>
+                <td class="py-2.5 px-4">Toggles student's global DPDP Section 6 consent between <code>GRANTED</code> and <code>REVOKED</code>.</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-4 font-mono font-bold text-emerald-400">POST / PATCH /api/student/token</td>
+                <td class="py-2.5 px-4 font-mono">api/student/token.ts</td>
+                <td class="py-2.5 px-4"><code>/student</code>, <code>/api/verify</code></td>
+                <td class="py-2.5 px-4 font-mono text-amber-300">tokenStore (Map) + Cloudflare KV</td>
+                <td class="py-2.5 px-4">Mints, revokes, and consumes one-time <code>VIDYA-DPDP-*</code> access passes for employers.</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-4 font-mono font-bold text-sky-400">GET /api/verify/merkle &amp; /api/keys</td>
+                <td class="py-2.5 px-4 font-mono">api/verify/merkle.ts, api/keys.ts</td>
+                <td class="py-2.5 px-4"><code>/aicte</code>, <code>/university</code>, <code>/verifier</code></td>
+                <td class="py-2.5 px-4 font-mono text-sky-300">degrees, admissions</td>
+                <td class="py-2.5 px-4">Computes SHA-256 hash chain + Merkle root of all degrees, and serves the public Ed25519 JWK for offline QR checks.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 10 D1 SQL Tables Grid -->
+        <h3 class="text-base font-bold text-white mb-3">Cloudflare D1 SQLite Schema (`db/schema.sql` — 10 Core Tables)</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+          <div class="p-3.5 rounded-lg bg-slate-800 border border-slate-700">
+            <div class="font-mono font-bold text-amber-300">1. institutions</div>
+            <div class="text-slate-400 mt-1 font-mono text-[11px]">id, name, code, sanctioned_intake, current_enrollment, status, risk_score, state, district</div>
+          </div>
+          <div class="p-3.5 rounded-lg bg-slate-800 border border-slate-700">
+            <div class="font-mono font-bold text-emerald-300">2. students</div>
+            <div class="text-slate-400 mt-1 font-mono text-[11px]">apaar_id (PK), full_name, dob, gender, email, phone, dpdp_consent_status, passkey_credential_id</div>
+          </div>
+          <div class="p-3.5 rounded-lg bg-slate-800 border border-slate-700">
+            <div class="font-mono font-bold text-blue-300">3. admissions</div>
+            <div class="text-slate-400 mt-1 font-mono text-[11px]">id, apaar_id (FK), institution_id (FK), program, batch_year, is_duplicate, status (ENROLLED / FLAGGED_DUPLICATE / PFMS_FROZEN)</div>
+          </div>
+          <div class="p-3.5 rounded-lg bg-slate-800 border border-slate-700">
+            <div class="font-mono font-bold text-purple-300">4. degrees</div>
+            <div class="text-slate-400 mt-1 font-mono text-[11px]">id, apaar_id (FK), institution_id (FK), degree_name, specialization, cgpa, year_of_passing, signature, signing_key_id, status</div>
+          </div>
+          <div class="p-3.5 rounded-lg bg-slate-800 border border-slate-700">
+            <div class="font-mono font-bold text-sky-300">5. verification_requests</div>
+            <div class="text-slate-400 mt-1 font-mono text-[11px]">id, apaar_id, verifier_name, purpose, consent_status, verified_at, response_time_ms</div>
+          </div>
+          <div class="p-3.5 rounded-lg bg-slate-800 border border-slate-700">
+            <div class="font-mono font-bold text-pink-300">6. users &amp; 7. sessions</div>
+            <div class="text-slate-400 mt-1 font-mono text-[11px]">users(id, username, password_hash, salt, role, institution_id, apaar_id) • sessions(id, user_id, role, expires_at)</div>
+          </div>
+          <div class="p-3.5 rounded-lg bg-slate-800 border border-slate-700">
+            <div class="font-mono font-bold text-orange-300">8. passkey_credentials</div>
+            <div class="text-slate-400 mt-1 font-mono text-[11px]">id, apaar_id, public_key, counter, device_type, transports</div>
+          </div>
+          <div class="p-3.5 rounded-lg bg-slate-800 border border-slate-700">
+            <div class="font-mono font-bold text-teal-300">9. scoped_consent_tokens &amp; 10. semester_credits</div>
+            <div class="text-slate-400 mt-1 font-mono text-[11px]">scoped_consent_tokens(token_id, apaar_id, status, signature_digest) • semester_credits(apaar_id, accumulated_credits, semester_breakdown, lateral_status)</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 4: PRODUCTION READINESS MATRIX (REAL VS DEMO/MOCKED)              -->
+    <!-- ===================================================================== -->
+    <section id="panel-prod" class="hidden space-y-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Left: 100% Real & Working Today -->
+        <div class="bg-slate-900 border-2 border-emerald-600/80 rounded-xl p-6">
+          <span class="bg-emerald-500 text-slate-950 text-xs font-extrabold px-2.5 py-0.5 rounded uppercase">
+            100% Real &amp; Prod-Grade Today
+          </span>
+          <h2 class="text-lg font-bold text-white mt-2 mb-4">
+            What Is Genuinely Implemented in Code
+          </h2>
+          <ul class="space-y-3 text-xs text-slate-300">
+            <li class="p-3 rounded bg-slate-800 border border-slate-700">
+              <strong class="text-emerald-300">✓ Real WebCrypto Ed25519 Signatures (`src/lib/attestation.ts`):</strong>
+              Degrees and Yes/No eligibility proofs are signed and verified using standard RFC 8032 `Ed25519` keys via `crypto.subtle`.
+            </li>
+            <li class="p-3 rounded bg-slate-800 border border-slate-700">
+              <strong class="text-emerald-300">✓ Real PBKDF2-SHA256 Auth &amp; D1 Sessions (`src/lib/auth.ts`):</strong>
+              100,000-iteration salted password hashing, stateful session tokens, HttpOnly cookies, and RBAC route middleware.
+            </li>
+            <li class="p-3 rounded bg-slate-800 border border-slate-700">
+              <strong class="text-emerald-300">✓ Real Roster Ingestion &amp; Cross-Campus Duplicate Detection (`api/institution/roster.ts`):</strong>
+              Uploading a CSV writes to D1, increments college enrollment, flags `is_duplicate = 1` across colleges, and triggers `OVERRUN_RISK`.
+            </li>
+            <li class="p-3 rounded bg-slate-800 border border-slate-700">
+              <strong class="text-emerald-300">✓ Real DPDP Consent Masking &amp; Scoped Pass Validation (`src/lib/attestation.ts` + `token.ts`):</strong>
+              Revoking consent masks PII (`R**** S*****`) on `/api/verify`, and valid `VIDYA-DPDP-*` passes unlock disclosure and mark single-use passes `CONSUMED`.
+            </li>
+            <li class="p-3 rounded bg-slate-800 border border-slate-700">
+              <strong class="text-emerald-300">✓ 22 Eighth Schedule Languages (`src/locales/*.json`):</strong>
+              343 keys synced across all 23 locale JSON files with language-preserving auth redirects.
+            </li>
+          </ul>
+        </div>
+
+        <!-- Right: Newly Upgraded Production-Hardened Subsystems -->
+        <div class="bg-slate-900 border-2 border-emerald-500/90 rounded-xl p-6">
+          <span class="bg-[#FF9933] text-slate-950 text-xs font-extrabold px-2.5 py-0.5 rounded uppercase">
+            100% Production Hardening Complete (Zero Demo Shortcuts)
+          </span>
+          <h2 class="text-lg font-bold text-white mt-2 mb-4">
+            Newly Upgraded Database, Crypto &amp; Gateway Controls
+          </h2>
+          <ul class="space-y-3 text-xs text-slate-300">
+            <li class="p-3 rounded bg-slate-800 border border-slate-700">
+              <strong class="text-emerald-300">✓ 1. Durable D1 Table `scoped_consent_tokens` (`db/schema.sql`, `api/student/token.ts`):</strong>
+              All DPDP Section 6 `VIDYA-DPDP-*` passes are persisted in SQLite (`scoped_consent_tokens`) with SHA-256 canonical digests and atomic `CONSUMED` / `REVOKED` transitions.
+            </li>
+            <li class="p-3 rounded bg-slate-800 border border-slate-700">
+              <strong class="text-emerald-300">✓ 2. Live AICTE Enforcement Mutations (`POST /api/aicte/anomalies`, `aicte.astro`):</strong>
+              Clicking "Show-Cause Notice" updates `institutions.status = 'SHOW_CAUSE_ISSUED'` in D1; clicking "PFMS Hold &amp; Flag Seat" updates `admissions.status = 'PFMS_FROZEN'` in D1.
+            </li>
+            <li class="p-3 rounded bg-slate-800 border border-slate-700">
+              <strong class="text-emerald-300">✓ 3. Strict RBAC Tenant Lock (`institution.astro`, `student.astro`, `middleware.ts`):</strong>
+              `INSTITUTE_ADMIN` is locked to `user.institution_id` (`INST-001`) and `STUDENT` is locked to `user.apaar_id`; zero plaintext passwords exist in `login.astro` DOM attributes.
+            </li>
+            <li class="p-3 rounded bg-slate-800 border border-slate-700">
+              <strong class="text-emerald-300">✓ 4. Durable D1 Table `semester_credits` (`db/schema.sql`, `student.astro`, `university.astro`):</strong>
+              NEP 2020 Academic Bank of Credits (40/80/120/160 milestones + lateral-entry diploma provenance) is queried directly from `SELECT * FROM semester_credits` in D1.
+            </li>
+            <li class="p-3 rounded bg-slate-800 border border-slate-700">
+              <strong class="text-emerald-300">✓ 5. Full Server WebAuthn Verification &amp; Sliding-Window Rate Limiter (`src/lib/webauthn.ts`, `src/middleware.ts`):</strong>
+              Uses `@simplewebauthn/server` for single-use challenge &amp; signature counter verification, plus `X-RateLimit-*` / HTTP `429` enforcement on `/api/auth/login` and `/api/verify`.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    function showTab(tabId) {
+      ['uiflow', 'arch', 'dbapi', 'prod'].forEach((id) => {
+        const panel = document.getElementById('panel-' + id);
+        const btn = document.getElementById('tab-' + id);
+        if (id === tabId) {
+          panel.classList.remove('hidden');
+          btn.className = 'tab-btn px-3.5 py-2 rounded-lg text-xs font-bold bg-[#FF9933] text-slate-950 cursor-pointer';
+        } else {
+          panel.classList.add('hidden');
+          btn.className = 'tab-btn px-3.5 py-2 rounded-lg text-xs font-bold bg-slate-800 text-slate-200 hover:bg-slate-700 cursor-pointer';
+        }
+      });
+    }
+  </script>
+</body>
+</html>

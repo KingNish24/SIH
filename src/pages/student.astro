@@ -1,7 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { getDB } from '../lib/db';
-import type { Student, Admission, Degree, VerificationRequest, Institution } from '../lib/types';
+import type { Student, Admission, Degree, VerificationRequest, Institution, SemesterCreditRow } from '../lib/types';
 import { maskApaar, maskName, maskEmail, maskPhone } from '../lib/types';
 import { getUIDictionary, type LangCode, isSupportedLang } from '../lib/i18n';
 
@@ -24,6 +24,9 @@ const verificationRequests = reqRes.results || [];
 
 const instRes = await db.prepare('SELECT * FROM institutions').bind().all<Institution>();
 const institutions = instRes.results || [];
+
+const creditsRes = await db.prepare('SELECT * FROM semester_credits').bind().all<SemesterCreditRow>();
+const dbCreditRows = creditsRes.results || [];
 
 const user = Astro.locals.user;
 const studentApaar = user?.role === 'STUDENT' ? user.apaar_id : null;
@@ -71,88 +74,121 @@ interface AbcCreditProfile {
   lateral_note: string;
 }
 
-const abcProfiles: Record<string, AbcCreditProfile> = {
-  '739284019283': {
-    apaar_id: '739284019283',
-    student_name: maskName('Rahul Sharma'),
-    accumulated_credits: 120,
-    max_credits: 160,
-    nep_exit_stage: "120 Credits — 3-Year Bachelor's Degree Eligible (Semester 6 Completed)",
-    semester_breakdown: [20, 20, 20, 20, 20, 20, 0, 0],
-    is_lateral_entry: true,
-    prior_diploma_board: 'MSBTE State Polytechnic Diploma (Computer Engg — 80 Credits)',
-    transferred_credits: 80,
-    lateral_status: 'VERIFIED_ANCHORED',
-    lateral_note: 'Prior 3-Year Polytechnic Diploma (80 ABC Credits) cryptographically verified via DigiLocker & MSBTE ledger before 2nd-Year B.Tech Lateral Entry.',
-  },
-  '412398471029': {
-    apaar_id: '412398471029',
-    student_name: maskName('Sneha Sundaram'),
-    accumulated_credits: 160,
-    max_credits: 160,
-    nep_exit_stage: '160 Credits — 4-Year B.Tech Honours / Research Degree Conferred',
-    semester_breakdown: [20, 20, 20, 20, 20, 20, 20, 20],
-    is_lateral_entry: false,
-    prior_diploma_board: 'Direct 1st-Year Regular Admission (10+2 PCM Qualifying)',
-    transferred_credits: 0,
-    lateral_status: 'STANDARD_ENTRY',
-    lateral_note: 'All 8 semesters (160 Credits) earned continuously at AICTE-approved parent institution.',
-  },
-  '582910384729': {
-    apaar_id: '582910384729',
-    student_name: maskName('Priya Verma'),
-    accumulated_credits: 80,
-    max_credits: 160,
-    nep_exit_stage: '80 Credits — UG Diploma / Lateral Entry Eligible (Exit Year 2)',
-    semester_breakdown: [20, 20, 20, 20, 0, 0, 0, 0],
-    is_lateral_entry: true,
-    prior_diploma_board: 'DTE Karnataka Polytechnic Diploma (Electronics — 80 Credits)',
-    transferred_credits: 80,
-    lateral_status: 'VERIFIED_ANCHORED',
-    lateral_note: 'Verified 80-credit UG Diploma anchored to 12-digit APAAR ID; eligible for NEP 2020 2nd-Year Lateral Entry.',
-  },
-  '901238471920': {
-    apaar_id: '901238471920',
-    student_name: maskName('Aaditya Patel'),
-    accumulated_credits: 40,
-    max_credits: 160,
-    nep_exit_stage: '40 Credits — UG Certificate Threshold Reached (Exit Year 1)',
-    semester_breakdown: [20, 20, 0, 0, 0, 0, 0, 0],
-    is_lateral_entry: false,
-    prior_diploma_board: 'Direct 1st-Year Regular Admission (10+2 Qualifying)',
-    transferred_credits: 0,
-    lateral_status: 'STANDARD_ENTRY',
-    lateral_note: 'Completed Year 1 (40 Credits); qualifies for NEP 2020 UG Certificate if exiting early.',
-  },
-  '601928374819': {
-    apaar_id: '601928374819',
-    student_name: maskName('Vikram Malhotra'),
-    accumulated_credits: 120,
-    max_credits: 160,
-    nep_exit_stage: 'REVOKED — Unverified Lateral Entry Credit Transfer Blocked',
-    semester_breakdown: [0, 0, 20, 20, 20, 20, 20, 20],
-    is_lateral_entry: true,
-    prior_diploma_board: 'Unverified Private Polytechnic Certificate (No ABC / APAAR Anchor)',
-    transferred_credits: 80,
-    lateral_status: 'DISCREPANCY_FLAGGED',
-    lateral_note: 'ALERT: Claimed 80 lateral-entry diploma credits lacked cryptographic APAAR/ABC provenance. Degree revoked during AICTE audit.',
-  },
-  '819203847561': {
-    apaar_id: '819203847561',
-    student_name: maskName('Ananya Sen'),
-    accumulated_credits: 160,
-    max_credits: 160,
-    nep_exit_stage: '160 Credits — 4-Year B.Tech Honours / Research Degree Conferred',
-    semester_breakdown: [20, 20, 20, 20, 20, 20, 20, 20],
-    is_lateral_entry: false,
-    prior_diploma_board: 'Direct 1st-Year Regular Admission (10+2 Qualifying)',
-    transferred_credits: 0,
-    lateral_status: 'STANDARD_ENTRY',
-    lateral_note: 'Full 160-credit B.Tech curriculum verified and anchored on National Academic Bank of Credits.',
-  },
-};
+const abcProfiles: Record<string, AbcCreditProfile> = {};
+for (const row of dbCreditRows) {
+  let semArr: number[] = [0, 0, 0, 0, 0, 0, 0, 0];
+  try {
+    const parsed = typeof row.semester_breakdown === 'string' ? JSON.parse(row.semester_breakdown) : row.semester_breakdown;
+    if (Array.isArray(parsed)) semArr = parsed.map(Number);
+  } catch {
+    // keep default
+  }
+  const st = students.find((s) => s.apaar_id === row.apaar_id);
+  abcProfiles[row.apaar_id] = {
+    apaar_id: row.apaar_id,
+    student_name: st ? maskName(st.full_name) : 'Candidate ' + row.apaar_id.slice(-4),
+    accumulated_credits: Number(row.accumulated_credits) || 0,
+    max_credits: Number(row.max_credits) || 160,
+    nep_exit_stage: row.nep_exit_stage,
+    semester_breakdown: semArr,
+    is_lateral_entry: Boolean(row.is_lateral_entry),
+    prior_diploma_board: row.prior_diploma_board,
+    transferred_credits: Number(row.transferred_credits) || 0,
+    lateral_status: row.lateral_status,
+    lateral_note: row.lateral_note,
+  };
+}
 
-const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abcProfiles['739284019283'];
+function buildFallbackAbcProfile(apaarId: string): AbcCreditProfile {
+  if (abcProfiles[apaarId]) return abcProfiles[apaarId];
+  const st = students.find((s) => s.apaar_id === apaarId);
+  const stuDegs = enrichedDegrees.filter((d) => d.apaar_id === apaarId);
+  const stuAdms = enrichedAdmissions.filter((a) => a.apaar_id === apaarId);
+  const maskedStuName = st ? maskName(st.full_name) : 'Student';
+
+  const issuedDeg = stuDegs.find((d) => d.status === 'ISSUED');
+  const revokedDeg = stuDegs.find((d) => d.status === 'REVOKED');
+  const primaryAdm = stuAdms[0];
+
+  if (issuedDeg) {
+    return {
+      apaar_id: apaarId,
+      student_name: maskedStuName,
+      accumulated_credits: 160,
+      max_credits: 160,
+      nep_exit_stage: `160 Credits — ${issuedDeg.degree_name} (${issuedDeg.specialization}) Conferred in ${issuedDeg.year_of_passing}`,
+      semester_breakdown: [20, 20, 20, 20, 20, 20, 20, 20],
+      is_lateral_entry: false,
+      prior_diploma_board: `Regular Admission — ${issuedDeg.institution_name}`,
+      transferred_credits: 0,
+      lateral_status: 'STANDARD_ENTRY',
+      lateral_note: `Completed 160 credits for ${issuedDeg.degree_name} at ${issuedDeg.institution_name} (CGPA: ${issuedDeg.cgpa}).`,
+    };
+  }
+
+  if (revokedDeg) {
+    return {
+      apaar_id: apaarId,
+      student_name: maskedStuName,
+      accumulated_credits: 120,
+      max_credits: 160,
+      nep_exit_stage: `REVOKED — ${revokedDeg.degree_name} at ${revokedDeg.institution_name}`,
+      semester_breakdown: [20, 20, 20, 20, 20, 20, 0, 0],
+      is_lateral_entry: false,
+      prior_diploma_board: `Admission Record — ${revokedDeg.institution_name}`,
+      transferred_credits: 0,
+      lateral_status: 'DISCREPANCY_FLAGGED',
+      lateral_note: `Degree record (${revokedDeg.id}) was revoked by ${revokedDeg.issuing_authority}.`,
+    };
+  }
+
+  if (primaryAdm) {
+    const yearsCompleted = Math.max(1, Math.min(4, 2026 - (Number(primaryAdm.batch_year) || 2024)));
+    const credits = yearsCompleted * 40;
+    const semsCompleted = yearsCompleted * 2;
+    const semBreakdown = Array.from({ length: 8 }, (_, idx) => (idx < semsCompleted ? 20 : 0));
+    const hasDuplicate = stuAdms.some((a) => a.status === 'FLAGGED_DUPLICATE' || Boolean(a.is_duplicate));
+    return {
+      apaar_id: apaarId,
+      student_name: maskedStuName,
+      accumulated_credits: credits,
+      max_credits: 160,
+      nep_exit_stage: `${credits} Credits — Active in ${primaryAdm.program} (${primaryAdm.institution_name}, Batch ${primaryAdm.batch_year})`,
+      semester_breakdown: semBreakdown,
+      is_lateral_entry: false,
+      prior_diploma_board: `${primaryAdm.program} — ${primaryAdm.institution_name} (${primaryAdm.institution_code})`,
+      transferred_credits: 0,
+      lateral_status: hasDuplicate ? 'DISCREPANCY_FLAGGED' : 'STANDARD_ENTRY',
+      lateral_note: hasDuplicate
+        ? `Duplicate enrollment flagged across colleges for ${primaryAdm.program}.`
+        : `Completed ${semsCompleted} semesters (${credits} credits) in ${primaryAdm.program} at ${primaryAdm.institution_name}.`,
+    };
+  }
+
+  return {
+    apaar_id: apaarId,
+    student_name: maskedStuName,
+    accumulated_credits: 0,
+    max_credits: 160,
+    nep_exit_stage: '0 Credits — No Active Course Credits Recorded Yet',
+    semester_breakdown: [0, 0, 0, 0, 0, 0, 0, 0],
+    is_lateral_entry: false,
+    prior_diploma_board: 'No College Admission Recorded Yet',
+    transferred_credits: 0,
+    lateral_status: 'STANDARD_ENTRY',
+    lateral_note: 'No semester credits, college admissions, or issued degrees found for this APAAR ID.',
+  };
+}
+
+for (const s of students) {
+  if (!abcProfiles[s.apaar_id]) {
+    abcProfiles[s.apaar_id] = buildFallbackAbcProfile(s.apaar_id);
+  }
+}
+
+const currentStudent = activeStudent;
+const initialAbc = buildFallbackAbcProfile(currentStudent?.apaar_id || '');
+const verifierBasePath = `/${lang === 'en' ? '' : lang + '/'}verifier`;
 ---
 
 <Layout title={`SIH 2026 | ${t.student_page_title}`} activeRole="student" lang={lang} breadcrumb={t.crumb_student}>
@@ -161,7 +197,7 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
     <div class="border-b border-slate-200 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
         <div class="text-xs font-bold text-[#1E40AF] uppercase tracking-wider mb-1">
-          Candidate Consent Module &bull; Code STU-04
+          Student Portal &bull; Academic Records &amp; Access Passes
         </div>
         <h1 class="text-xl sm:text-2xl font-bold text-[#0F2942]">
           {t.student_page_title}
@@ -218,166 +254,142 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
       </div>
     </div>
 
-    <!-- Student Identity Profile Card (Clean Indian Gov Design) -->
-    <div class="bg-white border border-slate-200 rounded p-5 shadow-sm">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div class="flex items-center gap-4">
-          <div class="w-12 h-12 rounded bg-[#0F2942] flex items-center justify-center text-white font-bold text-lg shadow-sm shrink-0">
-            <span id="studentAvatar">{initialAvatar}</span>
-          </div>
-          <div>
-            <div class="flex flex-wrap items-center gap-2 mb-1">
-              <span class="text-xs font-bold uppercase text-slate-500">{t.student_consent_label}</span>
-              <span
-                id="consentBadge"
-                role="status"
-                aria-live="polite"
-                class={`text-[11px] font-bold px-2.5 py-0.5 rounded border ${
-                  initialConsent === 'GRANTED'
-                    ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                    : initialConsent === 'REVOKED'
-                    ? 'bg-red-100 text-red-800 border-red-200'
-                    : 'bg-amber-100 text-amber-800 border-amber-200'
-                }`}
-              >
-                {initialConsent === 'GRANTED'
-                  ? t.student_consent_active
-                  : initialConsent === 'REVOKED'
-                  ? t.student_consent_revoked
-                  : 'DPDP CONSENT PENDING'}
-              </span>
-            </div>
-            <h2 id="studentNameDisplay" class="text-base sm:text-lg font-bold text-[#0F2942]">
-              {initialMaskedName}
-            </h2>
-            <p class="text-xs sm:text-sm text-slate-600 font-mono mt-0.5">
-              Masked APAAR: <span id="studentApaarDisplay" class="font-semibold text-slate-900">{activeStudent ? maskApaar(activeStudent.apaar_id) : 'XXXX-XXXX-9283'}</span> &bull; 
-              Registered Email: <span id="studentEmailDisplay" class="text-slate-600">{activeStudent ? maskEmail(activeStudent.email) : 'r***@***.in'}</span> &bull;
-              Phone: <span id="studentPhoneDisplay" class="text-slate-600">{activeStudent ? maskPhone(activeStudent.phone) : '+91 XXXXX X3210'}</span>
-            </p>
-          </div>
+    <!-- Student Identity Profile Summary -->
+    <section class="bg-white border border-slate-200 rounded p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded bg-[#0F2942] flex items-center justify-center text-white font-bold text-lg shadow-sm shrink-0">
+          <span id="studentAvatar">{initialAvatar}</span>
         </div>
-
-        <!-- Biometric Passkey Binding Status -->
-        <div class="bg-slate-50 p-3.5 rounded border border-slate-200 text-xs font-mono min-w-[260px]">
-          <div class="flex items-center justify-between gap-2 mb-1">
-            <span class="text-[10px] font-bold uppercase text-slate-500">Security Standard</span>
+        <div>
+          <div class="flex flex-wrap items-center gap-2 mb-1">
+            <span class="text-xs font-bold uppercase text-slate-500">{t.student_consent_label}</span>
             <span
-              id="passkeyBindingBadge"
+              id="consentBadge"
               role="status"
               aria-live="polite"
-              class={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded border ${
-                initialHasPasskey
+              class={`text-[11px] font-bold px-2.5 py-0.5 rounded border ${
+                initialConsent === 'GRANTED'
                   ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                  : initialConsent === 'REVOKED'
+                  ? 'bg-red-100 text-red-800 border-red-200'
                   : 'bg-amber-100 text-amber-800 border-amber-200'
               }`}
             >
-              {initialHasPasskey ? (
-                <>
-                  <svg class="w-3 h-3 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>{t.student_passkey_active}</span>
-                </>
-              ) : (
-                <span>No Passkey Bound — Click Below to Register</span>
-              )}
+              {initialConsent === 'GRANTED'
+                ? t.student_consent_active
+                : initialConsent === 'REVOKED'
+                ? t.student_consent_revoked
+                : 'DPDP CONSENT PENDING'}
             </span>
           </div>
-          <div id="passkeyDeviceDisplay" class="font-bold text-slate-900 mt-1">{t.student_passkey_heading}</div>
-          <div class="text-[11px] text-emerald-700 font-medium mt-0.5">{t.student_passkey_sub}</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- FEATURE #2: Purpose-Scoped One-Time Consent Tokens (DPDP Section 6 Data Minimization) -->
-    <div class="bg-white border border-slate-200 border-t-4 border-t-[#0F2942] rounded p-5 sm:p-6 shadow-sm">
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-200 pb-4 mb-5">
-        <div>
-          <div class="flex flex-wrap items-center gap-2 mb-1">
-            <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider bg-blue-50 text-[#1E40AF] border border-blue-200 px-2.5 py-0.5 rounded">
-              <svg class="w-3.5 h-3.5 text-[#1E40AF] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-              <span>DPDP Act 2023 Section 6(1) &amp; 6(4)</span>
-            </span>
-            <span class="text-[11px] font-mono font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded">
-              Zero-Knowledge Selective Disclosure
-            </span>
-          </div>
-          <h2 class="text-base sm:text-lg font-bold text-[#0F2942]">
-            Purpose-Scoped One-Time Consent Tokens (DPDP Section 6 Data Minimization)
+          <h2 id="studentNameDisplay" class="text-base sm:text-lg font-bold text-[#0F2942]">
+            {initialMaskedName}
           </h2>
-          <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
-            Instead of granting blanket transcript access, mint a time-bound, single-use cryptographic token scoped to a specific Verifier Organization, Purpose, and Attribute Set.
+          <p class="text-xs sm:text-sm text-slate-600 font-mono mt-0.5">
+            Masked APAAR: <span id="studentApaarDisplay" class="font-semibold text-slate-900">{activeStudent ? maskApaar(activeStudent.apaar_id) : 'XXXX-XXXX-9283'}</span> &bull; 
+            Registered Email: <span id="studentEmailDisplay" class="text-slate-600">{activeStudent ? maskEmail(activeStudent.email) : 'r***@***.in'}</span> &bull;
+            Phone: <span id="studentPhoneDisplay" class="text-slate-600">{activeStudent ? maskPhone(activeStudent.phone) : '+91 XXXXX X3210'}</span>
           </p>
         </div>
-        <div class="shrink-0">
-          <span class="inline-flex items-center gap-1.5 text-xs font-mono font-bold bg-slate-100 text-slate-800 px-3 py-1.5 rounded border border-slate-300">
-            <svg class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-            <span>SHA-256 Signed Token Ledger</span>
+      </div>
+
+      <!-- Biometric Passkey Binding Status -->
+      <div class="border-t md:border-t-0 md:border-l border-slate-200 pt-3 md:pt-0 md:pl-6 text-xs min-w-[240px]">
+        <div class="flex items-center justify-between gap-2 mb-1">
+          <span class="text-[10px] font-bold uppercase text-slate-500">Passkey Status</span>
+          <span
+            id="passkeyBindingBadge"
+            role="status"
+            aria-live="polite"
+            class={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded border ${
+              initialHasPasskey
+                ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                : 'bg-amber-100 text-amber-800 border-amber-200'
+            }`}
+          >
+            {initialHasPasskey ? (
+              <>
+                <svg class="w-3 h-3 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>{t.student_passkey_active}</span>
+              </>
+            ) : (
+              <span>No Passkey Bound — Click Below to Register</span>
+            )}
           </span>
         </div>
+        <div id="passkeyDeviceDisplay" class="font-bold text-slate-900 mt-1">{t.student_passkey_heading}</div>
+        <div class="text-[11px] text-emerald-700 font-medium mt-0.5">{t.student_passkey_sub}</div>
+      </div>
+    </section>
+
+    <!-- Create a One-Time Access Pass -->
+    <section class="bg-white border border-slate-200 border-t-4 border-t-[#0F2942] rounded p-5 sm:p-6 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-200 pb-4 mb-5">
+        <div>
+          <h2 class="text-base sm:text-lg font-bold text-[#0F2942]">
+            Create a One-Time Access Pass
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
+            Share only the fields an employer or college needs. Each single-use pass expires automatically after one check.
+          </p>
+        </div>
+        <span class="inline-flex items-center gap-1.5 text-xs font-semibold bg-blue-50 text-[#1E40AF] px-3 py-1.5 rounded border border-blue-200 self-start lg:self-auto">
+          <span>DPDP Act 2023 Section 6</span>
+        </span>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <!-- Left: Token Minting Form -->
-        <div class="lg:col-span-5 bg-slate-50 border border-slate-200 rounded p-4 sm:p-5 space-y-4">
-          <div class="text-xs font-bold uppercase tracking-wider text-[#0F2942] border-b border-slate-200 pb-2 flex items-center justify-between">
-            <span>Mint New Purpose-Scoped Token</span>
-            <span class="font-mono text-[11px] text-slate-500">POST /api/student/token</span>
-          </div>
-
-          <!-- Clickable Example Presets -->
-          <div class="bg-white border border-slate-200 rounded p-2.5">
-            <div class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">
-              Quick Consent Presets (Click to Populate):
+        <!-- Left: Pass Creation Form -->
+        <div class="lg:col-span-5 space-y-4">
+          <div>
+            <div class="text-xs font-bold text-slate-700 mb-1.5">
+              Quick Presets (Click to Fill):
             </div>
             <div class="flex flex-wrap gap-1.5">
               <button
                 type="button"
-                class="token-preset-chip text-[11px] font-mono font-semibold px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 text-[#1E40AF] border border-blue-200 transition-colors cursor-pointer"
+                class="token-preset-chip text-[11px] font-semibold px-2.5 py-1 rounded bg-blue-50 hover:bg-blue-100 text-[#1E40AF] border border-blue-200 transition-colors cursor-pointer"
                 data-org="UPSC Civil Services Board"
                 data-purpose="Degree & Eligibility Verification"
                 data-scope="degree_status,cgpa_threshold"
                 data-ttl="24"
               >
-                UPSC Minimal Proof
+                UPSC Eligibility Pass
               </button>
               <button
                 type="button"
-                class="token-preset-chip text-[11px] font-mono font-semibold px-2 py-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition-colors cursor-pointer"
+                class="token-preset-chip text-[11px] font-semibold px-2.5 py-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition-colors cursor-pointer"
                 data-org="TCS Background Verification"
                 data-purpose="Zero-Knowledge CGPA >= 7.5 Check"
                 data-scope="degree_status,cgpa_threshold"
                 data-ttl="24"
               >
-                TCS ZKP CGPA &gt;= 7.5
+                TCS CGPA &ge; 7.5 Pass
               </button>
               <button
                 type="button"
-                class="token-preset-chip text-[11px] font-mono font-semibold px-2 py-1 rounded bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition-colors cursor-pointer"
+                class="token-preset-chip text-[11px] font-semibold px-2.5 py-1 rounded bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition-colors cursor-pointer"
                 data-org="GATE Admissions Committee (IIT Roorkee)"
                 data-purpose="NEP 2020 ABC Credit & Lateral-Entry Audit"
                 data-scope="degree_status,cgpa_threshold,abc_credits"
                 data-ttl="1"
               >
-                GATE 160-Credit Audit
+                GATE 160-Credit Pass
               </button>
             </div>
           </div>
 
           <div>
             <label for="tokenVerifierOrg" class="block text-xs font-semibold text-slate-700 mb-1">
-              Target Verifier Organization:
+              Who can use this pass? (Organization)
             </label>
             <select
               id="tokenVerifierOrg"
               class="w-full h-9 bg-white border border-slate-300 rounded px-2.5 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0F2942]"
             >
-              <option value="">-- Select Target Verifier Organization --</option>
+              <option value="">-- Select Organization --</option>
               <option value="UPSC Civil Services Board">UPSC Civil Services Board</option>
               <option value="TCS Background Verification">TCS Background Verification</option>
               <option value="GATE Admissions Committee (IIT Roorkee)">GATE Admissions Committee (IIT Roorkee)</option>
@@ -388,13 +400,13 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
 
           <div>
             <label for="tokenPurpose" class="block text-xs font-semibold text-slate-700 mb-1">
-              Statutory Verification Purpose:
+              Why do they need it? (Purpose)
             </label>
             <select
               id="tokenPurpose"
               class="w-full h-9 bg-white border border-slate-300 rounded px-2.5 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0F2942]"
             >
-              <option value="">-- Select Statutory Verification Purpose --</option>
+              <option value="">-- Select Purpose --</option>
               <option value="Degree & Eligibility Verification">Degree &amp; Eligibility Verification</option>
               <option value="Zero-Knowledge CGPA >= 7.5 Check">Zero-Knowledge CGPA &gt;= 7.5 Check</option>
               <option value="NEP 2020 ABC Credit & Lateral-Entry Audit">NEP 2020 ABC Credit &amp; Lateral-Entry Audit</option>
@@ -404,29 +416,29 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
 
           <div>
             <label for="tokenScope" class="block text-xs font-semibold text-slate-700 mb-1">
-              Disclosed Attribute Scope (Data Minimization):
+              What information can they see?
             </label>
             <select
               id="tokenScope"
               class="w-full h-9 bg-white border border-slate-300 rounded px-2.5 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0F2942]"
             >
-              <option value="degree_status,cgpa_threshold">Minimal Proof: Degree Status + CGPA &gt;= 7.5 Only (Hide Marks)</option>
-              <option value="degree_status,cgpa_threshold,abc_credits">Academic Credit Proof: Degree Status + ABC Credits (160 Cr)</option>
-              <option value="full_transcript">Full Disclosure: Complete Semester Transcript &amp; Signature</option>
+              <option value="degree_status,cgpa_threshold">Yes / No Only: Valid Degree + CGPA &gt;= 7.5 (Hide Exact Marks)</option>
+              <option value="degree_status,cgpa_threshold,abc_credits">Degree Status + Course Credits (160 Cr)</option>
+              <option value="full_transcript">Full Record: Complete Degree &amp; Marks</option>
             </select>
           </div>
 
           <div>
             <label for="tokenTtl" class="block text-xs font-semibold text-slate-700 mb-1">
-              Token Validity &amp; Usage Policy (TTL):
+              How long is this pass valid?
             </label>
             <select
               id="tokenTtl"
               class="w-full h-9 bg-white border border-slate-300 rounded px-2.5 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0F2942]"
             >
-              <option value="24" data-single="true">24 Hours — Single-Use Auto-Burn (Recommended)</option>
-              <option value="1" data-single="true">1 Hour — Single-Use High-Security Window</option>
-              <option value="24" data-single="false">24 Hours — Multi-Query Audit Window</option>
+              <option value="24" data-single="true">24 Hours — Single-Use (Recommended)</option>
+              <option value="1" data-single="true">1 Hour — Single-Use</option>
+              <option value="24" data-single="false">24 Hours — Multiple Checks</option>
             </select>
           </div>
 
@@ -438,13 +450,13 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
-            <span>Mint Purpose-Scoped Consent Token</span>
+            <span>Create One-Time Access Pass</span>
           </button>
 
-          <!-- Newly Minted Token Banner -->
-          <div id="mintedTokenBanner" role="status" aria-live="polite" class="hidden p-3.5 rounded bg-emerald-50 border border-emerald-300 text-xs space-y-2">
+          <!-- Newly Created Pass Banner + Prominent 1-Click Handoff Button -->
+          <div id="mintedTokenBanner" role="status" aria-live="polite" class="hidden p-3.5 rounded bg-emerald-50 border border-emerald-300 text-xs space-y-2.5">
             <div class="flex items-center justify-between">
-              <span class="font-bold text-emerald-900 uppercase tracking-wider text-[11px]">Minted One-Time Token</span>
+              <span class="font-bold text-emerald-900 uppercase tracking-wider text-[11px]">Access Pass Ready</span>
               <span class="text-[10px] font-mono text-emerald-700 font-semibold">Single-Use Active</span>
             </div>
             <div class="flex items-center justify-between gap-2 bg-white px-3 py-2 rounded border border-emerald-200">
@@ -457,58 +469,54 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
                 <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-                <span>Copy Token</span>
+                <span>Copy Pass</span>
               </button>
             </div>
+            <a
+              id="testMintedTokenLink"
+              href={`${verifierBasePath}?apaar=${currentStudent?.apaar_id || ''}&token=`}
+              class="w-full py-2 px-3 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+            >
+              <span>Test This Pass in Public Verifier &rarr;</span>
+            </a>
           </div>
         </div>
 
-        <!-- Right: Active Scoped Tokens List with Instant Revoke -->
-        <div class="lg:col-span-7 flex flex-col justify-between">
+        <!-- Right: Active & Past Passes List -->
+        <div class="lg:col-span-7 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-slate-200 pt-4 lg:pt-0 lg:pl-6">
           <div>
             <div class="flex items-center justify-between border-b border-slate-200 pb-2 mb-3">
               <span class="text-xs font-bold uppercase tracking-wider text-[#0F2942]">
-                Active &amp; Historical Scoped Consent Tokens
+                Your Active &amp; Past Access Passes
               </span>
               <span id="scopedTokenCountBadge" class="text-[11px] font-mono font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                Loading tokens...
+                Loading passes...
               </span>
             </div>
-            <div id="scopedTokensList" class="space-y-2.5 max-h-[340px] overflow-y-auto pr-1 text-xs">
+            <div id="scopedTokensList" class="space-y-2.5 max-h-[360px] overflow-y-auto pr-1 text-xs">
               <div class="p-4 text-center text-slate-500 bg-slate-50 rounded border border-slate-200">
-                Loading scoped consent tokens for selected candidate...
+                Loading access passes for selected student...
               </div>
             </div>
           </div>
 
           <div class="mt-4 pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
-            <span>Statutory Guarantee: Unselected fields are cryptographically redacted at the edge gateway.</span>
-            <span class="font-mono font-semibold text-slate-700">DPDP Sec. 6(4) Instant Withdrawal</span>
+            <span>Hidden fields are removed before the verifier sees your record.</span>
+            <span class="font-semibold text-slate-700">Cancel any active pass at any time</span>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- FEATURE #3: NEP 2020 Academic Bank of Credits (ABC) & Multiple Entry/Exit Ledger -->
-    <div class="bg-white border border-slate-200 border-t-4 border-t-[#138808] rounded p-5 sm:p-6 shadow-sm">
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-200 pb-4 mb-5">
+    <!-- Your Course Credits (Semester by Semester) -->
+    <section class="bg-white border border-slate-200 border-t-4 border-t-[#138808] rounded p-5 sm:p-6 shadow-sm space-y-5">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-200 pb-4">
         <div>
-          <div class="flex flex-wrap items-center gap-2 mb-1">
-            <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded">
-              <svg class="w-3.5 h-3.5 text-emerald-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>NEP 2020 National Credit Framework (NCrF)</span>
-            </span>
-            <span class="text-[11px] font-mono font-semibold bg-amber-50 text-amber-900 border border-amber-200 px-2.5 py-0.5 rounded">
-              Lateral-Entry Provenance Validator
-            </span>
-          </div>
           <h2 class="text-base sm:text-lg font-bold text-[#0F2942]">
-            NEP 2020 Academic Bank of Credits (ABC) &amp; Multiple Entry/Exit Ledger
+            Your Course Credits (Semester by Semester)
           </h2>
           <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
-            Tracks semester-wise credit accumulation (<strong class="text-slate-800">0 to 160 Credits</strong>) across NEP 2020 exit thresholds and verifies prior Polytechnic Diploma credits for 2nd-year Lateral Entry.
+            Shows your earned credits from Semester 1 to Semester 8 (<strong class="text-slate-800">up to 160 Credits</strong>) and any diploma credits transferred for 2nd-year entry.
           </p>
         </div>
         <div class="shrink-0">
@@ -521,11 +529,11 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
         </div>
       </div>
 
-      <!-- Credit Accumulation Progress Bar with 4 NEP 2020 Milestones -->
-      <div class="bg-slate-50 border border-slate-200 rounded p-4 sm:p-5 mb-5">
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-2 text-xs">
+      <!-- Progress Bar & Milestones -->
+      <div class="space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
           <span class="font-bold text-slate-800 uppercase tracking-wider">
-            Cumulative Credit Progression (40 / 80 / 120 / 160 Thresholds)
+            Total Credits Earned (40 / 80 / 120 / 160 Milestones)
           </span>
           <span id="abcStageText" class="font-bold text-emerald-800 font-mono">
             {initialAbc.nep_exit_stage}
@@ -545,52 +553,62 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
           ></div>
         </div>
 
-        <!-- 4 Official NEP 2020 Exit Threshold Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4 text-xs">
+        <!-- Semester-by-Semester Breakdown Row -->
+        <div id="abcSemesterGrid" class="grid grid-cols-4 sm:grid-cols-8 gap-2 text-center text-xs">
+          {initialAbc.semester_breakdown.map((cr, idx) => (
+            <div class={`p-2 rounded border ${cr > 0 ? 'bg-emerald-50 border-emerald-200 text-emerald-950' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
+              <div class="text-[10px] font-bold uppercase">Sem {idx + 1}</div>
+              <div class="font-mono font-bold text-sm mt-0.5">{cr} Cr</div>
+            </div>
+          ))}
+        </div>
+
+        <!-- 4 NEP 2020 Exit Thresholds -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
           <div id="nepMilestone40" class={`p-3 rounded border ${initialAbc.accumulated_credits >= 40 ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950' : 'bg-white border-slate-200 text-slate-500'}`}>
             <div class="flex items-center justify-between font-mono font-bold mb-1">
               <span>40 CREDITS</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">Exit Year 1</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">Year 1</span>
             </div>
             <div class="font-bold text-slate-900">UG Certificate</div>
-            <div class="text-[11px] text-slate-600 mt-0.5">Semesters 1–2 Verified</div>
+            <div class="text-[11px] text-slate-600 mt-0.5">Semesters 1–2 Completed</div>
           </div>
 
           <div id="nepMilestone80" class={`p-3 rounded border ${initialAbc.accumulated_credits >= 80 ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950' : 'bg-white border-slate-200 text-slate-500'}`}>
             <div class="flex items-center justify-between font-mono font-bold mb-1">
               <span>80 CREDITS</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">Exit Year 2</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">Year 2</span>
             </div>
             <div class="font-bold text-slate-900">UG Diploma / Lateral Entry</div>
-            <div class="text-[11px] text-slate-600 mt-0.5">2nd-Year Direct Entry Eligible</div>
+            <div class="text-[11px] text-slate-600 mt-0.5">Semesters 1–4 Completed</div>
           </div>
 
           <div id="nepMilestone120" class={`p-3 rounded border ${initialAbc.accumulated_credits >= 120 ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950' : 'bg-white border-slate-200 text-slate-500'}`}>
             <div class="flex items-center justify-between font-mono font-bold mb-1">
               <span>120 CREDITS</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800">Exit Year 3</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800">Year 3</span>
             </div>
             <div class="font-bold text-slate-900">3-Year Bachelor's Degree</div>
-            <div class="text-[11px] text-slate-600 mt-0.5">B.Sc / B.Voc / B.Tech Exit</div>
+            <div class="text-[11px] text-slate-600 mt-0.5">Semesters 1–6 Completed</div>
           </div>
 
           <div id="nepMilestone160" class={`p-3 rounded border ${initialAbc.accumulated_credits >= 160 ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950' : 'bg-white border-slate-200 text-slate-500'}`}>
             <div class="flex items-center justify-between font-mono font-bold mb-1">
               <span>160 CREDITS</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-900">Exit Year 4</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-900">Year 4</span>
             </div>
             <div class="font-bold text-slate-900">4-Year B.Tech Honours</div>
-            <div class="text-[11px] text-slate-600 mt-0.5">Full Engineering / Research Degree</div>
+            <div class="text-[11px] text-slate-600 mt-0.5">All 8 Semesters Completed</div>
           </div>
         </div>
       </div>
 
-      <!-- Lateral-Entry Credit Transfer Provenance Box -->
-      <div id="abcLateralCard" class="p-4 rounded border border-slate-200 bg-white flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs sm:text-sm">
+      <!-- Prior Diploma / Credit Transfer Summary -->
+      <div id="abcLateralCard" class="pt-4 border-t border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs sm:text-sm">
         <div class="space-y-1">
           <div class="flex flex-wrap items-center gap-2">
             <span class="font-bold text-[#0F2942] uppercase tracking-wider text-xs">
-              Lateral-Entry Credit Transfer Provenance:
+              Entry &amp; Transferred Credits:
             </span>
             <span
               id="abcLateralBadge"
@@ -603,14 +621,14 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
               }`}
             >
               {initialAbc.lateral_status === 'VERIFIED_ANCHORED'
-                ? 'LATERAL DIPLOMA CREDITS VERIFIED (80 CR)'
+                ? 'DIPLOMA CREDITS VERIFIED (80 CR)'
                 : initialAbc.lateral_status === 'DISCREPANCY_FLAGGED'
-                ? 'UNVERIFIED LATERAL ENTRY FLAGGED'
-                : 'REGULAR 1ST-YEAR DIRECT ADMISSION'}
+                ? 'CREDIT TRANSFER FLAGGED'
+                : 'REGULAR 1ST-YEAR ADMISSION'}
             </span>
           </div>
           <div id="abcDiplomaSource" class="font-semibold text-slate-800">
-            Qualifying Channel: {initialAbc.prior_diploma_board}
+            Admission Path: {initialAbc.prior_diploma_board}
           </div>
           <p id="abcLateralNote" class="text-xs text-slate-600 leading-relaxed">
             {initialAbc.lateral_note}
@@ -620,22 +638,22 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
         <div class="shrink-0 bg-slate-50 px-4 py-2.5 rounded border border-slate-200 font-mono text-xs text-right">
           <div class="text-slate-500 text-[10px] uppercase font-bold">Transferred Credits</div>
           <div id="abcTransferredCredits" class="text-base font-bold text-[#0F2942]">{initialAbc.transferred_credits} Credits</div>
-          <div class="text-[10px] text-emerald-700">APAAR 12-Digit Bound</div>
+          <div class="text-[10px] text-emerald-700">Linked to APAAR ID</div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- Candidate Academic Provenance: Enrolled Institutions & Issued Degrees -->
+    <!-- Your College Admissions & Your Issued Degrees -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Enrolled Institutions -->
-      <div class="bg-white border border-slate-200 rounded p-5 shadow-sm">
+      <!-- Your College Admissions -->
+      <section class="bg-white border border-slate-200 rounded p-5 shadow-sm">
         <div class="flex items-center justify-between mb-3">
           <div>
-            <h2 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider">
-              Enrolled Institution Roster Record
+            <h2 class="text-sm sm:text-base font-bold text-[#0F2942]">
+              Your College Admissions
             </h2>
             <p class="text-xs text-slate-500 mt-0.5">
-              Active AICTE institutional admission records anchored to this APAAR ID.
+              Colleges and programs where your APAAR ID is registered.
             </p>
           </div>
           <span class="text-[11px] font-mono font-semibold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded border border-slate-200">
@@ -647,6 +665,12 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
           {enrichedAdmissions.map((adm) => (
             <div
               data-student-apaar={adm.apaar_id}
+              data-inst-name={adm.institution_name}
+              data-inst-code={adm.institution_code}
+              data-program={adm.program}
+              data-batch={adm.batch_year}
+              data-status={adm.status}
+              data-duplicate={adm.is_duplicate ? '1' : '0'}
               class={`student-admission-item p-3.5 rounded border border-slate-200 bg-slate-50 flex items-center justify-between gap-3 ${
                 adm.apaar_id === activeStudent?.apaar_id ? '' : 'hidden'
               }`}
@@ -664,25 +688,25 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
                     : 'bg-emerald-100 text-emerald-800 border-emerald-200'
                 }`}
               >
-                {adm.status === 'FLAGGED_DUPLICATE' || adm.is_duplicate ? 'DUAL ENROLLMENT FLAGGED' : adm.status}
+                {adm.status === 'FLAGGED_DUPLICATE' || adm.is_duplicate ? 'DUPLICATE ADMISSION FLAGGED' : adm.status}
               </span>
             </div>
           ))}
           <div id="noAdmissionsMsg" class="hidden p-4 text-center text-slate-500 text-xs bg-slate-50 rounded border border-slate-200">
-            No active institutional admission records found for this APAAR ID.
+            No college admission records found for this APAAR ID.
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- Issued Degrees -->
-      <div class="bg-white border border-slate-200 rounded p-5 shadow-sm">
+      <!-- Your Issued Degrees -->
+      <section class="bg-white border border-slate-200 rounded p-5 shadow-sm">
         <div class="flex items-center justify-between mb-3">
           <div>
-            <h2 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider">
-              Issued University Degree Credentials
+            <h2 class="text-sm sm:text-base font-bold text-[#0F2942]">
+              Your Issued Degrees
             </h2>
             <p class="text-xs text-slate-500 mt-0.5">
-              Cryptographically signed degree certificates anchored to this APAAR ID.
+              Signed degree certificates linked to your APAAR ID.
             </p>
           </div>
           <span class="text-[11px] font-mono font-semibold bg-indigo-50 text-indigo-800 px-2.5 py-0.5 rounded border border-indigo-200">
@@ -694,6 +718,13 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
           {enrichedDegrees.map((deg) => (
             <div
               data-student-apaar={deg.apaar_id}
+              data-degree-name={deg.degree_name}
+              data-spec={deg.specialization}
+              data-cgpa={deg.cgpa}
+              data-year={deg.year_of_passing}
+              data-status={deg.status}
+              data-inst-name={deg.institution_name}
+              data-authority={deg.issuing_authority}
               class={`student-degree-item p-3.5 rounded border border-slate-200 bg-slate-50 flex items-center justify-between gap-3 ${
                 deg.apaar_id === activeStudent?.apaar_id ? '' : 'hidden'
               }`}
@@ -706,7 +737,7 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
                   ID: <strong>{deg.id}</strong> &bull; CGPA: <strong>{deg.cgpa}</strong> &bull; Class of {deg.year_of_passing}
                 </div>
                 <div class="text-[11px] text-slate-500 mt-0.5">
-                  Conferred by: {deg.issuing_authority} ({deg.institution_name})
+                  Issued by: {deg.issuing_authority} ({deg.institution_name})
                 </div>
               </div>
               <span
@@ -721,10 +752,10 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
             </div>
           ))}
           <div id="noDegreesMsg" class="hidden p-4 text-center text-slate-500 text-xs bg-slate-50 rounded border border-slate-200">
-            No university degree credentials issued yet for this candidate profile.
+            No degrees issued yet for this student.
           </div>
         </div>
-      </div>
+      </section>
     </div>
 
     <!-- Consent Toggle & Actions -->
@@ -830,8 +861,9 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
     data-grant-btn={t.student_grant_btn}
     data-register-btn={t.student_register_passkey_btn}
   ></div>
-  <script is:inline define:vars={{ abcProfiles }}>
+  <script is:inline define:vars={{ abcProfiles, verifierBasePath }}>
     window.__ABC_PROFILES__ = abcProfiles;
+    window.__VERIFIER_BASE_PATH__ = verifierBasePath;
   </script>
 
   <script>
@@ -917,14 +949,94 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
       }
     }
 
+    function buildClientFallbackAbcProfile(apaar: string) {
+      const degEls = Array.from(
+        document.querySelectorAll<HTMLElement>(`.student-degree-item[data-student-apaar="${apaar}"]`)
+      );
+      const admEls = Array.from(
+        document.querySelectorAll<HTMLElement>(`.student-admission-item[data-student-apaar="${apaar}"]`)
+      );
+      const issuedDeg = degEls.find((el) => el.dataset.status === 'ISSUED');
+      const revokedDeg = degEls.find((el) => el.dataset.status === 'REVOKED');
+      const primaryAdm = admEls[0];
+
+      if (issuedDeg) {
+        const degName = issuedDeg.dataset.degreeName || 'Bachelor Degree';
+        const spec = issuedDeg.dataset.spec || 'Engineering';
+        const inst = issuedDeg.dataset.instName || 'AICTE Institution';
+        const year = issuedDeg.dataset.year || '2024';
+        const cgpa = issuedDeg.dataset.cgpa || '--';
+        return {
+          accumulated_credits: 160,
+          nep_exit_stage: `160 Credits — ${degName} (${spec}) Conferred in ${year}`,
+          semester_breakdown: [20, 20, 20, 20, 20, 20, 20, 20],
+          prior_diploma_board: `Regular Admission — ${inst}`,
+          transferred_credits: 0,
+          lateral_status: 'STANDARD_ENTRY',
+          lateral_note: `Completed 160 credits for ${degName} at ${inst} (CGPA: ${cgpa}).`,
+        };
+      }
+
+      if (revokedDeg) {
+        const degName = revokedDeg.dataset.degreeName || 'Bachelor Degree';
+        const inst = revokedDeg.dataset.instName || 'AICTE Institution';
+        const auth = revokedDeg.dataset.authority || 'Issuing University';
+        return {
+          accumulated_credits: 120,
+          nep_exit_stage: `REVOKED — ${degName} at ${inst}`,
+          semester_breakdown: [20, 20, 20, 20, 20, 20, 0, 0],
+          prior_diploma_board: `Admission Record — ${inst}`,
+          transferred_credits: 0,
+          lateral_status: 'DISCREPANCY_FLAGGED',
+          lateral_note: `Degree record was revoked by ${auth}.`,
+        };
+      }
+
+      if (primaryAdm) {
+        const batch = Number(primaryAdm.dataset.batch) || 2024;
+        const yearsCompleted = Math.max(1, Math.min(4, 2026 - batch));
+        const credits = yearsCompleted * 40;
+        const semsCompleted = yearsCompleted * 2;
+        const semBreakdown = Array.from({ length: 8 }, (_, idx) => (idx < semsCompleted ? 20 : 0));
+        const prog = primaryAdm.dataset.program || 'B.Tech';
+        const inst = primaryAdm.dataset.instName || 'AICTE Institution';
+        const code = primaryAdm.dataset.instCode || 'N/A';
+        const hasDup = admEls.some(
+          (el) => el.dataset.status === 'FLAGGED_DUPLICATE' || el.dataset.duplicate === '1'
+        );
+        return {
+          accumulated_credits: credits,
+          nep_exit_stage: `${credits} Credits — Active in ${prog} (${inst}, Batch ${batch})`,
+          semester_breakdown: semBreakdown,
+          prior_diploma_board: `${prog} — ${inst} (${code})`,
+          transferred_credits: 0,
+          lateral_status: hasDup ? 'DISCREPANCY_FLAGGED' : 'STANDARD_ENTRY',
+          lateral_note: hasDup
+            ? `Duplicate enrollment flagged across colleges for ${prog}.`
+            : `Completed ${semsCompleted} semesters (${credits} credits) in ${prog} at ${inst}.`,
+        };
+      }
+
+      return {
+        accumulated_credits: 0,
+        nep_exit_stage: '0 Credits — No Active Course Credits Recorded Yet',
+        semester_breakdown: [0, 0, 0, 0, 0, 0, 0, 0],
+        prior_diploma_board: 'No College Admission Recorded Yet',
+        transferred_credits: 0,
+        lateral_status: 'STANDARD_ENTRY',
+        lateral_note: 'No semester credits, college admissions, or issued degrees found for this APAAR ID.',
+      };
+    }
+
     function updateAbcLedgerUI(apaar: string) {
       const profiles = (window as any).__ABC_PROFILES__ || {};
-      const p = profiles[apaar] || profiles['739284019283'];
+      const p = profiles[apaar] || buildClientFallbackAbcProfile(apaar);
       if (!p) return;
 
       const totalBadge = document.getElementById('abcTotalBadge');
       const stageText = document.getElementById('abcStageText');
       const bar = document.getElementById('abcProgressBar');
+      const semGrid = document.getElementById('abcSemesterGrid');
       const latBadge = document.getElementById('abcLateralBadge');
       const dipSource = document.getElementById('abcDiplomaSource');
       const latNote = document.getElementById('abcLateralNote');
@@ -935,6 +1047,21 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
       if (bar) {
         bar.style.width = `${Math.min(100, (p.accumulated_credits / 160) * 100)}%`;
         bar.setAttribute('aria-valuenow', String(p.accumulated_credits));
+      }
+
+      if (semGrid && Array.isArray(p.semester_breakdown)) {
+        semGrid.innerHTML = p.semester_breakdown
+          .map(
+            (cr: number, idx: number) => `
+            <div class="p-2 rounded border ${
+              cr > 0 ? 'bg-emerald-50 border-emerald-200 text-emerald-950' : 'bg-slate-50 border-slate-200 text-slate-400'
+            }">
+              <div class="text-[10px] font-bold uppercase">Sem ${idx + 1}</div>
+              <div class="font-mono font-bold text-sm mt-0.5">${Number(cr)} Cr</div>
+            </div>
+          `
+          )
+          .join('');
       }
 
       const setMilestone = (id: string, threshold: number) => {
@@ -952,17 +1079,17 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
 
       if (latBadge) {
         if (p.lateral_status === 'VERIFIED_ANCHORED') {
-          latBadge.textContent = 'LATERAL DIPLOMA CREDITS VERIFIED (80 CR)';
+          latBadge.textContent = 'DIPLOMA CREDITS VERIFIED (80 CR)';
           latBadge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded border bg-emerald-100 text-emerald-800 border-emerald-200';
         } else if (p.lateral_status === 'DISCREPANCY_FLAGGED') {
-          latBadge.textContent = 'UNVERIFIED LATERAL ENTRY FLAGGED';
+          latBadge.textContent = 'CREDIT TRANSFER FLAGGED';
           latBadge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded border bg-red-100 text-red-800 border-red-200';
         } else {
-          latBadge.textContent = 'REGULAR 1ST-YEAR DIRECT ADMISSION';
+          latBadge.textContent = 'REGULAR 1ST-YEAR ADMISSION';
           latBadge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded border bg-blue-50 text-blue-800 border-blue-200';
         }
       }
-      if (dipSource) dipSource.textContent = `Qualifying Channel: ${p.prior_diploma_board}`;
+      if (dipSource) dipSource.textContent = `Admission Path: ${p.prior_diploma_board}`;
       if (latNote) latNote.textContent = p.lateral_note;
       if (transCredits) transCredits.textContent = `${p.transferred_credits} Credits`;
     }
@@ -970,6 +1097,7 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
     async function loadScopedTokens(apaar: string) {
       const listEl = document.getElementById('scopedTokensList');
       const countBadge = document.getElementById('scopedTokenCountBadge');
+      const verifierBase = (window as any).__VERIFIER_BASE_PATH__ || '/verifier';
       if (!listEl) return;
 
       try {
@@ -983,7 +1111,7 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
         }
 
         if (tokens.length === 0) {
-          listEl.innerHTML = `<div class="p-4 text-center text-slate-500 bg-slate-50 rounded border border-slate-200">No purpose-scoped consent tokens minted for this candidate yet. Use the form on the left to mint a 24-hour single-use token.</div>`;
+          listEl.innerHTML = `<div class="p-4 text-center text-slate-500 bg-slate-50 rounded border border-slate-200">No access passes created for this student yet. Use the form on the left to create a one-time pass.</div>`;
           return;
         }
 
@@ -1001,6 +1129,7 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
             const safePurpose = escapeHtml(t.purpose);
             const safeDigest = escapeHtml(t.signature_digest);
             const safeExpires = escapeHtml(String(t.expires_at || '').replace('T', ' ').slice(0, 16));
+            const handoffHref = `${verifierBase}?apaar=${encodeURIComponent(t.apaar_id || apaar)}&token=${encodeURIComponent(t.token_id)}`;
             return `
               <div class="p-3.5 rounded border border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div class="space-y-1">
@@ -1011,13 +1140,23 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
                   </div>
                   <div class="font-bold text-slate-900 text-xs sm:text-sm">${safeOrg}</div>
                   <div class="text-xs text-slate-600">
-                    Purpose: <strong>${safePurpose}</strong> &bull; Disclosed Scope: <code class="font-mono text-[11px] bg-slate-200/70 px-1.5 py-0.5 rounded">${scopeLabels}</code>
+                    Purpose: <strong>${safePurpose}</strong> &bull; Shared Fields: <code class="font-mono text-[11px] bg-slate-200/70 px-1.5 py-0.5 rounded">${scopeLabels}</code>
                   </div>
                   <div class="text-[10px] font-mono text-slate-400 truncate max-w-md" title="${safeDigest}">
                     ${safeDigest} &bull; Expires: ${safeExpires} UTC
                   </div>
                 </div>
-                <div class="flex items-center gap-2 shrink-0">
+                <div class="flex flex-wrap items-center gap-2 shrink-0">
+                  ${
+                    isActive
+                      ? `<a
+                          href="${handoffHref}"
+                          class="px-2.5 py-1.5 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-semibold text-xs inline-flex items-center gap-1 transition-colors"
+                        >
+                          <span>Test This Pass in Public Verifier &rarr;</span>
+                        </a>`
+                      : ''
+                  }
                   <button
                     type="button"
                     data-copy-token="${safeTokenId}"
@@ -1038,7 +1177,7 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
                           <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                           </svg>
-                          <span>Revoke Token</span>
+                          <span>Revoke</span>
                         </button>`
                       : ''
                   }
@@ -1052,7 +1191,7 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
           btn.addEventListener('click', () => {
             const code = btn.getAttribute('data-copy-token') || '';
             navigator.clipboard?.writeText(code);
-            toast(`Consent token ${code} copied to clipboard.`, 'info');
+            toast(`Consent pass ${code} copied to clipboard.`, 'info');
           });
         });
 
@@ -1067,20 +1206,20 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
               });
               const delJson = await delRes.json();
               if (delJson.success) {
-                toast(`Scoped Consent Token ${code} revoked immediately under DPDP Section 6(4).`, 'warning');
+                toast(`Access pass ${code} revoked immediately.`, 'warning');
                 await loadScopedTokens(apaar);
               } else {
-                toast(delJson.error || 'Failed to revoke token', 'error');
+                toast(delJson.error || 'Failed to revoke pass', 'error');
               }
             } catch {
-              toast('Network error revoking token', 'error');
+              toast('Network error revoking pass', 'error');
             } finally {
               btn.disabled = false;
             }
           });
         });
       } catch {
-        listEl.innerHTML = `<div class="p-4 text-center text-red-600 bg-red-50 rounded border border-red-200">Error loading scoped consent tokens.</div>`;
+        listEl.innerHTML = `<div class="p-4 text-center text-red-600 bg-red-50 rounded border border-red-200">Error loading access passes.</div>`;
       }
     }
 
@@ -1153,6 +1292,7 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
     const mintedBanner = document.getElementById('mintedTokenBanner');
     const mintedCodeEl = document.getElementById('mintedTokenCode');
     const copyMintedBtn = document.getElementById('copyMintedTokenBtn');
+    const testMintedLink = document.getElementById('testMintedTokenLink') as HTMLAnchorElement | null;
 
     mintBtn?.addEventListener('click', async () => {
       const apaar = selector ? selector.value : '739284019283';
@@ -1162,9 +1302,10 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
       const ttlSelect = document.getElementById('tokenTtl') as HTMLSelectElement | null;
       const ttlHours = Number(ttlSelect?.value || 24);
       const singleUse = ttlSelect?.selectedOptions?.[0]?.getAttribute('data-single') !== 'false';
+      const verifierBase = (window as any).__VERIFIER_BASE_PATH__ || '/verifier';
 
       if (!verifierOrg || !purpose) {
-        toast('Please select a Target Verifier Organization and Statutory Purpose (or click a Quick Consent Preset above).', 'warning');
+        toast('Please select an Organization and Purpose (or click a Quick Preset above).', 'warning');
         return;
       }
 
@@ -1180,17 +1321,20 @@ const initialAbc = abcProfiles[activeStudent?.apaar_id || '739284019283'] || abc
         });
 
         if (!data.success) {
-          throw new Error(data.error || 'Failed to mint consent token');
+          throw new Error(data.error || 'Failed to create access pass');
         }
 
         if (mintedBanner && mintedCodeEl) {
           mintedCodeEl.textContent = data.data.token_id;
           mintedBanner.classList.remove('hidden');
         }
-        toast(`Scoped Token ${data.data.token_id} minted for ${verifierOrg}.`, 'success');
+        if (testMintedLink) {
+          testMintedLink.href = `${verifierBase}?apaar=${encodeURIComponent(apaar)}&token=${encodeURIComponent(data.data.token_id)}`;
+        }
+        toast(`Access pass ${data.data.token_id} created for ${verifierOrg}.`, 'success');
         await loadScopedTokens(apaar);
       } catch (err: any) {
-        toast(err?.message || 'Error minting scoped token', 'error');
+        toast(err?.message || 'Error creating access pass', 'error');
       } finally {
         mintBtn.disabled = false;
       }

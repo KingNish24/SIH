@@ -6,6 +6,7 @@ import { maskApaar, maskName, maskEmail } from '../lib/types';
 import { getUIDictionary, type LangCode, isSupportedLang } from '../lib/i18n';
 
 const lang: LangCode = isSupportedLang(Astro.locals.lang) ? Astro.locals.lang : 'en';
+const langPrefix = lang === 'en' ? '' : `/${lang}`;
 const t = getUIDictionary(lang);
 
 const db = getDB(Astro.locals);
@@ -101,7 +102,7 @@ for (const [apaar, list] of duplicatesMap.entries()) {
         ? 'AICTE Pragati / Post-Matric Central Sector Scholarship (PFMS Hold)'
         : 'Dual Seat Reservation (No Active NSP DBT Claim)',
       nsp_disbursement_status: hasFlaggedDuplicate
-        ? 'NSP Ghost Beneficiary Risk: Blocked'
+        ? 'Duplicate Scholarship Blocked'
         : 'Concurrent Seat Lock: Flagged',
       nsp_amount_inr: hasFlaggedDuplicate ? 'INR 50,000 / Yr (PFMS Hold)' : 'INR 0 (Seat Audit)',
       colleges: list.map((l, idx) => {
@@ -172,7 +173,7 @@ const sampleSearchCodes = institutions.slice(0, 2).map((i) => i.code);
           <svg class="w-4 h-4 text-slate-500" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          <span>Sync D1 (/api/aicte/anomalies)</span>
+          <span>Refresh Audit Data</span>
         </button>
       </div>
     </div>
@@ -418,7 +419,11 @@ const sampleSearchCodes = institutions.slice(0, 2).map((i) => i.code);
                     </div>
                   </td>
                   <td class="py-3.5 px-4">
-                    {isOverrun ? (
+                    {i.status === 'SHOW_CAUSE_ISSUED' ? (
+                      <span class="bg-red-900 text-white font-bold px-2.5 py-0.5 rounded text-xs border border-red-950">
+                        SHOW-CAUSE ISSUED
+                      </span>
+                    ) : isOverrun ? (
                       <span class="bg-red-100 text-red-800 font-bold px-2.5 py-0.5 rounded text-xs border border-red-200">
                         {t.statusOverrun}
                       </span>
@@ -430,13 +435,26 @@ const sampleSearchCodes = institutions.slice(0, 2).map((i) => i.code);
                   </td>
                   <td class="py-3.5 px-4 text-right">
                     {isOverrun ? (
-                      <button
-                        type="button"
-                        data-action-notice={`${i.name} (${i.code})`}
-                        class="px-3 py-1.5 rounded bg-red-50 hover:bg-red-100 border border-red-300 text-red-800 font-semibold text-xs transition-colors cursor-pointer"
-                      >
-                        Show-Cause Notice
-                      </button>
+                      <div class="inline-flex flex-wrap items-center justify-end gap-2">
+                        <a
+                          href={`${langPrefix}/institution`}
+                          class="px-3 py-1.5 rounded bg-white hover:bg-slate-50 border border-slate-300 text-[#0F2942] font-semibold text-xs transition-colors"
+                        >
+                          Check College Records →
+                        </a>
+                        <button
+                          type="button"
+                          data-action-notice={i.code}
+                          data-action-name={`${i.name} (${i.code})`}
+                          class={`px-3 py-1.5 rounded border font-semibold text-xs transition-colors cursor-pointer ${
+                            i.status === 'SHOW_CAUSE_ISSUED'
+                              ? 'bg-red-900 text-white border-red-950'
+                              : 'bg-red-50 hover:bg-red-100 border-red-300 text-red-800'
+                          }`}
+                        >
+                          {i.status === 'SHOW_CAUSE_ISSUED' ? 'Notice Issued ✓' : 'Show-Cause Notice'}
+                        </button>
+                      </div>
                     ) : (
                       <button
                         type="button"
@@ -547,10 +565,16 @@ const sampleSearchCodes = institutions.slice(0, 2).map((i) => i.code);
                 </div>
               </div>
 
-              <div class="flex items-center gap-2 shrink-0">
+              <div class="flex flex-wrap items-center gap-2 shrink-0">
+                <a
+                  href={`${langPrefix}/verifier?apaar=${ds.apaar_id}`}
+                  class="px-3 py-1.5 rounded bg-white hover:bg-slate-100 text-[#0F2942] border border-slate-300 font-semibold text-xs inline-flex items-center gap-1.5 transition-colors"
+                >
+                  <span>Check in Public Verifier →</span>
+                </a>
                 <button
                   type="button"
-                  data-freeze-apaar={maskApaar(ds.apaar_id)}
+                  data-freeze-apaar={ds.apaar_id}
                   class="px-3 py-1.5 rounded bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 font-semibold text-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <span>PFMS Hold &amp; Flag Seat</span>
@@ -583,73 +607,27 @@ const sampleSearchCodes = institutions.slice(0, 2).map((i) => i.code);
       </div>
     </div>
 
-    <!-- FEATURE #5: Section 63 BSA Cryptographic Hash-Chain & Merkle Audit Verifier -->
-    <div class="bg-white border border-slate-200 border-t-4 border-t-[#0F2942] rounded p-5 sm:p-6 shadow-sm">
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 pb-4 mb-4">
-        <div>
-          <div class="flex flex-wrap items-center gap-2 mb-1">
-            <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-900 border border-indigo-200 px-2.5 py-0.5 rounded">
-              <span>Bharatiya Sakshya Adhiniyam (BSA) 2023 Sec. 63</span>
-            </span>
-            <span class="text-[11px] font-mono font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded">
-              SHA-256 Merkle Chain
-            </span>
-          </div>
-          <h2 class="text-sm sm:text-base font-bold text-[#0F2942]">
-            {t.s13_title} &bull; SHA-256 Merkle Audit Verifier
-          </h2>
-          <p class="text-xs text-slate-600 mt-0.5">
-            {t.s13_body} (<code class="font-mono text-[11px] bg-slate-100 px-1 py-0.5 rounded">SHA256(prev_hash + ":" + canonical_payload)</code>)
-          </p>
-        </div>
-
-        <button
-          type="button"
-          id="verifyMerkleBtnAicte"
-          class="shrink-0 h-10 px-4 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold text-xs sm:text-sm transition-colors inline-flex items-center gap-2 shadow-xs cursor-pointer"
-        >
-          <svg class="w-4 h-4 text-emerald-300 shrink-0" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span>{t.s13_try}</span>
-        </button>
+    <!-- Compact 1-Row Check All Degree Signatures Verification Bar -->
+    <div id="merkleSummaryStripAicte" role="status" aria-live="polite" class="bg-white border border-slate-200 rounded px-4 py-3 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="font-bold text-[#0F2942] text-xs sm:text-sm">Check All Degree Signatures</span>
+        <span class="text-slate-400">&bull;</span>
+        <span id="merkleStatusTextAicte" class="font-semibold text-slate-700">{t.s13_try}</span>
+        <span class="text-slate-400 hidden sm:inline">&bull;</span>
+        <span class="font-mono text-slate-500">Root: <strong id="merkleRootTextAicte" class="text-[#0F2942]">--</strong></span>
+        <span class="font-mono text-emerald-700 font-bold" id="merkleBlockCountAicte"></span>
       </div>
-
-      <!-- Summary Status Strip -->
-      <div
-        id="merkleSummaryStripAicte"
-        role="status"
-        aria-live="polite"
-        class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 text-xs"
+      <button
+        type="button"
+        id="verifyMerkleBtnAicte"
+        class="shrink-0 h-9 px-3.5 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-semibold text-xs transition-colors inline-flex items-center gap-1.5 cursor-pointer"
       >
-        <div class="p-3.5 bg-slate-50 rounded border border-slate-200">
-          <div class="text-[10px] font-bold uppercase text-slate-500">{t.aicte_col_status}</div>
-          <div id="merkleStatusTextAicte" class="font-bold text-slate-800 mt-1 flex items-center gap-1.5">
-            <span>{t.s13_try}</span>
-          </div>
-        </div>
-        <div class="p-3.5 bg-slate-50 rounded border border-slate-200">
-          <div class="text-[10px] font-bold uppercase text-slate-500">Merkle Root (SHA-256)</div>
-          <div id="merkleRootTextAicte" class="font-mono font-bold text-[#0F2942] mt-1 truncate">
-            --
-          </div>
-        </div>
-        <div class="p-3.5 bg-slate-50 rounded border border-slate-200">
-          <div class="text-[10px] font-bold uppercase text-slate-500">Ledger Blocks</div>
-          <div id="merkleBlockCountAicte" class="font-mono font-bold text-emerald-700 mt-1">
-            --
-          </div>
-        </div>
-      </div>
-
-      <!-- Individual Block Links Table -->
-      <div id="merkleBlocksContainerAicte" class="hidden border border-slate-200 rounded overflow-hidden">
-        <div class="bg-slate-100 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between text-xs font-bold text-slate-700">
-          <span>SHA-256 Block Chain Links (prev_hash &rarr; block_hash)</span>
-          <span class="font-mono text-[11px] text-emerald-800">crypto.subtle.digest('SHA-256')</span>
-        </div>
-        <div class="max-h-64 overflow-y-auto divide-y divide-slate-200 text-xs font-mono" id="merkleBlocksListAicte"></div>
-      </div>
+        <svg class="w-3.5 h-3.5 text-emerald-300 shrink-0" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>Check All Degree Signatures</span>
+      </button>
+      <div id="merkleBlocksContainerAicte" class="hidden"><div id="merkleBlocksListAicte"></div></div>
     </div>
   </div>
 
@@ -703,16 +681,43 @@ const sampleSearchCodes = institutions.slice(0, 2).map((i) => i.code);
       });
     });
 
-    // Action buttons for Show-Cause Notice, Docket Inspection, and PFMS Freeze
+    // Action buttons for Show-Cause Notice, Docket Inspection, and PFMS Freeze (Persisted in D1 via POST /api/aicte/anomalies)
+    async function issueShowCauseNotice(code: string, label: string, btnEl?: HTMLButtonElement | null) {
+      if (!code) return;
+      if (btnEl) btnEl.disabled = true;
+      try {
+        const res = await fetch('/api/aicte/anomalies', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'ISSUE_SHOW_CAUSE', code }),
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          if (btnEl) {
+            btnEl.textContent = 'Notice Issued ✓';
+            btnEl.className = 'px-3 py-1.5 rounded bg-red-900 text-white border border-red-950 font-semibold text-xs transition-colors cursor-pointer';
+          }
+          (window as any).showToast?.(data.message || `Show-Cause Notice persisted in D1 for ${label}.`, 'warning');
+        } else {
+          throw new Error(data.error || 'Failed to issue Show-Cause Notice');
+        }
+      } catch (err: any) {
+        (window as any).showToast?.(err.message || 'Error issuing Show-Cause Notice', 'error');
+        if (btnEl) btnEl.disabled = false;
+      }
+    }
+
     document.getElementById('topShowCauseBtn')?.addEventListener('click', (e) => {
-      const code = (e.currentTarget as HTMLElement).getAttribute('data-notice-code') || '';
-      (window as any).showToast?.(`Show-Cause Notice dispatched to ${code} (APH 2024-27 Clause 7.14).`, 'warning');
+      const btn = e.currentTarget as HTMLButtonElement;
+      const code = btn.getAttribute('data-notice-code') || '';
+      issueShowCauseNotice(code, code, btn);
     });
 
     document.querySelectorAll<HTMLButtonElement>('[data-action-notice]').forEach((btn) => {
       btn.addEventListener('click', () => {
-        const target = btn.getAttribute('data-action-notice') || '';
-        (window as any).showToast?.(`Show-Cause Notice issued: ${target}`, 'warning');
+        const code = btn.getAttribute('data-action-notice') || '';
+        const name = btn.getAttribute('data-action-name') || code;
+        issueShowCauseNotice(code, name, btn);
       });
     });
 
@@ -724,9 +729,28 @@ const sampleSearchCodes = institutions.slice(0, 2).map((i) => i.code);
     });
 
     document.querySelectorAll<HTMLButtonElement>('[data-freeze-apaar]').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const apaar = btn.getAttribute('data-freeze-apaar') || '';
-        (window as any).showToast?.(`PFMS / NSP Scholarship Hold applied for APAAR ${apaar}.`, 'warning');
+        if (!apaar) return;
+        btn.disabled = true;
+        try {
+          const res = await fetch('/api/aicte/anomalies', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'FREEZE_DUPLICATE_SEAT', apaar_id: apaar }),
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            btn.textContent = 'PFMS Hold Active ✓';
+            btn.className = 'px-3 py-1.5 rounded bg-red-900 text-white border border-red-950 font-semibold text-xs inline-flex items-center gap-1.5 transition-colors';
+            (window as any).showToast?.(data.message || `PFMS / NSP Scholarship Hold applied for APAAR ${apaar}.`, 'warning');
+          } else {
+            throw new Error(data.error || 'Failed to apply PFMS hold');
+          }
+        } catch (err: any) {
+          (window as any).showToast?.(err.message || 'Error applying PFMS hold', 'error');
+          btn.disabled = false;
+        }
       });
     });
 

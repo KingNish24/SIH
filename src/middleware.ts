@@ -11,7 +11,18 @@ interface RateLimiter {
   limit: (opts: { key: string }) => Promise<{ success: boolean }>;
 }
 
-function enforceRateLimit(request: Request, pathname: string): Response | null {
+const RATE_LIMIT_CONFIG: Record<string, { maxRequests: number; windowMs: number }> = {
+  login: { maxRequests: 25, windowMs: 60_000 },
+  verify: { maxRequests: 60, windowMs: 60_000 },
+  api: { maxRequests: 120, windowMs: 60_000 },
+};
+
+const slidingWindowBuckets = new Map<string, number[]>();
+
+async function enforceRateLimit(
+  request: Request,
+  pathname: string
+): Promise<{ blocked: Response | null; headers: Record<string, string> }> {
   let bindingName: string | null = null;
   let scope = 'api';
 
@@ -26,28 +37,78 @@ function enforceRateLimit(request: Request, pathname: string): Response | null {
     scope = 'api';
   }
 
-  if (!bindingName) return null;
-
-  const env = getEnv();
-  const limiter = env?.[bindingName] as RateLimiter | undefined;
-  if (!limiter?.limit) return null; // Graceful no-op when bindings are absent (local dev / SSR)
+  if (!bindingName) return { blocked: null, headers: {} };
 
   const ip =
     request.headers.get('cf-connecting-ip') ||
     request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
-    'unknown';
+    '127.0.0.1';
 
-  // Rate limiter invocation within gateway pipeline
-  limiter
-    .limit({ key: `${scope}:${ip}` })
-    .then(({ success }) => {
+  const cfg = RATE_LIMIT_CONFIG[scope] || RATE_LIMIT_CONFIG.api;
+  const now = Date.now();
+  const bucketKey = `${scope}:${ip}`;
+  const recent = (slidingWindowBuckets.get(bucketKey) || []).filter((ts) => now - ts < cfg.windowMs);
+  recent.push(now);
+  slidingWindowBuckets.set(bucketKey, recent);
+
+  const remaining = Math.max(0, cfg.maxRequests - recent.length);
+  const resetEpochSec = Math.ceil((now + cfg.windowMs) / 1000);
+  const headers: Record<string, string> = {
+    'X-RateLimit-Limit': String(cfg.maxRequests),
+    'X-RateLimit-Remaining': String(remaining),
+    'X-RateLimit-Reset': String(resetEpochSec),
+  };
+
+  const env = getEnv();
+  const limiter = env?.[bindingName] as RateLimiter | undefined;
+  if (limiter?.limit) {
+    try {
+      const { success } = await limiter.limit({ key: bucketKey });
       if (!success) {
-        // Handled via async check or fail-open in edge runtime
+        return {
+          blocked: new Response(
+            JSON.stringify({
+              success: false,
+              error: 'TOO_MANY_REQUESTS: Rate limit exceeded. Please wait before retrying.',
+            }),
+            {
+              status: 429,
+              headers: {
+                'Content-Type': 'application/json',
+                'Retry-After': '60',
+                ...headers,
+              },
+            }
+          ),
+          headers,
+        };
       }
-    })
-    .catch(() => {});
+    } catch {
+      // Fallback to in-memory sliding window check
+    }
+  }
 
-  return null;
+  if (recent.length > cfg.maxRequests) {
+    return {
+      blocked: new Response(
+        JSON.stringify({
+          success: false,
+          error: 'TOO_MANY_REQUESTS: Rate limit exceeded. Please wait before retrying.',
+        }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'Retry-After': '60',
+            ...headers,
+          },
+        }
+      ),
+      headers,
+    };
+  }
+
+  return { blocked: null, headers };
 }
 
 const route = async (
@@ -95,8 +156,8 @@ const route = async (
   context.locals.lang = resolvedLang;
 
   // 2. Gateway Rate Limit Enforcement
-  const rateLimitResponse = enforceRateLimit(context.request, pathname);
-  if (rateLimitResponse) return rateLimitResponse;
+  const rateLimitResult = await enforceRateLimit(context.request, pathname);
+  if (rateLimitResult.blocked) return rateLimitResult.blocked;
 
   // 3. Resolve database and active session
   const db = getDB(context.locals);
@@ -125,11 +186,13 @@ const route = async (
     normalizedPath === '/hyperlinking-policy';
 
   if (!isPublicPage) {
+    const loginBasePath = resolvedLang === 'en' ? '/login' : `/${resolvedLang}/login`;
+
     // 5. Role-based Protected Page Routes
     // AICTE Regulatory Council
     if (normalizedPath === '/aicte' || normalizedPath.startsWith('/aicte/')) {
       if (!user || user.role !== 'AICTE_ADMIN') {
-        const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
+        const redirectUrl = `${loginBasePath}?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
         return context.redirect(redirectUrl, 302);
       }
     }
@@ -137,7 +200,7 @@ const route = async (
     // Institute Admin Portal
     if (normalizedPath === '/institution' || normalizedPath.startsWith('/institution/')) {
       if (!user || user.role !== 'INSTITUTE_ADMIN') {
-        const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
+        const redirectUrl = `${loginBasePath}?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
         return context.redirect(redirectUrl, 302);
       }
     }
@@ -145,7 +208,7 @@ const route = async (
     // Affiliating University Degree Ledger
     if (normalizedPath === '/university' || normalizedPath.startsWith('/university/')) {
       if (!user || user.role !== 'UNIVERSITY_ADMIN') {
-        const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
+        const redirectUrl = `${loginBasePath}?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
         return context.redirect(redirectUrl, 302);
       }
     }
@@ -153,7 +216,7 @@ const route = async (
     // Student DPDP Consent Portal
     if (normalizedPath === '/student' || normalizedPath.startsWith('/student/')) {
       if (!user || user.role !== 'STUDENT') {
-        const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
+        const redirectUrl = `${loginBasePath}?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
         return context.redirect(redirectUrl, 302);
       }
     }
@@ -207,6 +270,9 @@ const route = async (
 
   // 7. Security Headers (GIGW 3.0 / OWASP Standards)
   const response = await next();
+  for (const [k, v] of Object.entries(rateLimitResult.headers)) {
+    response.headers.set(k, v);
+  }
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-XSS-Protection', '1; mode=block');

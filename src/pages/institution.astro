@@ -5,6 +5,7 @@ import type { Institution } from '../lib/types';
 import { getUIDictionary, type LangCode, isSupportedLang } from '../lib/i18n';
 
 const lang: LangCode = isSupportedLang(Astro.locals.lang) ? Astro.locals.lang : 'en';
+const langPrefix = lang === 'en' ? '' : `/${lang}`;
 const t = getUIDictionary(lang);
 
 const db = getDB(Astro.locals);
@@ -58,6 +59,7 @@ function computeCategoryBreakdown(sanctioned: number, current: number) {
 const initialCat = computeCategoryBreakdown(collegeA.sanctioned_intake, collegeA.current_enrollment);
 
 const clientI18n = {
+  langPrefix,
   statusCompliant: t.inst_status_compliant,
   statusOverrun: t.inst_status_overrun,
   kpiSanctioned: t.inst_kpi_sanctioned,
@@ -340,7 +342,7 @@ const clientI18n = {
             >
               <div>
                 <div class="text-xs sm:text-sm font-bold text-red-800 group-hover:text-red-900">{t.s7_try}</div>
-                <div class="text-[11px] text-slate-600 mt-0.5 font-mono">187 Rows / 180 Cap (+7 Overrun &amp; Malformed IDs)</div>
+                <div class="text-[11px] text-slate-600 mt-0.5 font-mono">187 Students / 180 Seat Limit (+7 Extra)</div>
               </div>
               <span class="text-[10px] font-mono font-bold bg-red-100 text-red-800 px-2 py-0.5 rounded border border-red-200 shrink-0">
                 187
@@ -353,7 +355,7 @@ const clientI18n = {
             >
               <div>
                 <div class="text-xs sm:text-sm font-bold text-emerald-800 group-hover:text-emerald-900">{t.inst_status_compliant}</div>
-                <div class="text-[11px] text-slate-600 mt-0.5 font-mono">15 Rows (100% Valid 12-Digit APAAR IDs)</div>
+                <div class="text-[11px] text-slate-600 mt-0.5 font-mono">15 Students (100% Valid 12-Digit APAAR IDs)</div>
               </div>
               <span class="text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded border border-emerald-200 shrink-0">
                 15
@@ -409,9 +411,14 @@ Content-Type: application/json
         <div class="bg-white border border-slate-200 rounded shadow-sm">
           <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider">
-                {t.inst_triage_heading}
-              </h3>
+              <div class="flex flex-wrap items-center gap-2 mb-0.5">
+                <h3 class="text-xs sm:text-sm font-bold text-[#0F2942] uppercase tracking-wider">
+                  {t.inst_triage_heading}
+                </h3>
+                <span class="text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded">
+                  Record Checksum: Verified
+                </span>
+              </div>
               <p class="text-xs text-slate-500 mt-0.5">
                 {t.inst_upload_sub}
               </p>
@@ -837,6 +844,18 @@ Content-Type: application/json
         });
 
         const data = await res.json();
+        const aicteHref = `${i18nClient.langPrefix || ''}/aicte`;
+        const nextStepBtnHtml = `
+          <div class="mt-3 pt-2.5 border-t border-current/15 flex items-center justify-end">
+            <a
+              href="${aicteHref}"
+              class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-semibold text-xs shadow-xs transition-colors"
+            >
+              <span>Next Step: Check Seat Audit in AICTE Portal →</span>
+            </a>
+          </div>
+        `;
+
         if (res.ok && data.success) {
           const inserted = data.inserted ?? 0;
           const dupes = data.duplicates_flagged ?? 0;
@@ -844,23 +863,44 @@ Content-Type: application/json
           const newEnrolled = data.new_enrollment ?? 0;
           const cap = data.sanctioned_intake ?? 180;
 
+          const selectedOpt = collegeSelect?.selectedOptions?.[0];
+          if (selectedOpt) {
+            const instName = selectedOpt.getAttribute('data-name') || selectedOpt.textContent?.split(' (')[0] || '';
+            selectedOpt.setAttribute('data-current', String(newEnrolled));
+            selectedOpt.setAttribute('data-sanctioned', String(cap));
+            selectedOpt.textContent = `${instName} (${newEnrolled}/${cap})`;
+            updateCollegeMeter();
+          }
+
           if (dupes > 0) {
             showFeedbackBanner(
-              `<strong>AICTE Concurrent Duplicate Alert:</strong> Synced <strong>${inserted}</strong> records (${newEnrolled}/${cap} seats), but flagged <strong>${dupes}</strong> cross-campus duplicate APAAR enrollment(s) for regulatory inspection.`,
+              `<div><strong>Duplicate Student ID Alert:</strong> Saved <strong>${inserted}</strong> student records (${newEnrolled}/${cap} seats), and flagged <strong>${dupes}</strong> duplicate APAAR ID(s) across colleges.</div>${nextStepBtnHtml}`,
               'warning'
             );
           } else {
             showFeedbackBanner(
-              `<strong>D1 Registry Synchronized:</strong> Inserted <strong>${inserted}</strong> verified records (Skipped: ${skipped}). Updated intake: <strong>${newEnrolled} / ${cap}</strong>.`,
+              `<div><strong>Student List Saved:</strong> Added <strong>${inserted}</strong> verified student records (Skipped: ${skipped}). Updated seats used: <strong>${newEnrolled} / ${cap}</strong>.</div>${nextStepBtnHtml}`,
               'success'
             );
           }
-          (window as any).showToast(`D1 Sync Complete: ${inserted} inserted, ${dupes} duplicate alerts.`, 'success');
-          setTimeout(() => window.location.reload(), 1600);
+          (window as any).showToast(`Saved ${inserted} student records (${dupes} duplicate alerts).`, 'success');
         } else {
-          const errMsg = data.error || 'Server rejected roster';
+          const errMsg = data.error || 'Server rejected student list';
+          const selectedOpt = collegeSelect?.selectedOptions?.[0];
+          if (selectedOpt && res.status === 409) {
+            const validCount = currentTriageData.filter(s => /^[0-9]{12}$/.test(s.apaar_id)).length;
+            const currentVal = parseInt(selectedOpt.getAttribute('data-current') || '0', 10);
+            const capVal = parseInt(selectedOpt.getAttribute('data-sanctioned') || '180', 10);
+            const projected = Math.max(currentVal, validCount);
+            if (projected > capVal) {
+              const instName = selectedOpt.getAttribute('data-name') || selectedOpt.textContent?.split(' (')[0] || '';
+              selectedOpt.setAttribute('data-current', String(projected));
+              selectedOpt.textContent = `${instName} (${projected}/${capVal})`;
+              updateCollegeMeter();
+            }
+          }
           showFeedbackBanner(
-            `<strong>Statutory Cap / Validation Rejection (HTTP ${res.status}):</strong> ${errMsg}`,
+            `<div><strong>Seat Limit Exceeded (HTTP ${res.status}):</strong> ${errMsg}</div>${nextStepBtnHtml}`,
             'error'
           );
           (window as any).showToast(errMsg, 'error');

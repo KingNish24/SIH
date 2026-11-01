@@ -1,5 +1,5 @@
 // Database interface abstraction supporting Cloudflare D1 and SSR fallback
-import type { Institution, Student, Admission, Degree, VerificationRequest, PasskeyCredential, User, Session } from './types';
+import type { Institution, Student, Admission, Degree, VerificationRequest, PasskeyCredential, User, Session, ScopedConsentTokenRow, SemesterCreditRow } from './types';
 
 export interface DatabaseAdapter {
   prepare: (query: string) => {
@@ -360,6 +360,148 @@ class MemoryDBAdapter implements DatabaseAdapter {
 
   private sessions: Session[] = [];
 
+  private scopedConsentTokens: ScopedConsentTokenRow[] = [
+    {
+      token_id: 'VIDYA-DPDP-8492-A19F',
+      apaar_id: '739284019283',
+      verifier_org: 'UPSC Civil Services Board',
+      purpose: 'Degree & Eligibility Verification',
+      disclosed_fields: JSON.stringify(['degree_status', 'cgpa_threshold', 'abc_credits']),
+      ttl_label: '24 Hours (Single-Use)',
+      single_use: 1,
+      status: 'ACTIVE',
+      created_at: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      signature_digest: 'SHA256:9f41c80b2a73e19d4401bc8a772e9012f3451d0a8b76c5e1290a4f8b3c12e771',
+    },
+    {
+      token_id: 'VIDYA-DPDP-3104-C72B',
+      apaar_id: '739284019283',
+      verifier_org: 'TCS Background Verification',
+      purpose: 'Zero-Knowledge CGPA >= 7.5 Check',
+      disclosed_fields: JSON.stringify(['degree_status', 'cgpa_threshold']),
+      ttl_label: '1 Hour (Single-Use)',
+      single_use: 1,
+      status: 'ACTIVE',
+      created_at: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+      expires_at: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+      signature_digest: 'SHA256:4a82d19f0e55b62c8910fa32817465bc9012e4f8a1b2c3d4e5f60718293a4b5c',
+    },
+    {
+      token_id: 'VIDYA-DPDP-6291-E08D',
+      apaar_id: '412398471029',
+      verifier_org: 'GATE Admissions Committee (IIT Roorkee)',
+      purpose: 'B.Tech Honours & ABC 160-Credit Audit',
+      disclosed_fields: JSON.stringify(['degree_status', 'cgpa_threshold', 'abc_credits']),
+      ttl_label: '24 Hours (Single-Use)',
+      single_use: 1,
+      status: 'ACTIVE',
+      created_at: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      signature_digest: 'SHA256:7d12e84a90b3c4f12839045a6b7c8d9e0f1a2b3c4d5e6f708192a3b4c5d6e7f8',
+    },
+    {
+      token_id: 'VIDYA-DPDP-5510-F94A',
+      apaar_id: '582910384729',
+      verifier_org: 'DRDO Scientist Entry Recruitment Board',
+      purpose: 'Degree & Eligibility Verification',
+      disclosed_fields: JSON.stringify(['degree_status', 'cgpa_threshold']),
+      ttl_label: '24 Hours (Single-Use)',
+      single_use: 1,
+      status: 'ACTIVE',
+      created_at: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      signature_digest: 'SHA256:3c91a04f82e1b7d6543210fedcba9876543210abcdef0123456789abcdef0123',
+    },
+  ];
+
+  private semesterCredits: SemesterCreditRow[] = [
+    {
+      apaar_id: '739284019283',
+      program: 'B.Tech Computer Science & Engineering',
+      accumulated_credits: 120,
+      max_credits: 160,
+      nep_exit_stage: "120 Credits — 3-Year Bachelor's Degree Eligible (Semester 6 Completed)",
+      semester_breakdown: JSON.stringify([20, 20, 20, 20, 20, 20, 0, 0]),
+      is_lateral_entry: 1,
+      entry_mode: '2nd-Year Lateral Entry (Sem 3 Direct)',
+      prior_diploma_board: 'MSBTE State Polytechnic Diploma (Computer Engg — 80 Credits)',
+      transferred_credits: 80,
+      lateral_status: 'VERIFIED_ANCHORED',
+      lateral_note: 'Prior 3-Year Polytechnic Diploma (80 ABC Credits) cryptographically verified via DigiLocker & MSBTE ledger before 2nd-Year B.Tech Lateral Entry.',
+    },
+    {
+      apaar_id: '412398471029',
+      program: 'B.Tech Computer Science & Engineering',
+      accumulated_credits: 160,
+      max_credits: 160,
+      nep_exit_stage: '160 Credits — 4-Year B.Tech Honours / Research Degree Conferred',
+      semester_breakdown: JSON.stringify([20, 20, 20, 20, 20, 20, 20, 20]),
+      is_lateral_entry: 0,
+      entry_mode: '1st-Year Regular (10+2 PCM)',
+      prior_diploma_board: 'Direct 1st-Year Regular Admission (10+2 PCM Qualifying)',
+      transferred_credits: 0,
+      lateral_status: 'STANDARD_ENTRY',
+      lateral_note: 'All 8 semesters (160 Credits) earned continuously at AICTE-approved parent institution.',
+    },
+    {
+      apaar_id: '582910384729',
+      program: 'B.Tech Electronics & Comm.',
+      accumulated_credits: 80,
+      max_credits: 160,
+      nep_exit_stage: '80 Credits — UG Diploma / Lateral Entry Eligible (Exit Year 2)',
+      semester_breakdown: JSON.stringify([20, 20, 20, 20, 0, 0, 0, 0]),
+      is_lateral_entry: 1,
+      entry_mode: '2nd-Year Lateral Entry (Sem 3 Direct)',
+      prior_diploma_board: 'DTE Karnataka Polytechnic Diploma (Electronics — 80 Credits)',
+      transferred_credits: 80,
+      lateral_status: 'VERIFIED_ANCHORED',
+      lateral_note: 'Verified 80-credit UG Diploma anchored to 12-digit APAAR ID; eligible for NEP 2020 2nd-Year Lateral Entry.',
+    },
+    {
+      apaar_id: '901238471920',
+      program: 'B.Tech Mechanical Engineering',
+      accumulated_credits: 40,
+      max_credits: 160,
+      nep_exit_stage: '40 Credits — UG Certificate Threshold Reached (Exit Year 1)',
+      semester_breakdown: JSON.stringify([20, 20, 0, 0, 0, 0, 0, 0]),
+      is_lateral_entry: 0,
+      entry_mode: '1st-Year Regular (10+2 PCM)',
+      prior_diploma_board: 'Direct 1st-Year Regular Admission (10+2 Qualifying)',
+      transferred_credits: 0,
+      lateral_status: 'STANDARD_ENTRY',
+      lateral_note: 'Completed Year 1 (40 Credits); qualifies for NEP 2020 UG Certificate if exiting early.',
+    },
+    {
+      apaar_id: '601928374819',
+      program: 'B.Tech Civil Engineering',
+      accumulated_credits: 120,
+      max_credits: 160,
+      nep_exit_stage: 'REVOKED — Unverified Lateral Entry Credit Transfer Blocked',
+      semester_breakdown: JSON.stringify([0, 0, 20, 20, 20, 20, 20, 20]),
+      is_lateral_entry: 1,
+      entry_mode: '2nd-Year Lateral Entry (Disputed)',
+      prior_diploma_board: 'Unverified Private Polytechnic Certificate (No ABC / APAAR Anchor)',
+      transferred_credits: 80,
+      lateral_status: 'DISCREPANCY_FLAGGED',
+      lateral_note: 'ALERT: Claimed 80 lateral-entry diploma credits lacked cryptographic APAAR/ABC provenance. Degree revoked during AICTE audit.',
+    },
+    {
+      apaar_id: '819203847561',
+      program: 'B.Tech Data Science & AI',
+      accumulated_credits: 160,
+      max_credits: 160,
+      nep_exit_stage: '160 Credits — 4-Year B.Tech Honours / Research Degree Conferred',
+      semester_breakdown: JSON.stringify([20, 20, 20, 20, 20, 20, 20, 20]),
+      is_lateral_entry: 0,
+      entry_mode: '1st-Year Regular (10+2 PCM)',
+      prior_diploma_board: 'Direct 1st-Year Regular Admission (10+2 Qualifying)',
+      transferred_credits: 0,
+      lateral_status: 'STANDARD_ENTRY',
+      lateral_note: 'Full 160-credit B.Tech curriculum verified and anchored on National Academic Bank of Credits.',
+    },
+  ];
+
   prepare(query: string) {
     const q = query.trim();
     return {
@@ -527,6 +669,27 @@ class MemoryDBAdapter implements DatabaseAdapter {
       return this.users.map((u) => ({ ...u }));
     }
 
+    if (upper.includes('FROM SCOPED_CONSENT_TOKENS')) {
+      if (upper.includes('WHERE TOKEN_ID = ?')) {
+        const tok = this.scopedConsentTokens.find((t) => t.token_id === params[0]);
+        return tok ? [{ ...tok }] : [];
+      }
+      if (upper.includes('WHERE APAAR_ID = ?')) {
+        return this.scopedConsentTokens
+          .filter((t) => t.apaar_id === params[0])
+          .map((t) => ({ ...t }));
+      }
+      return this.scopedConsentTokens.map((t) => ({ ...t }));
+    }
+
+    if (upper.includes('FROM SEMESTER_CREDITS')) {
+      if (upper.includes('WHERE APAAR_ID = ?')) {
+        const row = this.semesterCredits.find((c) => c.apaar_id === params[0]);
+        return row ? [{ ...row }] : [];
+      }
+      return this.semesterCredits.map((c) => ({ ...c }));
+    }
+
     return [];
   }
 
@@ -556,6 +719,30 @@ class MemoryDBAdapter implements DatabaseAdapter {
         inst.status = newStatus;
       }
       return { success: true };
+    }
+
+    // UPDATE INSTITUTIONS STATUS (AICTE SHOW-CAUSE NOTICE / AUDIT)
+    if (upper.includes('UPDATE INSTITUTIONS SET STATUS = ?')) {
+      const [newStatus, idOrCode] = params;
+      const inst = this.institutions.find((i) => i.id === idOrCode || i.code === idOrCode);
+      if (inst) {
+        inst.status = newStatus;
+        return { success: true, meta: { changes: 1 } };
+      }
+      return { success: true, meta: { changes: 0 } };
+    }
+
+    // UPDATE ADMISSIONS STATUS (AICTE PFMS FREEZE / DUPLICATE HOLD)
+    if (upper.includes('UPDATE ADMISSIONS SET STATUS = ?')) {
+      const [newStatus, apaar_id] = params;
+      let changes = 0;
+      for (const adm of this.admissions) {
+        if (adm.apaar_id === apaar_id) {
+          adm.status = newStatus;
+          changes++;
+        }
+      }
+      return { success: true, meta: { changes } };
     }
 
     // INSERT INTO STUDENTS
@@ -631,7 +818,15 @@ class MemoryDBAdapter implements DatabaseAdapter {
 
     // INSERT INTO DEGREES
     if (upper.includes('INSERT INTO DEGREES')) {
-      const [id, apaar_id, institution_id, degree_name, specialization, cgpa, year_of_passing, status, issuing_authority, issued_at, digital_signature_hash] = params;
+      const [id, apaar_id, institution_id, degree_name, specialization, cgpa, year_of_passing, statusOrAuth, authOrIssued, issuedOrHash, hashOrSig, sigOrKey, keyIdMaybe] = params;
+      const hasExplicitIssuedLiteral = upper.includes("'ISSUED'");
+      const status = hasExplicitIssuedLiteral ? 'ISSUED' : (statusOrAuth || 'ISSUED');
+      const issuing_authority = hasExplicitIssuedLiteral ? statusOrAuth : authOrIssued;
+      const issued_at = hasExplicitIssuedLiteral ? authOrIssued : issuedOrHash;
+      const digital_signature_hash = hasExplicitIssuedLiteral ? issuedOrHash : hashOrSig;
+      const signature = hasExplicitIssuedLiteral ? hashOrSig : sigOrKey;
+      const signing_key_id = hasExplicitIssuedLiteral ? sigOrKey : keyIdMaybe;
+
       this.degrees.push({
         id,
         apaar_id,
@@ -640,13 +835,15 @@ class MemoryDBAdapter implements DatabaseAdapter {
         specialization,
         cgpa: Number(cgpa) || 8.0,
         year_of_passing: Number(year_of_passing) || 2024,
-        status: status || 'ISSUED',
+        status: status as any,
         issuing_authority,
         issued_at: issued_at || new Date().toISOString(),
         revoked_at: null,
         revocation_reason: null,
         digital_signature_hash,
-      });
+        ...(signature ? { signature } : {}),
+        ...(signing_key_id ? { signing_key_id } : {}),
+      } as any);
       return { success: true };
     }
 
@@ -677,18 +874,100 @@ class MemoryDBAdapter implements DatabaseAdapter {
 
     // INSERT PASSKEY
     if (upper.includes('INSERT INTO PASSKEY_CREDENTIALS')) {
-      const [id, apaar_id, public_key, counter, device_type] = params;
+      const [id, apaar_id, public_key, counter, device_type, transports] = params;
       this.passkeys.push({
         id,
         apaar_id,
         public_key,
         counter: Number(counter) || 0,
         device_type: device_type || 'Biometric Passkey',
+        transports: transports || null,
       });
       const st = this.students.find((s) => s.apaar_id === apaar_id);
       if (st) {
         st.passkey_credential_id = id;
         st.dpdp_consent_status = 'GRANTED';
+      }
+      return { success: true };
+    }
+
+    // UPDATE PASSKEY COUNTER
+    if (upper.includes('UPDATE PASSKEY_CREDENTIALS SET COUNTER = ?')) {
+      const [counter, id] = params;
+      const pk = this.passkeys.find((p) => p.id === id);
+      if (pk) pk.counter = Number(counter) || 0;
+      return { success: true };
+    }
+
+    // UPDATE STUDENT CONSENT & PASSKEY CREDENTIAL ID
+    if (upper.includes('UPDATE STUDENTS SET DPDP_CONSENT_STATUS = ?, PASSKEY_CREDENTIAL_ID = ?')) {
+      const [status, credId, apaar_id] = params;
+      const st = this.students.find((s) => s.apaar_id === apaar_id);
+      if (st) {
+        st.dpdp_consent_status = status;
+        st.passkey_credential_id = credId;
+      }
+      return { success: true };
+    }
+
+    // INSERT INTO SCOPED_CONSENT_TOKENS
+    if (upper.includes('INTO SCOPED_CONSENT_TOKENS')) {
+      const [token_id, apaar_id, verifier_org, purpose, disclosed_fields, ttl_label, single_use, status, created_at, expires_at, signature_digest] = params;
+      const existingIdx = this.scopedConsentTokens.findIndex((t) => t.token_id === token_id);
+      const row: ScopedConsentTokenRow = {
+        token_id,
+        apaar_id,
+        verifier_org,
+        purpose,
+        disclosed_fields: typeof disclosed_fields === 'string' ? disclosed_fields : JSON.stringify(disclosed_fields || []),
+        ttl_label,
+        single_use: Number(single_use) ? 1 : 0,
+        status: (status as any) || 'ACTIVE',
+        created_at,
+        expires_at,
+        signature_digest,
+      };
+      if (existingIdx >= 0) {
+        this.scopedConsentTokens[existingIdx] = row;
+      } else {
+        this.scopedConsentTokens.unshift(row);
+      }
+      return { success: true };
+    }
+
+    // UPDATE SCOPED_CONSENT_TOKENS STATUS
+    if (upper.includes('UPDATE SCOPED_CONSENT_TOKENS SET STATUS = ?')) {
+      const [status, token_id] = params;
+      const tok = this.scopedConsentTokens.find((t) => t.token_id === token_id);
+      if (tok) {
+        tok.status = status;
+        return { success: true, meta: { changes: 1 } };
+      }
+      return { success: true, meta: { changes: 0 } };
+    }
+
+    // INSERT OR REPLACE INTO SEMESTER_CREDITS
+    if (upper.includes('INTO SEMESTER_CREDITS')) {
+      const [apaar_id, program, accumulated_credits, max_credits, nep_exit_stage, semester_breakdown, is_lateral_entry, entry_mode, prior_diploma_board, transferred_credits, lateral_status, lateral_note] = params;
+      const idx = this.semesterCredits.findIndex((c) => c.apaar_id === apaar_id);
+      const row: SemesterCreditRow = {
+        apaar_id,
+        program,
+        accumulated_credits: Number(accumulated_credits) || 0,
+        max_credits: Number(max_credits) || 160,
+        nep_exit_stage,
+        semester_breakdown: typeof semester_breakdown === 'string' ? semester_breakdown : JSON.stringify(semester_breakdown || []),
+        is_lateral_entry: Number(is_lateral_entry) ? 1 : 0,
+        entry_mode,
+        prior_diploma_board,
+        transferred_credits: Number(transferred_credits) || 0,
+        lateral_status: (lateral_status as any) || 'STANDARD_ENTRY',
+        lateral_note,
+      };
+      if (idx >= 0) {
+        this.semesterCredits[idx] = row;
+      } else {
+        this.semesterCredits.push(row);
       }
       return { success: true };
     }

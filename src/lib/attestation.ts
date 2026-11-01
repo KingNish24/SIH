@@ -3,6 +3,9 @@ import type { Student, Degree, Admission, Institution } from './types';
 import { verifyDegree, getSigningKeys } from './signing';
 import { generateQrSvg } from './qr';
 import { maskApaar, maskName, maskEmail, maskPhone } from './types';
+import { validateAndConsumeConsentToken, type TokenValidationResult } from '../pages/api/student/token';
+
+export { validateAndConsumeConsentToken, type TokenValidationResult };
 
 export interface PredicateQuery {
   min_cgpa?: number;
@@ -91,8 +94,17 @@ export async function verifyCredential(options: VerifyCredentialOptions): Promis
   }
 
   // 2. DPDP Consent Check (DPDP Act 2023 Sec. 6)
-  const hasValidConsentToken = typeof consent_token === 'string' && consent_token.trim().length >= 8;
-  const isConsentGranted = student.dpdp_consent_status === 'GRANTED' || hasValidConsentToken;
+  const providedToken = typeof consent_token === 'string' ? consent_token.trim() : '';
+  const tokenValidation = providedToken
+    ? await validateAndConsumeConsentToken(providedToken, cleanApaar, db)
+    : null;
+  const hasValidConsentToken = Boolean(tokenValidation?.valid);
+  const isConsentGranted = providedToken
+    ? hasValidConsentToken
+    : student.dpdp_consent_status === 'GRANTED';
+  const resolvedConsentStatus = providedToken
+    ? (hasValidConsentToken ? 'GRANTED_VIA_TOKEN' : `TOKEN_${tokenValidation?.status || 'INVALID'}`)
+    : student.dpdp_consent_status;
 
   // 3. Fetch Degrees
   const degreesRes = await db.prepare('SELECT * FROM degrees WHERE apaar_id = ?').bind(cleanApaar).all<Degree>();
@@ -380,7 +392,7 @@ export async function verifyCredential(options: VerifyCredentialOptions): Promis
     requestId: reqId,
     responseTimeMs: elapsedMs,
     apaar_id: cleanApaar,
-    consentStatus: hasValidConsentToken ? 'GRANTED_VIA_TOKEN' : student.dpdp_consent_status,
+    consentStatus: resolvedConsentStatus,
     consentGranted: isConsentGranted,
     predicateMode: isPredicateMode,
     predicateVerified: predicateProof ? Boolean(predicateProof.predicateVerified) : undefined,
@@ -404,3 +416,5 @@ export async function verifyCredential(options: VerifyCredentialOptions): Promis
     dpdp_consent_applied: !isConsentGranted,
   };
 }
+
+export const verifyAcademicRecord = verifyCredential;

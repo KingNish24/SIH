@@ -62,3 +62,30 @@ VALUES
   ('cred_webauthn_412398', '412398471029', 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAz92...demo_pubkey_sneha', 12, 'Apple Touch ID Biometric Sensor'),
   ('cred_webauthn_582910', '582910384729', 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAz93...demo_pubkey_priya', 2, 'Android FIDO2 Biometric Key'),
   ('cred_webauthn_601928', '601928374819', 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAz94...demo_pubkey_vikram', 1, 'YubiKey 5C NFC FIDO2');
+
+-- 7. Scoped Consent Tokens (DPDP Section 6 Single-Use / Time-Bound Passes)
+INSERT INTO scoped_consent_tokens (token_id, apaar_id, verifier_org, purpose, disclosed_fields, ttl_label, single_use, status, created_at, expires_at, signature_digest)
+VALUES
+  ('VIDYA-DPDP-8492-A19F', '739284019283', 'UPSC Civil Services Board', 'Degree & Eligibility Verification', '["degree_status","cgpa_threshold","abc_credits"]', '24 Hours (Single-Use)', 1, 'ACTIVE', '2026-10-31T10:00:00.000Z', '2027-10-31T10:00:00.000Z', 'SHA256:9f41c80b2a73e19d4401bc8a772e9012f3451d0a8b76c5e1290a4f8b3c12e771'),
+  ('VIDYA-DPDP-3104-C72B', '739284019283', 'TCS Background Verification', 'Zero-Knowledge CGPA >= 7.5 Check', '["degree_status","cgpa_threshold"]', '1 Hour (Single-Use)', 1, 'ACTIVE', '2026-10-31T10:00:00.000Z', '2027-10-31T11:00:00.000Z', 'SHA256:4a82d19f0e55b62c8910fa32817465bc9012e4f8a1b2c3d4e5f60718293a4b5c'),
+  ('VIDYA-DPDP-6291-E08D', '412398471029', 'GATE Admissions Committee (IIT Roorkee)', 'B.Tech Honours & ABC 160-Credit Audit', '["degree_status","cgpa_threshold","abc_credits"]', '24 Hours (Single-Use)', 1, 'ACTIVE', '2026-10-31T10:00:00.000Z', '2027-10-31T10:00:00.000Z', 'SHA256:7d12e84a90b3c4f12839045a6b7c8d9e0f1a2b3c4d5e6f708192a3b4c5d6e7f8'),
+  ('VIDYA-DPDP-5510-F94A', '582910384729', 'DRDO Scientist Entry Recruitment Board', 'Degree & Eligibility Verification', '["degree_status","cgpa_threshold"]', '24 Hours (Single-Use)', 1, 'ACTIVE', '2026-10-31T10:00:00.000Z', '2027-10-31T10:00:00.000Z', 'SHA256:3c91a04f82e1b7d6543210fedcba9876543210abcdef0123456789abcdef0123');
+
+-- 8. Academic Bank of Credits (Semester Credits & Lateral Entry Provenance)
+INSERT INTO semester_credits (apaar_id, program, accumulated_credits, max_credits, nep_exit_stage, semester_breakdown, is_lateral_entry, entry_mode, prior_diploma_board, transferred_credits, lateral_status, lateral_note)
+VALUES
+  ('739284019283', 'B.Tech Computer Science & Engineering', 120, 160, '120 Credits — 3-Year Bachelor''s Degree Eligible (Semester 6 Completed)', '[20,20,20,20,20,20,0,0]', 1, '2nd-Year Lateral Entry (Sem 3 Direct)', 'MSBTE State Polytechnic Diploma (Computer Engg — 80 Credits)', 80, 'VERIFIED_ANCHORED', 'Prior 3-Year Polytechnic Diploma (80 ABC Credits) cryptographically verified via DigiLocker & MSBTE ledger before 2nd-Year B.Tech Lateral Entry.'),
+  ('412398471029', 'B.Tech Computer Science & Engineering', 160, 160, '160 Credits — 4-Year B.Tech Honours / Research Degree Conferred', '[20,20,20,20,20,20,20,20]', 0, '1st-Year Regular (10+2 PCM)', 'Direct 1st-Year Regular Admission (10+2 PCM Qualifying)', 0, 'STANDARD_ENTRY', 'All 8 semesters (160 Credits) earned continuously at AICTE-approved parent institution.'),
+  ('582910384729', 'B.Tech Electronics & Comm.', 80, 160, '80 Credits — UG Diploma / Lateral Entry Eligible (Exit Year 2)', '[20,20,20,20,0,0,0,0]', 1, '2nd-Year Lateral Entry (Sem 3 Direct)', 'DTE Karnataka Polytechnic Diploma (Electronics — 80 Credits)', 80, 'VERIFIED_ANCHORED', 'Verified 80-credit UG Diploma anchored to 12-digit APAAR ID; eligible for NEP 2020 2nd-Year Lateral Entry.'),
+  ('901238471920', 'B.Tech Mechanical Engineering', 40, 160, '40 Credits — UG Certificate Threshold Reached (Exit Year 1)', '[20,20,0,0,0,0,0,0]', 0, '1st-Year Regular (10+2 PCM)', 'Direct 1st-Year Regular Admission (10+2 Qualifying)', 0, 'STANDARD_ENTRY', 'Completed Year 1 (40 Credits); qualifies for NEP 2020 UG Certificate if exiting early.'),
+  ('601928374819', 'B.Tech Civil Engineering', 120, 160, 'REVOKED — Unverified Lateral Entry Credit Transfer Blocked', '[0,0,20,20,20,20,20,20]', 1, '2nd-Year Lateral Entry (Disputed)', 'Unverified Private Polytechnic Certificate (No ABC / APAAR Anchor)', 80, 'DISCREPANCY_FLAGGED', 'ALERT: Claimed 80 lateral-entry diploma credits lacked cryptographic APAAR/ABC provenance. Degree revoked during AICTE audit.'),
+  ('819203847561', 'B.Tech Data Science & AI', 160, 160, '160 Credits — 4-Year B.Tech Honours / Research Degree Conferred', '[20,20,20,20,20,20,20,20]', 0, '1st-Year Regular (10+2 PCM)', 'Direct 1st-Year Regular Admission (10+2 Qualifying)', 0, 'STANDARD_ENTRY', 'Full 160-credit B.Tech curriculum verified and anchored on National Academic Bank of Credits.');
+
+-- 9. Default Verified Credential Accounts (PBKDF2 SHA-256 with 100k iterations)
+INSERT OR REPLACE INTO users (id, username, password_hash, salt, full_name, role, institution_id, apaar_id)
+VALUES
+  ('usr_aicte_001', 'aicte.officer', '824e730d989e0352cfb0a1673d07a2791e30717a9b6d5fec437ae261088f5750', 'c5d4d9749769e7571454fd79b79d2ad7', 'Dr. S. K. Mahajan (AICTE Chief Regulatory Officer)', 'AICTE_ADMIN', NULL, NULL),
+  ('usr_inst_001', 'principal.pune', '5ce6651ef4d90f081964a610390d72bd6c21684076d552c40fcf52c134ec367b', 'e8c17281c34c78ce820a1124e9066700', 'Dr. Ramesh Joshi (Principal, Technical College A)', 'INSTITUTE_ADMIN', 'INST-001', NULL),
+  ('usr_univ_001', 'registrar.univ', '301b2c4bb975359a21844de3943e2055ede072ecc7f886ea0d82c75de0cbfea8', '002d37270c2f723012aca513ff600724', 'Prof. K. Venkatesh (Registrar, State Affiliating University)', 'UNIVERSITY_ADMIN', NULL, NULL),
+  ('usr_student_001', 'student.rahul', '61a1c0df9dbfb018cc68b2dd46cb88d40225f39203fb2fa0b9e9c20db79f8fe8', '1a2784398d44ba4056557f678ed2b7e8', 'Rahul Sharma', 'STUDENT', 'INST-001', '739284019283'),
+  ('usr_verifier_001', 'verifier.gov', '02ebdecc9c7fbc3fcca1fcc4648d647833d70405b16992cba0a9cc5f7ffa3b92', 'f2ab869161bb2a63630f857ccd0c3d6e', 'Vikramaditya Rao (Chief Verification Officer, National Gateway)', 'VERIFIER', NULL, NULL);

@@ -1,9 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { getDB } from '../lib/db';
-import type { Institution } from '../lib/types';
 import {
-  EIGHTH_SCHEDULE_LANGUAGES,
   getLanguageInfo,
   getUIDictionary,
   isSupportedLang,
@@ -14,68 +11,6 @@ const resolvedLang: LangCode = isSupportedLang(Astro.locals.lang) ? Astro.locals
 const langInfo = getLanguageInfo(resolvedLang);
 const t = getUIDictionary(resolvedLang);
 const langPrefix = resolvedLang === 'en' ? '' : `/${resolvedLang}`;
-
-const db = getDB(Astro.locals);
-const instRes = await db.prepare('SELECT * FROM institutions ORDER BY name ASC').bind().all<Institution>();
-const institutions = instRes.results || [];
-const user = Astro.locals.user;
-
-const totalMonitored = institutions.length;
-const overrunCount = institutions.filter((i) => i.current_enrollment > i.sanctioned_intake).length;
-const compliantCount = totalMonitored - overrunCount;
-const totalSanctioned = institutions.reduce((sum, i) => sum + (i.sanctioned_intake || 0), 0);
-const totalEnrollment = institutions.reduce((sum, i) => sum + (i.current_enrollment || 0), 0);
-const compliancePct = totalMonitored > 0 ? ((compliantCount / totalMonitored) * 100).toFixed(1) : '100.0';
-const degRes = await db.prepare('SELECT * FROM degrees').bind().all<{ status?: string }>();
-const verifiedDegreesCount = (degRes.results || []).filter((d) => d.status === 'ISSUED').length;
-
-const portals = [
-  {
-    role: 'institution',
-    title: t.portal1Title,
-    code: 'INST-01',
-    description: t.portal1Desc,
-    path: `${langPrefix}/institution`,
-    stats: '60 / 120 / 180 / 240 Cap',
-    isPublic: false,
-  },
-  {
-    role: 'aicte',
-    title: t.portal2Title,
-    code: 'REG-02',
-    description: t.portal2Desc,
-    path: `${langPrefix}/aicte`,
-    stats: 'AICTE APH 2024–2027 Audit',
-    isPublic: false,
-  },
-  {
-    role: 'university',
-    title: t.portal3Title,
-    code: 'UNIV-03',
-    description: t.portal3Desc,
-    path: `${langPrefix}/university`,
-    stats: 'Ed25519 Signed Ledger',
-    isPublic: false,
-  },
-  {
-    role: 'student',
-    title: t.portal4Title,
-    code: 'STU-04',
-    description: t.portal4Desc,
-    path: `${langPrefix}/student`,
-    stats: 'DPDP Act Sec. 6 & Passkey',
-    isPublic: false,
-  },
-  {
-    role: 'verifier',
-    title: t.portal5Title,
-    code: 'VRF-05',
-    description: t.portal5Desc,
-    path: `${langPrefix}/verifier`,
-    stats: '< 50 ms Edge Verification',
-    isPublic: true,
-  },
-];
 ---
 
 <Layout
@@ -83,551 +18,378 @@ const portals = [
   activeRole="overview"
   breadcrumb={t.portalTitle}
   lang={resolvedLang}
+  fullBleed={true}
 >
-  <!-- 1. Authoritative UX4G Hero / Statutory Header Card (Localized in 22 Eighth Schedule Languages) -->
-  <section class="bg-gradient-to-br from-[#0F2942] via-[#133251] to-[#0B1E32] text-white rounded-lg border-t-4 border-[#FF9933] shadow-md p-6 sm:p-8 mb-8">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-      <!-- Left Column: Statutory Mandate & Primary CTAs -->
-      <div class="lg:col-span-7 space-y-4">
-        <div class="flex flex-wrap items-center gap-2">
-          <span class="bg-[#FF9933] text-slate-950 font-bold text-xs uppercase px-2.5 py-0.5 rounded tracking-wide" data-i18n="heroBadge">
-            {t.heroBadge}
-          </span>
-          <span class="bg-white/10 border border-white/20 text-slate-100 text-xs font-medium px-2.5 py-0.5 rounded">
-            NEP 2020 | APAAR &amp; ABC Registry
-          </span>
-          <span class="bg-emerald-900/60 border border-emerald-500/40 text-emerald-200 text-xs font-semibold px-2.5 py-0.5 rounded inline-flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5 text-emerald-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-            </svg>
-            <span>{langInfo.nativeName}</span>
-          </span>
-        </div>
+  <div class="w-full bg-white">
+    <!-- 1. HERO BANNER: Contained UIDAI-Style Card + APAAR Academic ID Card Preview -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-8 pt-6 pb-8">
+      <div class="relative rounded-2xl bg-gradient-to-r from-[#040E29] via-[#092052] to-[#0E337A] text-white overflow-hidden shadow-lg px-6 sm:px-12 py-10 sm:py-14">
+        <!-- Subtle Background Dot Grid -->
+        <div
+          class="absolute inset-0 opacity-15 pointer-events-none"
+          style="background-image: radial-gradient(#60A5FA 1px, transparent 1px); background-size: 24px 24px;"
+          aria-hidden="true"
+        ></div>
 
-        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white leading-tight" data-i18n="heroTitle">
-          {t.heroTitle}
-        </h1>
+        <div class="relative grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+          <!-- Left 7 Cols: AICTE APAAR Student Registry Headline & Pill CTAs -->
+          <div class="lg:col-span-7 space-y-4">
+            <p class="text-xs sm:text-sm font-bold text-[#FF9933] uppercase tracking-wider" data-i18n="heroBadge">
+              {t.heroBadge}
+            </p>
 
-        <p class="text-sm text-slate-200 leading-relaxed" data-i18n="heroSubtitle">
-          {t.heroSubtitle}
-        </p>
+            <h1 class="text-2xl sm:text-4xl lg:text-[40px] font-extrabold tracking-tight text-white leading-[1.18]" data-i18n="heroTitle">
+              {t.heroTitle}
+            </h1>
 
-        <div class="flex flex-wrap items-center gap-3 pt-1">
-          <a
-            href={`${langPrefix}/verifier`}
-            class="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-[#138808] hover:bg-[#0E6506] text-white text-xs sm:text-sm font-bold shadow-xs transition-colors"
-          >
-            <svg class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-            <span data-i18n="verifyCta">{t.verifyCta}</span>
-          </a>
-          <a
-            href={`${langPrefix}/login`}
-            class="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-[#FF9933] hover:bg-[#F28500] text-slate-950 text-xs sm:text-sm font-bold shadow-xs transition-colors"
-          >
-            <span data-i18n="signIn">{t.signIn}</span>
-            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-          </a>
-          <a
-            href="#institution-search"
-            class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs sm:text-sm font-semibold transition-colors"
-          >
-            <span>{t.dirHeading}</span>
-          </a>
-        </div>
-      </div>
+            <p class="text-xs sm:text-sm text-slate-200/90 leading-relaxed max-w-xl" data-i18n="heroSubtitle">
+              {t.heroSubtitle}
+            </p>
 
-      <!-- Right Column: Quick Inline 12-Digit APAAR Verification Card -->
-      <div class="lg:col-span-5">
-        <div class="bg-white text-slate-900 rounded-lg p-5 shadow-lg border border-slate-200">
-          <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
-            <div>
-              <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700 block">
-                {t.navVerifier}
-              </span>
-              <h2 class="text-base font-bold text-[#0F2942]" data-i18n="quickVerifyTitle">
-                {t.quickVerifyTitle}
-              </h2>
-            </div>
-            <span class="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-bold px-2.5 py-0.5 rounded">
-              {t.navVerifier}
-            </span>
-          </div>
-
-          <form action={`${langPrefix}/verifier`} method="GET" class="space-y-3" id="quickVerifyForm">
-            <div>
-              <label for="quickApaarInputLang" class="block text-xs font-bold text-slate-700 mb-1.5" data-i18n="quickVerifyLabel">
-                {t.quickVerifyLabel}
-              </label>
-              <input
-                type="text"
-                id="quickApaarInputLang"
-                name="apaar"
-                inputmode="numeric"
-                pattern="[0-9]{12}"
-                maxlength="12"
-                required
-                placeholder="412398471029"
-                class="w-full bg-slate-50 border border-slate-300 rounded px-3.5 py-2.5 font-mono text-sm text-slate-900 tracking-wider focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F2942]"
-              />
-            </div>
-            <button
-              type="submit"
-              class="w-full py-2.5 px-4 bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold rounded text-xs sm:text-sm transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <span data-i18n="quickVerifyBtn">{t.quickVerifyBtn}</span>
-              <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-            </button>
-          </form>
-
-          <div class="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <span>APAAR:</span>
-              <button
-                type="button"
-                data-sample-apaar="102938475610"
-                class="font-mono font-bold text-[#0F2942] bg-slate-100 hover:bg-blue-50 hover:text-blue-800 border border-slate-300 px-2 py-0.5 rounded transition-colors cursor-pointer"
-                title="Click to populate sample APAAR ID"
-              >
-                102938475610
-              </button>
-              <button
-                type="button"
-                data-sample-apaar="412398471029"
-                class="font-mono font-bold text-[#0F2942] bg-slate-100 hover:bg-blue-50 hover:text-blue-800 border border-slate-300 px-2 py-0.5 rounded transition-colors cursor-pointer"
-                title="Click to populate Sneha Deshmukh APAAR ID"
-              >
-                412398471029
-              </button>
-            </div>
-            <a href={`${langPrefix}/verifier`} class="text-blue-700 hover:underline font-semibold inline-flex items-center gap-1">
-              <span>{t.navVerifier}</span>
-              <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 2. 4 KPI Benchmark Cards (With Live D1 Registry Telemetry) -->
-  <section aria-label={t.portalTitle} class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-    <div class="bg-white p-5 rounded-lg border border-slate-200 border-l-4 border-l-[#0F2942] shadow-xs">
-      <div class="text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="kpi1Label">{t.kpi1Label}</div>
-      <div class="text-2xl sm:text-3xl font-bold text-[#0F2942] mt-1.5 font-mono">{totalMonitored}</div>
-      <div class="text-xs text-slate-600 mt-1 flex items-center justify-between">
-        <span>{t.aicte_kpi_total_colleges}:</span>
-        <span class="font-mono font-bold text-[#0F2942] bg-slate-100 px-1.5 py-0.5 rounded">{compliantCount} Compliant</span>
-      </div>
-    </div>
-
-    <div class="bg-white p-5 rounded-lg border border-slate-200 border-l-4 border-l-[#FF9933] shadow-xs">
-      <div class="text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="kpi2Label">{t.kpi2Label}</div>
-      <div class="text-2xl sm:text-3xl font-bold text-[#0F2942] mt-1.5 font-mono">{totalEnrollment} <span class="text-base font-normal text-slate-500">/ {totalSanctioned}</span></div>
-      <div class="text-xs text-slate-600 mt-1 flex items-center justify-between">
-        <span>{t.aicte_col_actual} / {t.aicte_col_sanctioned}:</span>
-        <span class="font-mono font-bold text-[#0F2942] bg-amber-50 px-1.5 py-0.5 rounded">{((totalEnrollment / Math.max(1, totalSanctioned)) * 100).toFixed(1)}%</span>
-      </div>
-    </div>
-
-    <div class="bg-white p-5 rounded-lg border border-slate-200 border-l-4 border-l-[#138808] shadow-xs">
-      <div class="text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="kpi3Label">{t.kpi3Label}</div>
-      <div class="text-2xl sm:text-3xl font-bold text-[#0F2942] mt-1.5 font-mono">{compliancePct}%</div>
-      <div class="text-xs text-slate-600 mt-1 flex items-center justify-between">
-        <span>{t.statusCompliant}:</span>
-        <span class="font-mono font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded">{compliantCount} / {totalMonitored}</span>
-      </div>
-    </div>
-
-    <div class="bg-white p-5 rounded-lg border border-slate-200 border-l-4 border-l-blue-600 shadow-xs">
-      <div class="text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="kpi4Label">{t.kpi4Label}</div>
-      <div class="text-2xl sm:text-3xl font-bold text-[#0F2942] mt-1.5 font-mono">{verifiedDegreesCount}</div>
-      <div class="text-xs text-slate-600 mt-1 flex items-center justify-between">
-        <span>Ed25519 + WebAuthn</span>
-        <span class="font-mono font-bold text-blue-800 bg-blue-50 px-1.5 py-0.5 rounded">Signed Ledger</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- 3. Public Institution Directory & Regulatory Compliance Table -->
-  <section class="bg-white rounded-lg border border-slate-200 shadow-xs p-5 sm:p-6 mb-8" id="institution-search">
-    <div class="border-b border-slate-200 pb-4 mb-5 flex flex-col md:flex-row md:items-center justify-between gap-3">
-      <div>
-        <div class="flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-          <span class="text-xs font-bold text-emerald-700 uppercase tracking-wider">{t.heroBadge}</span>
-        </div>
-        <h2 class="text-lg sm:text-xl font-bold text-[#0F2942] mt-0.5" data-i18n="dirHeading">
-          {t.dirHeading}
-        </h2>
-        <p class="text-xs sm:text-sm text-slate-600 mt-0.5" data-i18n="dirSub">
-          {t.dirSub}
-        </p>
-      </div>
-      <div class="flex items-center gap-2 shrink-0">
-        <span id="dirCountBadge" class="text-xs font-mono font-bold bg-slate-100 text-slate-700 border border-slate-300 px-2.5 py-1.5 rounded">
-          {totalMonitored} / {totalMonitored}
-        </span>
-        <a
-          href={`${langPrefix}/verifier`}
-          class="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white text-xs font-bold shadow-xs transition-colors"
-        >
-          <span>{t.navVerifier}</span>
-          <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-        </a>
-      </div>
-    </div>
-
-    <!-- Search & Filter Controls for Directory -->
-    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-4">
-      <div class="md:col-span-6 relative">
-        <label for="instSearchInput" class="sr-only">{t.dirHeading}</label>
-        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </div>
-        <input
-          type="text"
-          id="instSearchInput"
-          placeholder={t.aicte_search_placeholder || t.dirSub}
-          class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded text-xs sm:text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-        />
-      </div>
-
-      <div class="md:col-span-3">
-        <label for="stateFilterSelect" class="sr-only">{t.aicte_col_state}</label>
-        <select
-          id="stateFilterSelect"
-          class="w-full py-2 px-3 bg-slate-50 border border-slate-300 rounded text-xs sm:text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-        >
-          <option value="">{t.aicte_all_states}</option>
-          {Array.from(new Set(institutions.map((i) => i.state).filter(Boolean))).sort().map((st) => (
-            <option value={st.toLowerCase()}>{st}</option>
-          ))}
-        </select>
-      </div>
-
-      <div class="md:col-span-3">
-        <label for="statusFilterSelect" class="sr-only">{t.aicte_col_status}</label>
-        <select
-          id="statusFilterSelect"
-          class="w-full py-2 px-3 bg-slate-50 border border-slate-300 rounded text-xs sm:text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
-        >
-          <option value="">{t.aicte_all_statuses}</option>
-          <option value="compliant">{t.statusCompliant} ({compliantCount})</option>
-          <option value="overrun">{t.statusOverrun} ({overrunCount})</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Interactive Directory Table -->
-    <div class="overflow-x-auto border border-slate-200 rounded-lg">
-      <table class="w-full text-left text-xs sm:text-sm" id="institutionsTable">
-        <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider text-xs">
-          <tr>
-            <th class="py-3 px-4">{t.aicte_col_inst}</th>
-            <th class="py-3 px-4">{t.aicte_col_state}</th>
-            <th class="py-3 px-4">{t.aicte_col_sanctioned}</th>
-            <th class="py-3 px-4">{t.aicte_col_actual}</th>
-            <th class="py-3 px-4">{t.aicte_col_status}</th>
-            <th class="py-3 px-4 text-right">{t.verifyRecordsBtn}</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-200 font-medium text-slate-700" id="instTableBody">
-          {institutions.map((inst) => {
-            const isOverrun = inst.current_enrollment > inst.sanctioned_intake;
-            const excessSeats = inst.current_enrollment - inst.sanctioned_intake;
-
-            return (
-              <tr
-                class={`transition-colors inst-row ${isOverrun ? 'bg-red-50/30 hover:bg-red-50/60' : 'hover:bg-slate-50'}`}
-                data-name={inst.name.toLowerCase()}
-                data-code={inst.code.toLowerCase()}
-                data-id={inst.id.toLowerCase()}
-                data-state={inst.state.toLowerCase()}
-                data-district={inst.district.toLowerCase()}
-                data-status={isOverrun ? 'overrun' : 'compliant'}
-              >
-                <td class="py-3.5 px-4">
-                  <div class="font-bold text-[#0F2942] text-sm">{inst.name}</div>
-                  <div class="text-xs font-mono text-slate-500 mt-0.5">
-                    {t.aicte_col_code}: {inst.code} &bull; ID: {inst.id}
-                  </div>
-                </td>
-                <td class="py-3.5 px-4">
-                  <div class="font-semibold text-slate-800">{inst.district}</div>
-                  <div class="text-xs text-slate-500">{inst.state}</div>
-                </td>
-                <td class="py-3.5 px-4">
-                  <span class="font-bold text-slate-900 font-mono">{inst.sanctioned_intake}</span>
-                </td>
-                <td class="py-3.5 px-4">
-                  {isOverrun ? (
-                    <span class="font-mono font-bold text-red-700">
-                      {inst.current_enrollment} / {inst.sanctioned_intake}
-                    </span>
-                  ) : (
-                    <span class="font-mono font-semibold text-slate-800">
-                      {inst.current_enrollment} / {inst.sanctioned_intake}
-                    </span>
-                  )}
-                </td>
-                <td class="py-3.5 px-4">
-                  {isOverrun ? (
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-bold bg-red-50 text-red-800 border border-red-200">
-                      <span class="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
-                      <span data-i18n="statusOverrun">{t.statusOverrun} (+{excessSeats})</span>
-                    </span>
-                  ) : (
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                      <span data-i18n="statusCompliant">{t.statusCompliant}</span>
-                    </span>
-                  )}
-                </td>
-                <td class="py-3.5 px-4 text-right">
-                  <a
-                    href={`${langPrefix}/verifier?institution=${encodeURIComponent(inst.id)}&code=${encodeURIComponent(inst.code)}`}
-                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-slate-100 hover:bg-[#0F2942] text-[#0F2942] hover:text-white border border-slate-300 text-xs font-bold transition-colors"
-                  >
-                    <span data-i18n="verifyRecordsBtn">{t.verifyRecordsBtn}</span>
-                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                  </a>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-      <div id="noResultsMsg" class="hidden p-6 text-center text-sm text-slate-500">
-        0 / {totalMonitored} — {t.dirHeading}
-      </div>
-    </div>
-  </section>
-
-  <!-- 4. 5 Stakeholder Portals Grid -->
-  <section class="mb-8" aria-labelledby="portals-heading">
-    <div class="border-b border-slate-200 pb-3 mb-5 flex flex-wrap items-center justify-between gap-2">
-      <div>
-        <h2 id="portals-heading" class="text-lg sm:text-xl font-bold text-[#0F2942]" data-i18n="portalsHeading">
-          {t.portalsHeading}
-        </h2>
-        <p class="text-xs sm:text-sm text-slate-600 mt-0.5" data-i18n="portalsSub">
-          {t.portalsSub}
-        </p>
-      </div>
-      <span class="text-xs font-mono font-semibold bg-slate-100 text-slate-700 px-3 py-1 rounded border border-slate-300">
-        INST-01 &bull; REG-02 &bull; UNIV-03 &bull; STU-04 &bull; VRF-05
-      </span>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-5">
-      {portals.map((p, index) => {
-        const isPublic = p.isPublic;
-        const targetUrl = user
-          ? p.path
-          : isPublic
-          ? `${langPrefix}/verifier`
-          : `${langPrefix}/login?redirect=${encodeURIComponent(p.path)}`;
-        const actionText = user
-          ? `${t.navOverview}`
-          : isPublic
-          ? `${t.verifyCta}`
-          : `${t.signIn}`;
-
-        const colSpanClass = index < 3 ? 'lg:col-span-2' : 'lg:col-span-3';
-
-        return (
-          <div
-            class={`${colSpanClass} bg-white rounded-lg border shadow-xs flex flex-col justify-between transition-all ${
-              isPublic
-                ? 'border-emerald-600 ring-1 ring-emerald-500/30 hover:border-emerald-700'
-                : 'border-slate-200 hover:border-[#0F2942]'
-            }`}
-          >
-            <div class="p-5 sm:p-6">
-              <div class="flex items-center justify-between gap-2 mb-3">
-                <span class="text-xs font-mono font-bold bg-slate-100 text-[#0F2942] px-2.5 py-0.5 rounded border border-slate-300">
-                  {p.code}
-                </span>
-                {isPublic ? (
-                  <span class="text-xs font-bold px-2.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
-                    {t.navVerifier}
-                  </span>
-                ) : (
-                  <span class="text-xs font-bold px-2.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200">
-                    {t.signIn}
-                  </span>
-                )}
-              </div>
-
-              <h3 class="text-base font-bold text-[#0F2942] mb-2 leading-snug">
-                {p.title}
-              </h3>
-
-              <p class="text-sm text-slate-600 leading-relaxed mb-4">
-                {p.description}
-              </p>
-
-              <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span class="text-slate-500 font-medium">{t.heroBadge}:</span>
-                <span class="font-bold text-slate-800">{p.stats}</span>
-              </div>
-            </div>
-
-            <div class={`p-4 border-t mt-auto ${isPublic ? 'bg-emerald-50/50 border-emerald-100' : 'bg-slate-50 border-slate-100'}`}>
+            <div class="pt-3 flex flex-wrap items-center gap-3">
               <a
-                href={targetUrl}
-                class={`inline-flex items-center justify-center gap-2 w-full text-center text-xs sm:text-sm font-bold py-2.5 px-4 rounded transition-colors shadow-xs ${
-                  isPublic
-                    ? 'bg-[#138808] hover:bg-[#0E6506] text-white'
-                    : 'bg-[#0F2942] hover:bg-[#1E3A8A] text-white'
-                }`}
+                href="#stakeholder-flow"
+                class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#FF9933] hover:bg-[#F28500] text-slate-950 text-xs sm:text-sm font-bold shadow-sm transition-all"
               >
-                <span>{actionText}</span>
-                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                <span data-i18n="portalsHeading">{t.portalsHeading}</span>
+                <span aria-hidden="true">&rarr;</span>
+              </a>
+              <a
+                href={`${langPrefix}/verifier`}
+                class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white/15 hover:bg-white/25 border border-white/30 text-white text-xs sm:text-sm font-bold transition-all"
+              >
+                <span data-i18n="navVerifier">{t.navVerifier}</span>
+                <span aria-hidden="true">&rarr;</span>
               </a>
             </div>
           </div>
-        );
-      })}
-    </div>
-  </section>
 
-  <!-- 5. Statutory Architecture, 22 Scheduled Languages & Sovereign GovCloud Baseline -->
-  <section class="bg-white rounded-lg border border-slate-200 p-6 shadow-xs" id="aicte-mandate">
-    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-4 mb-5">
-      <div>
-        <h2 class="text-base sm:text-lg font-bold text-[#0F2942]">
-          {t.heroBadge} | 22 Scheduled Indian Languages &amp; Sovereign GovCloud Architecture
-        </h2>
-        <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
-          NIC MeghRaj / Sovereign Government Cloud Portable (&lt;15 MB Runtime, Zero Vendor Lock-in) | Eighth Schedule Multilingual Support
-        </p>
-      </div>
-      <span class="text-xs font-mono bg-blue-50 text-blue-900 border border-blue-200 px-3 py-1 rounded font-bold">
-        Mandate Ref: APH-2024-27
-      </span>
-    </div>
+          <!-- Right 5 Cols: Authentic APAAR Academic ID Card Preview (Like apaar.education.gov.in) -->
+          <div class="lg:col-span-5 flex items-center justify-center py-2">
+            <div class="relative w-full max-w-[370px] select-none">
+              <!-- Floating Verified Pill (Bottom Left) -->
+              <div class="-bottom-3.5 left-4 z-20 absolute bg-emerald-50 text-slate-900 rounded-full shadow-lg border border-emerald-300 px-3.5 py-1.5 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-[#138808]"></span>
+                <span class="text-[11px] font-extrabold text-[#0B1E48] leading-none">AICTE Seat Verified • Within Limit</span>
+              </div>
 
-    <!-- All 22 Eighth Schedule Languages Quick Switcher Bar -->
-    <div class="mb-5 p-3.5 bg-slate-50 rounded-lg border border-slate-200">
-      <div class="text-xs font-bold text-[#0F2942] uppercase tracking-wider mb-2 flex items-center gap-1.5">
-        <svg class="w-4 h-4 text-[#0F2942] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-        </svg>
-        <span>संविधान की 8वीं अनुसूची की सभी 22 भारतीय भाषाएँ + अंग्रेज़ी (22 Eighth Schedule Official Indian Languages):</span>
+              <!-- Main White APAAR Card -->
+              <div class="relative z-10 bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200/90 p-5 pb-6">
+                <!-- Card Header: Ministry + APAAR -->
+                <div class="flex items-center justify-between pb-3 mb-3.5 border-b border-slate-100">
+                  <div class="flex items-center gap-2">
+                    <img src="/emblem.svg" alt="" class="h-7 w-auto object-contain" />
+                    <div class="leading-tight">
+                      <div class="text-[9px] font-bold uppercase text-slate-500">Ministry of Education</div>
+                      <div class="text-[11px] font-extrabold text-[#0B1E48]">AICTE • Govt. of India</div>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-sm font-black tracking-tight text-[#138808] leading-none">APAAR</div>
+                    <div class="text-[8px] font-bold uppercase tracking-wider text-slate-400 mt-0.5">One Nation One ID</div>
+                  </div>
+                </div>
+
+                <!-- Card Body: Student Details + QR Code -->
+                <div class="flex items-center justify-between gap-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-[#0B1E48] font-extrabold text-sm shrink-0">
+                      SS
+                    </div>
+                    <div class="space-y-0.5">
+                      <div class="text-xs font-extrabold text-slate-900">Sneha Sundaram</div>
+                      <div class="text-[11px] text-slate-600">B.Tech Computer Science</div>
+                      <div class="text-[10px] font-mono text-slate-500">Roll ID: TCA-2024-029</div>
+                    </div>
+                  </div>
+
+                  <div class="w-14 h-14 p-1 rounded-lg border border-slate-200 bg-white shrink-0">
+                    <svg viewBox="0 0 36 36" class="w-full h-full text-slate-900" fill="currentColor" aria-hidden="true">
+                      <path d="M2 2h10v10H2V2zm2 2v6h6V4H4zm2 2h2v2H6V6zm18-4h10v10H24V2zm2 2v6h6V4h-6zm2 2h2v2h-2V6zM2 24h10v10H2V24zm2 2v6h6v-6H4zm2 2h2v2H6v-2zm10-24h2v4h-2V4zm4 2h2v4h-2V6zm-4 6h4v2h-4v-2zm6 2h6v2h-6v-2zm-8 4h4v4h-4v-4zm6 4h4v4h-4v-4zm6-2h4v6h-4v-6zm-12 8h2v4h-2v-4zm4 2h6v2h-6v-2zm8 0h4v4h-4v-4z" />
+                    </svg>
+                  </div>
+                </div>
+
+                <!-- Card Footer: 12-Digit Number -->
+                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">APAAR ID</span>
+                  <span class="font-mono text-sm font-extrabold tracking-widest text-[#0B1E48]">4123 9847 1029</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="flex flex-wrap gap-1.5">
-        {EIGHTH_SCHEDULE_LANGUAGES.map((l) => (
+    </section>
+
+    <!-- 2. UIDAI-STYLE "CHOOSE YOUR PORTAL" SOFT CONTAINER WITH 4 MINIMAL WHITE CARDS -->
+    <section id="stakeholder-flow" class="max-w-7xl mx-auto px-4 sm:px-8 py-4">
+      <div class="rounded-3xl bg-[#F3F5FB] p-6 sm:p-9">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-7">
+          <div>
+            <h2 class="text-xl sm:text-2xl font-bold text-[#0B1E48]" data-i18n="portalsHeading">
+              {t.portalsHeading}
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-600 mt-0.5" data-i18n="portalsSub">
+              {t.portalsSub}
+            </p>
+          </div>
           <a
-            href={l.code === 'en' ? '/' : `/${l.code}`}
-            hreflang={l.code}
-            class={`px-2.5 py-1 rounded text-xs font-medium transition-colors border ${
-              l.code === resolvedLang
-                ? 'bg-[#0F2942] text-white border-[#0F2942] font-bold'
-                : 'bg-white text-slate-700 border-slate-300 hover:border-[#0F2942] hover:text-[#0F2942]'
-            }`}
+            href={`${langPrefix}/verifier`}
+            class="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-[#0B1E48]/30 hover:border-[#0B1E48] bg-white text-[#0B1E48] text-xs font-bold transition-all self-start sm:self-auto"
           >
-            {l.nativeName}
+            <span data-i18n="navVerifier">{t.navVerifier}</span>
+            <span aria-hidden="true">&rarr;</span>
           </a>
-        ))}
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 text-sm">
-      <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
-        <div class="font-bold text-[#0F2942] mb-1.5 flex items-center gap-2">
-          <span>{t.portal1Title}</span>
         </div>
-        <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
-          {t.portal1Desc}
-        </p>
-      </div>
 
-      <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
-        <div class="font-bold text-[#0F2942] mb-1.5 flex items-center gap-2">
-          <span>{t.portal3Title}</span>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <!-- Card 1: Colleges -->
+          <a
+            href={`${langPrefix}/institution`}
+            class="group bg-white rounded-2xl p-6 shadow-2xs hover:shadow-md border border-slate-100 transition-all flex flex-col justify-between min-h-[195px]"
+          >
+            <div>
+              <div class="w-10 h-10 text-[#0B1E48] mb-3">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <h3 class="text-base font-bold text-slate-900 group-hover:text-[#0B4EA2] transition-colors" data-i18n="portal1Title">
+                {t.portal1Title}
+              </h3>
+              <p class="text-xs text-slate-600 leading-relaxed mt-1.5" data-i18n="portal1Desc">
+                {t.portal1Desc}
+              </p>
+            </div>
+            <div class="pt-5 flex items-center justify-between">
+              <span class="w-7 h-7 rounded-full border border-slate-300 group-hover:border-[#0B4EA2] group-hover:bg-[#0B4EA2] group-hover:text-white text-slate-600 flex items-center justify-center text-xs transition-all">
+                &rarr;
+              </span>
+              <span class="text-[11px] font-medium text-slate-400">{t.nav_institution}</span>
+            </div>
+          </a>
+
+          <!-- Card 2: AICTE Portal -->
+          <a
+            href={`${langPrefix}/aicte`}
+            class="group bg-white rounded-2xl p-6 shadow-2xs hover:shadow-md border border-slate-100 transition-all flex flex-col justify-between min-h-[195px]"
+          >
+            <div>
+              <div class="w-10 h-10 text-[#0B1E48] mb-3">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <h3 class="text-base font-bold text-slate-900 group-hover:text-[#0B4EA2] transition-colors" data-i18n="portal2Title">
+                {t.portal2Title}
+              </h3>
+              <p class="text-xs text-slate-600 leading-relaxed mt-1.5" data-i18n="portal2Desc">
+                {t.portal2Desc}
+              </p>
+            </div>
+            <div class="pt-5 flex items-center justify-between">
+              <span class="w-7 h-7 rounded-full border border-slate-300 group-hover:border-[#0B4EA2] group-hover:bg-[#0B4EA2] group-hover:text-white text-slate-600 flex items-center justify-center text-xs transition-all">
+                &rarr;
+              </span>
+              <span class="text-[11px] font-medium text-slate-400">{t.nav_aicte}</span>
+            </div>
+          </a>
+
+          <!-- Card 3: Universities -->
+          <a
+            href={`${langPrefix}/university`}
+            class="group bg-white rounded-2xl p-6 shadow-2xs hover:shadow-md border border-slate-100 transition-all flex flex-col justify-between min-h-[195px]"
+          >
+            <div>
+              <div class="w-10 h-10 text-[#0B1E48] mb-3">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <h3 class="text-base font-bold text-slate-900 group-hover:text-[#0B4EA2] transition-colors" data-i18n="nav_university">
+                {t.nav_university}
+              </h3>
+              <p class="text-xs text-slate-600 leading-relaxed mt-1.5" data-i18n="portal3Desc">
+                {t.portal3Desc}
+              </p>
+            </div>
+            <div class="pt-5 flex items-center justify-between">
+              <span class="w-7 h-7 rounded-full border border-slate-300 group-hover:border-[#0B4EA2] group-hover:bg-[#0B4EA2] group-hover:text-white text-slate-600 flex items-center justify-center text-xs transition-all">
+                &rarr;
+              </span>
+              <span class="text-[11px] font-medium text-slate-400">{t.nav_university}</span>
+            </div>
+          </a>
+
+          <!-- Card 4: Students -->
+          <a
+            href={`${langPrefix}/student`}
+            class="group bg-white rounded-2xl p-6 shadow-2xs hover:shadow-md border border-slate-100 transition-all flex flex-col justify-between min-h-[195px]"
+          >
+            <div>
+              <div class="w-10 h-10 text-[#0B1E48] mb-3">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" />
+                </svg>
+              </div>
+              <h3 class="text-base font-bold text-slate-900 group-hover:text-[#0B4EA2] transition-colors" data-i18n="portal4Title">
+                {t.portal4Title}
+              </h3>
+              <p class="text-xs text-slate-600 leading-relaxed mt-1.5" data-i18n="portal4Desc">
+                {t.portal4Desc}
+              </p>
+            </div>
+            <div class="pt-5 flex items-center justify-between">
+              <span class="w-7 h-7 rounded-full border border-slate-300 group-hover:border-[#0B4EA2] group-hover:bg-[#0B4EA2] group-hover:text-white text-slate-600 flex items-center justify-center text-xs transition-all">
+                &rarr;
+              </span>
+              <span class="text-[11px] font-medium text-slate-400">{t.nav_student}</span>
+            </div>
+          </a>
         </div>
-        <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
-          {t.portal3Desc}
-        </p>
       </div>
+    </section>
 
-      <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
-        <div class="font-bold text-[#0F2942] mb-1.5 flex items-center gap-2">
-          <span>{t.portal4Title}</span>
+    <!-- 3. NAD-STYLE BENEFITS SECTION WITH YELLOW CIRCLE LOGOS (3 Cards) -->
+    <section id="how-it-works" class="max-w-7xl mx-auto px-4 sm:px-8 py-14">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+        <!-- Left 5 Cols: Top-Aligned Heading, Text & Clean Vector Illustration (Exact NAD 'Benefits of NAD' Style) -->
+        <div class="lg:col-span-5 space-y-4 lg:pt-4">
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-tight" data-i18n="home_steps_heading">
+            {t.home_steps_heading}
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed" data-i18n="home_steps_sub">
+            {t.home_steps_sub}
+          </p>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            <span data-i18n="home_rule1_desc">{t.home_rule1_desc}</span>{' '}
+            <span data-i18n="home_rule2_desc">{t.home_rule2_desc}</span>
+          </p>
+
+          <!-- NAD-Style Clean Vector Academic Illustration Below Text -->
+          <div class="pt-4 flex justify-center lg:justify-start">
+            <svg viewBox="0 0 280 210" class="w-64 h-auto select-none" fill="none" aria-hidden="true">
+              <!-- Soft Background Blob -->
+              <circle cx="140" cy="110" r="82" fill="#F3F5FB" />
+              <!-- Floating Academic Elements -->
+              <circle cx="72" cy="52" r="14" fill="#FFAE19" fill-opacity="0.2" />
+              <circle cx="72" cy="52" r="7" fill="#FFAE19" />
+              <rect x="190" y="38" width="46" height="34" rx="6" fill="#fff" stroke="#CBD5E1" stroke-width="2" />
+              <line x1="198" y1="49" x2="226" y2="49" stroke="#0B4EA2" stroke-width="2.5" stroke-linecap="round" />
+              <line x1="198" y1="58" x2="218" y2="58" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" />
+              <!-- Central Certificate / Shield Card -->
+              <rect x="85" y="68" width="110" height="86" rx="12" fill="#FFFFFF" stroke="#0B4EA2" stroke-width="2.5" />
+              <rect x="100" y="84" width="50" height="6" rx="3" fill="#0B1E48" />
+              <rect x="100" y="96" width="76" height="5" rx="2.5" fill="#CBD5E1" />
+              <rect x="100" y="106" width="64" height="5" rx="2.5" fill="#CBD5E1" />
+              <!-- Green Verified Seal -->
+              <circle cx="168" cy="130" r="14" fill="#138808" />
+              <path d="M162 130l4 4 8-8" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+              <!-- Graduation Cap Accent -->
+              <path d="M62 135l24-10 24 10-24 10-24-10z" fill="#0B4EA2" />
+            </svg>
+          </div>
         </div>
-        <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
-          {t.portal4Desc}
-        </p>
+
+        <!-- Right 7 Cols: NAD Staggered 3-Card Layout with Yellow Circle Logos -->
+        <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
+          <!-- Left Column: Institutions + Students -->
+          <div class="space-y-6">
+            <!-- Card 1: Institutions -->
+            <div class="bg-white rounded-2xl p-6 shadow-[0_10px_35px_-10px_rgba(11,30,72,0.14)] border border-slate-100">
+              <div class="w-12 h-12 rounded-full bg-[#FFAE19] flex items-center justify-center mb-4 shadow-xs">
+                <div class="w-6 h-6 rounded bg-sky-600 text-white flex items-center justify-center">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5" />
+                  </svg>
+                </div>
+              </div>
+              <h3 class="text-base font-extrabold text-slate-900 mb-2" data-i18n="portal1Title">
+                {t.portal1Title}
+              </h3>
+              <p class="text-xs text-slate-600 leading-relaxed mb-1.5" data-i18n="home_step1_desc">
+                {t.home_step1_desc}
+              </p>
+              <p class="text-xs text-slate-600 leading-relaxed mb-4" data-i18n="home_step2_desc">
+                {t.home_step2_desc}
+              </p>
+              <a href={`${langPrefix}/institution`} class="text-xs font-bold text-[#0B4EA2] hover:underline">
+                Know More
+              </a>
+            </div>
+
+            <!-- Card 2: Students -->
+            <div class="bg-white rounded-2xl p-6 shadow-[0_10px_35px_-10px_rgba(11,30,72,0.14)] border border-slate-100">
+              <div class="w-12 h-12 rounded-full bg-[#FFAE19] flex items-center justify-center mb-4 shadow-xs">
+                <div class="w-6 h-6 rounded bg-sky-600 text-white flex items-center justify-center">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 14l9-5-9-5-9 5 9 5z" />
+                  </svg>
+                </div>
+              </div>
+              <h3 class="text-base font-extrabold text-slate-900 mb-2" data-i18n="portal4Title">
+                {t.portal4Title}
+              </h3>
+              <p class="text-xs text-slate-600 leading-relaxed mb-1.5" data-i18n="home_step3_desc">
+                {t.home_step3_desc}
+              </p>
+              <p class="text-xs text-slate-600 leading-relaxed mb-4" data-i18n="portal4Desc">
+                {t.portal4Desc}
+              </p>
+              <a href={`${langPrefix}/student`} class="text-xs font-bold text-[#0B4EA2] hover:underline">
+                Know More
+              </a>
+            </div>
+          </div>
+
+          <!-- Right Column: Verifiers (Centered Vertically — Exact NAD Stagger) -->
+          <div>
+            <div class="bg-white rounded-2xl p-6 shadow-[0_10px_35px_-10px_rgba(11,30,72,0.14)] border border-slate-100">
+              <div class="w-12 h-12 rounded-full bg-[#FFAE19] flex items-center justify-center mb-4 shadow-xs">
+                <div class="w-6 h-6 rounded bg-emerald-600 text-white flex items-center justify-center">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+              </div>
+              <h3 class="text-base font-extrabold text-slate-900 mb-2" data-i18n="portal5Title">
+                {t.portal5Title}
+              </h3>
+              <p class="text-xs text-slate-600 leading-relaxed mb-1.5" data-i18n="home_step4_desc">
+                {t.home_step4_desc}
+              </p>
+              <p class="text-xs text-slate-600 leading-relaxed mb-4" data-i18n="portal5Desc">
+                {t.portal5Desc}
+              </p>
+              <a href={`${langPrefix}/verifier`} class="text-xs font-bold text-[#0B4EA2] hover:underline">
+                Know More
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <script is:inline>
-    const searchInput = document.getElementById('instSearchInput');
-    const stateFilter = document.getElementById('stateFilterSelect');
-    const statusFilter = document.getElementById('statusFilterSelect');
-    const rows = document.querySelectorAll('.inst-row');
-    const noResults = document.getElementById('noResultsMsg');
-    const countBadge = document.getElementById('dirCountBadge');
-    const quickApaarInput = document.getElementById('quickApaarInputLang');
+    <!-- 4. NAD-STYLE FULL-WIDTH BLUE VIDEO CONFERENCE BANNER -->
+    <section class="w-full bg-[#09569B] text-white py-10 px-4 sm:px-8">
+      <div class="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
+        <div>
+          <h3 class="text-lg sm:text-2xl font-extrabold text-white" data-i18n="home_helpdesk_title">
+            {t.home_helpdesk_title}
+          </h3>
+          <p class="text-xs sm:text-sm text-sky-100 mt-1">
+            <span data-i18n="home_helpdesk_hours_val">{t.home_helpdesk_hours_val}</span> &bull; Helpline: <strong class="font-mono text-white">1800-889-3511</strong>
+          </p>
+        </div>
 
-    function filterInstitutions() {
-      const q = (searchInput?.value || '').toLowerCase().trim();
-      const state = (stateFilter?.value || '').toLowerCase().trim();
-      const status = (statusFilter?.value || '').toLowerCase().trim();
-      let visibleCount = 0;
-
-      rows.forEach((row) => {
-        const name = row.getAttribute('data-name') || '';
-        const code = row.getAttribute('data-code') || '';
-        const id = row.getAttribute('data-id') || '';
-        const rowState = row.getAttribute('data-state') || '';
-        const district = row.getAttribute('data-district') || '';
-        const rowStatus = row.getAttribute('data-status') || '';
-
-        const matchesQuery =
-          !q || name.includes(q) || code.includes(q) || id.includes(q) || district.includes(q);
-        const matchesState = !state || rowState === state;
-        const matchesStatus = !status || rowStatus === status;
-
-        if (matchesQuery && matchesState && matchesStatus) {
-          row.style.display = '';
-          visibleCount++;
-        } else {
-          row.style.display = 'none';
-        }
-      });
-
-      if (noResults) {
-        noResults.classList.toggle('hidden', visibleCount > 0);
-      }
-      if (countBadge) {
-        countBadge.textContent = `${visibleCount} / ${rows.length}`;
-      }
-    }
-
-    searchInput?.addEventListener('input', filterInstitutions);
-    stateFilter?.addEventListener('change', filterInstitutions);
-    statusFilter?.addEventListener('change', filterInstitutions);
-
-    // Quick Verify sample APAAR buttons & numeric sanitization
-    quickApaarInput?.addEventListener('input', () => {
-      quickApaarInput.value = quickApaarInput.value.replace(/\D/g, '').slice(0, 12);
-    });
-
-    document.querySelectorAll('[data-sample-apaar]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const sampleId = btn.getAttribute('data-sample-apaar') || '';
-        if (quickApaarInput && sampleId) {
-          quickApaarInput.value = sampleId;
-          quickApaarInput.focus();
-        }
-      });
-    });
-  </script>
+        <a
+          href={`${langPrefix}/institution`}
+          class="px-7 py-2.5 rounded-full bg-white hover:bg-slate-100 text-[#09569B] font-extrabold text-xs sm:text-sm shadow-md transition-all shrink-0"
+        >
+          Join Now
+        </a>
+      </div>
+    </section>
+  </div>
 </Layout>
