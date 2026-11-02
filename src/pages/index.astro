@@ -1,10 +1,5 @@
 ---
-/**
- * Home Page (SIH26263 — National APAAR Student Registry for AICTE Institutions)
- * Three Impeccable-crafted variants switchable via `?variant=A|B|C` in dev.
- */
 import Layout from '../layouts/Layout.astro';
-import PrototypeSwitcher from '../components/PrototypeSwitcher.astro';
 import {
   getLanguageInfo,
   getUIDictionary,
@@ -16,15 +11,6 @@ const resolvedLang: LangCode = isSupportedLang(Astro.locals.lang) ? Astro.locals
 const langInfo = getLanguageInfo(resolvedLang);
 const t = getUIDictionary(resolvedLang);
 const langPrefix = resolvedLang === 'en' ? '' : `/${resolvedLang}`;
-
-const rawVariant = (Astro.url.searchParams.get('variant') || 'A').toUpperCase();
-const activeVariant = ['A', 'B', 'C'].includes(rawVariant) ? rawVariant : 'A';
-
-const prototypeVariants = [
-  { key: 'A', name: 'UIDAI Rich Surface + 3-Col Yellow Cards' },
-  { key: 'B', name: '2x2 Horizontal Portals + NAD 1+2 Grid' },
-  { key: 'C', name: 'Deep Civic Cards + 3-Col Benefits' },
-];
 ---
 
 <Layout
@@ -35,7 +21,7 @@ const prototypeVariants = [
   fullBleed={true}
 >
   <div class="w-full bg-white">
-    <!-- HERO BANNER: Contained UIDAI-Style Card + APAAR Academic ID Card Preview -->
+    <!-- 1. HERO BANNER: Contained UIDAI-Style Card + APAAR Academic ID Card Preview -->
     <section class="max-w-7xl mx-auto px-4 sm:px-8 pt-6 pb-6">
       <div class="relative rounded-2xl bg-gradient-to-r from-[#040E29] via-[#092052] to-[#0E337A] text-white overflow-hidden shadow-[0_20px_50px_-12px_rgba(4,14,41,0.35)] px-6 sm:px-12 py-10 sm:py-13">
         <!-- Geometric Architectural Blueprint Lines -->
@@ -146,912 +132,260 @@ const prototypeVariants = [
       </div>
     </section>
 
-    <!-- =====================================================================
-         VARIANT A: UIDAI Rich Surface (Duotone Medallions + Inset Scope Bar)
-                    + 3-Column Yellow-Medallion Benefits Section
-         ===================================================================== -->
-    <div data-proto-variant-panel="A" class={activeVariant === 'A' ? '' : 'hidden'}>
-      <!-- A1. Choose Your Portal: Warm Tinted Surface + Inline Degree Check + 4 Rich Cards -->
-      <section id="choose-portal" class="max-w-7xl mx-auto px-4 sm:px-8 py-5">
-        <div class="relative rounded-2xl bg-[#EEF2FA] px-6 sm:px-10 py-9 overflow-hidden">
-          <!-- Subtle UIDAI-Style Geometric Watermark -->
-          <svg
-            class="absolute -right-12 -top-12 w-72 h-72 text-[#0B4EA2]/[0.04] pointer-events-none"
-            viewBox="0 0 200 200"
-            fill="none"
-            aria-hidden="true"
+    <!-- 2. CHOOSE YOUR PORTAL: 4 Distinct Rich Color-Themed Portal Cards (ABC.gov.in Style) -->
+    <section id="choose-portal" class="max-w-7xl mx-auto px-4 sm:px-8 py-6">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+        <div>
+          <h2
+            class="text-2xl sm:text-3xl font-extrabold text-[#0B1E48] tracking-[-0.02em]"
+            data-i18n="portalsHeading"
           >
-            <circle cx="100" cy="100" r="90" stroke="currentColor" stroke-width="6" />
-            <circle cx="100" cy="100" r="65" stroke="currentColor" stroke-width="3" />
-            <circle cx="100" cy="100" r="35" stroke="currentColor" stroke-width="3" />
-          </svg>
-
-          <!-- Top Header + Instant Public Verifier Bar -->
-          <div class="relative flex flex-col lg:flex-row lg:items-center justify-between gap-5 mb-8">
-            <div>
-              <h2
-                class="text-2xl sm:text-[28px] font-extrabold text-[#0B1E48] tracking-[-0.02em]"
-                data-i18n="portalsHeading"
-              >
-                {t.portalsHeading}
-              </h2>
-              <p class="text-sm text-[#334155] mt-1" data-i18n="portalsSub">
-                {t.portalsSub}
-              </p>
-            </div>
-
-            <!-- Inline Quick Verifier Form -->
-            <form
-              action={`${langPrefix}/verifier`}
-              method="get"
-              class="flex items-center gap-2 bg-white p-1.5 rounded-xl shadow-[0_4px_16px_rgba(11,30,72,0.06)] w-full lg:w-auto"
-            >
-              <div class="flex items-center gap-2 pl-3 pr-1 flex-1 lg:w-64">
-                <svg class="w-4 h-4 text-[#0B4EA2] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input
-                  type="text"
-                  name="apaar"
-                  maxlength="12"
-                  placeholder="Enter 12-digit APAAR ID to verify..."
-                  aria-label="Enter 12-digit APAAR ID to verify"
-                  class="w-full text-xs font-semibold text-slate-900 placeholder:text-slate-500 bg-transparent focus:outline-none"
-                />
-              </div>
-              <button
-                type="submit"
-                class="px-4 py-2 rounded-lg bg-[#0B1E48] hover:bg-[#0B4EA2] text-white text-xs font-bold transition-colors cursor-pointer shrink-0"
-              >
-                {t.quickVerifyBtn}
-              </button>
-            </form>
-          </div>
-
-          <!-- 4 Rich Portal Cards -->
-          <div class="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            <!-- Card 1: Colleges -->
-            <a
-              href={`${langPrefix}/institution`}
-              class="group bg-white rounded-2xl p-6 shadow-[0_8px_24px_-4px_rgba(11,30,72,0.06)] hover:shadow-[0_18px_36px_-8px_rgba(11,30,72,0.14)] hover:-translate-y-0.5 transition-all flex flex-col justify-between"
-            >
-              <div>
-                <div class="flex items-center justify-between mb-5">
-                  <div class="w-12 h-12 rounded-xl bg-[#EEF4FF] text-[#0B4EA2] flex items-center justify-center group-hover:bg-[#0B4EA2] group-hover:text-white transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                  </div>
-                  <span class="px-2.5 py-1 rounded-md bg-[#F1F5F9] text-[#334155] text-[11px] font-bold">
-                    Seat Intake
-                  </span>
-                </div>
-
-                <h3
-                  class="text-lg font-extrabold text-[#0B1E48] group-hover:text-[#0B4EA2] transition-colors"
-                  data-i18n="portal1Title"
-                >
-                  {t.portal1Title}
-                </h3>
-                <p class="mt-1.5 text-xs sm:text-[13px] text-[#334155] leading-relaxed" data-i18n="portal1Desc">
-                  {t.portal1Desc}
-                </p>
-
-                <!-- Inset Capability Strip -->
-                <div class="mt-4 rounded-xl bg-[#F4F7FC] px-3.5 py-2.5 text-[11px] font-semibold text-[#1E293B] flex items-center gap-2">
-                  <svg class="w-4 h-4 text-[#0B4EA2] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>CSV Batch &amp; ERP API Upload</span>
-                </div>
-              </div>
-
-              <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
-                <span class="text-xs font-extrabold text-[#0B4EA2]">Open College Portal</span>
-                <span class="w-8 h-8 rounded-full bg-[#EEF4FF] text-[#0B4EA2] group-hover:bg-[#0B4EA2] group-hover:text-white flex items-center justify-center transition-colors">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
-                  </svg>
-                </span>
-              </div>
-            </a>
-
-            <!-- Card 2: AICTE Portal -->
-            <a
-              href={`${langPrefix}/aicte`}
-              class="group bg-white rounded-2xl p-6 shadow-[0_8px_24px_-4px_rgba(11,30,72,0.06)] hover:shadow-[0_18px_36px_-8px_rgba(11,30,72,0.14)] hover:-translate-y-0.5 transition-all flex flex-col justify-between"
-            >
-              <div>
-                <div class="flex items-center justify-between mb-5">
-                  <div class="w-12 h-12 rounded-xl bg-[#FEF3C7] text-[#B45309] flex items-center justify-center group-hover:bg-[#D97706] group-hover:text-white transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                  </div>
-                  <span class="px-2.5 py-1 rounded-md bg-[#F1F5F9] text-[#334155] text-[11px] font-bold">
-                    National Audit
-                  </span>
-                </div>
-
-                <h3
-                  class="text-lg font-extrabold text-[#0B1E48] group-hover:text-[#B45309] transition-colors"
-                  data-i18n="portal2Title"
-                >
-                  {t.portal2Title}
-                </h3>
-                <p class="mt-1.5 text-xs sm:text-[13px] text-[#334155] leading-relaxed" data-i18n="portal2Desc">
-                  {t.portal2Desc}
-                </p>
-
-                <div class="mt-4 rounded-xl bg-[#F4F7FC] px-3.5 py-2.5 text-[11px] font-semibold text-[#1E293B] flex items-center gap-2">
-                  <svg class="w-4 h-4 text-[#B45309] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Seat Cap &amp; Duplicate ID Alerts</span>
-                </div>
-              </div>
-
-              <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
-                <span class="text-xs font-extrabold text-[#B45309]">Open AICTE Portal</span>
-                <span class="w-8 h-8 rounded-full bg-[#FEF3C7] text-[#B45309] group-hover:bg-[#D97706] group-hover:text-white flex items-center justify-center transition-colors">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
-                  </svg>
-                </span>
-              </div>
-            </a>
-
-            <!-- Card 3: University Portal -->
-            <a
-              href={`${langPrefix}/university`}
-              class="group bg-white rounded-2xl p-6 shadow-[0_8px_24px_-4px_rgba(11,30,72,0.06)] hover:shadow-[0_18px_36px_-8px_rgba(11,30,72,0.14)] hover:-translate-y-0.5 transition-all flex flex-col justify-between"
-            >
-              <div>
-                <div class="flex items-center justify-between mb-5">
-                  <div class="w-12 h-12 rounded-xl bg-[#E0E7FF] text-[#3730A3] flex items-center justify-center group-hover:bg-[#3730A3] group-hover:text-white transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                  </div>
-                  <span class="px-2.5 py-1 rounded-md bg-[#F1F5F9] text-[#334155] text-[11px] font-bold">
-                    Digital Seal
-                  </span>
-                </div>
-
-                <h3 class="text-lg font-extrabold text-[#0B1E48] group-hover:text-[#3730A3] transition-colors">
-                  University Portal
-                </h3>
-                <p class="mt-1.5 text-xs sm:text-[13px] text-[#334155] leading-relaxed" data-i18n="portal3Desc">
-                  {t.portal3Desc}
-                </p>
-
-                <div class="mt-4 rounded-xl bg-[#F4F7FC] px-3.5 py-2.5 text-[11px] font-semibold text-[#1E293B] flex items-center gap-2">
-                  <svg class="w-4 h-4 text-[#3730A3] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Sign &amp; Issue Verified Degrees</span>
-                </div>
-              </div>
-
-              <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
-                <span class="text-xs font-extrabold text-[#3730A3]">Open University Portal</span>
-                <span class="w-8 h-8 rounded-full bg-[#E0E7FF] text-[#3730A3] group-hover:bg-[#3730A3] group-hover:text-white flex items-center justify-center transition-colors">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
-                  </svg>
-                </span>
-              </div>
-            </a>
-
-            <!-- Card 4: Students -->
-            <a
-              href={`${langPrefix}/student`}
-              class="group bg-white rounded-2xl p-6 shadow-[0_8px_24px_-4px_rgba(11,30,72,0.06)] hover:shadow-[0_18px_36px_-8px_rgba(11,30,72,0.14)] hover:-translate-y-0.5 transition-all flex flex-col justify-between"
-            >
-              <div>
-                <div class="flex items-center justify-between mb-5">
-                  <div class="w-12 h-12 rounded-xl bg-[#D1FAE5] text-[#065F46] flex items-center justify-center group-hover:bg-[#059669] group-hover:text-white transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                    </svg>
-                  </div>
-                  <span class="px-2.5 py-1 rounded-md bg-[#F1F5F9] text-[#334155] text-[11px] font-bold">
-                    APAAR Wallet
-                  </span>
-                </div>
-
-                <h3
-                  class="text-lg font-extrabold text-[#0B1E48] group-hover:text-[#059669] transition-colors"
-                  data-i18n="portal4Title"
-                >
-                  {t.portal4Title}
-                </h3>
-                <p class="mt-1.5 text-xs sm:text-[13px] text-[#334155] leading-relaxed" data-i18n="portal4Desc">
-                  {t.portal4Desc}
-                </p>
-
-                <div class="mt-4 rounded-xl bg-[#F4F7FC] px-3.5 py-2.5 text-[11px] font-semibold text-[#1E293B] flex items-center gap-2">
-                  <svg class="w-4 h-4 text-[#059669] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Download Degree &amp; Manage Access</span>
-                </div>
-              </div>
-
-              <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
-                <span class="text-xs font-extrabold text-[#065F46]">Open Student Portal</span>
-                <span class="w-8 h-8 rounded-full bg-[#D1FAE5] text-[#065F46] group-hover:bg-[#059669] group-hover:text-white flex items-center justify-center transition-colors">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
-                  </svg>
-                </span>
-              </div>
-            </a>
-          </div>
+            {t.portalsHeading}
+          </h2>
+          <p class="text-sm text-[#334155] mt-1" data-i18n="portalsSub">
+            {t.portalsSub}
+          </p>
         </div>
-      </section>
+        <a
+          href={`${langPrefix}/verifier`}
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#FFAE19] hover:bg-[#f09f0a] text-[#040E29] text-xs font-extrabold shadow-[0_6px_16px_-4px_rgba(255,174,25,0.4)] transition-all self-start sm:self-auto"
+        >
+          <span data-i18n="quickVerifyTitle">{t.quickVerifyTitle}</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
+          </svg>
+        </a>
+      </div>
 
-      <!-- A2. 3-Card Section with Yellow Circle Medallions (#FFAE19) & NAD Ecosystem Pill -->
-      <section id="how-it-works" class="max-w-7xl mx-auto px-4 sm:px-8 py-12">
-        <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-9">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <!-- Card 1: Colleges (Royal Cobalt Blue) -->
+        <a
+          href={`${langPrefix}/institution`}
+          class="group relative rounded-2xl bg-gradient-to-br from-[#0B4EA2] to-[#072F6B] hover:from-[#0D58B5] hover:to-[#093A82] text-white p-6 shadow-[0_12px_28px_-6px_rgba(11,78,162,0.32)] hover:-translate-y-0.5 transition-all flex flex-col justify-between overflow-hidden"
+        >
+          <svg class="absolute -right-6 -bottom-6 w-28 h-28 text-white/[0.06] pointer-events-none" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true">
+            <circle cx="50" cy="50" r="50" />
+          </svg>
           <div>
-            <h2
-              class="text-2xl sm:text-3xl font-extrabold text-[#0B1E48] tracking-[-0.02em]"
-              data-i18n="home_steps_heading"
-            >
-              {t.home_steps_heading}
-            </h2>
-            <p class="mt-2 text-sm sm:text-base text-[#334155] max-w-[65ch]" data-i18n="home_steps_sub">
-              {t.home_steps_sub}
+            <div class="w-12 h-12 rounded-full bg-white text-[#0B4EA2] flex items-center justify-center mb-5 shadow-sm">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-extrabold text-white mb-2" data-i18n="portal1Title">{t.portal1Title}</h3>
+            <p class="text-xs sm:text-[13px] text-blue-50 leading-relaxed mb-6" data-i18n="portal1Desc">
+              {t.portal1Desc}
             </p>
           </div>
-
-          <!-- Compact NAD-Style 3-Step Connected Flow Pill -->
-          <div class="inline-flex items-center gap-2 sm:gap-3 bg-[#F4F7FC] px-4 py-2.5 rounded-2xl text-xs font-bold text-[#0B1E48] self-start lg:self-auto">
-            <span class="px-2.5 py-1 rounded-lg bg-white shadow-2xs">Colleges Admit</span>
-            <svg class="w-4 h-4 text-[#0B4EA2] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
-            </svg>
-            <span class="px-2.5 py-1 rounded-lg bg-white shadow-2xs">AICTE Checks Cap</span>
-            <svg class="w-4 h-4 text-[#0B4EA2] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
-            </svg>
-            <span class="px-2.5 py-1 rounded-lg bg-white shadow-2xs">Universities Issue</span>
+          <div>
+            <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-[#072F6B] group-hover:bg-[#FFAE19] group-hover:text-[#040E29] text-xs font-extrabold transition-colors">
+              <span>College Portal</span>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 12h14m-6-6l6 6-6 6" />
+              </svg>
+            </span>
           </div>
+        </a>
+
+        <!-- Card 2: AICTE Portal (Rich Warm Amber / Saffron-Bronze) -->
+        <a
+          href={`${langPrefix}/aicte`}
+          class="group relative rounded-2xl bg-gradient-to-br from-[#B45309] to-[#78350F] hover:from-[#C25E0E] hover:to-[#8A3E12] text-white p-6 shadow-[0_12px_28px_-6px_rgba(180,83,9,0.32)] hover:-translate-y-0.5 transition-all flex flex-col justify-between overflow-hidden"
+        >
+          <svg class="absolute -right-6 -bottom-6 w-28 h-28 text-white/[0.06] pointer-events-none" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true">
+            <circle cx="50" cy="50" r="50" />
+          </svg>
+          <div>
+            <div class="w-12 h-12 rounded-full bg-white text-[#92400E] flex items-center justify-center mb-5 shadow-sm">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-extrabold text-white mb-2" data-i18n="portal2Title">{t.portal2Title}</h3>
+            <p class="text-xs sm:text-[13px] text-amber-50 leading-relaxed mb-6" data-i18n="portal2Desc">
+              {t.portal2Desc}
+            </p>
+          </div>
+          <div>
+            <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-[#78350F] group-hover:bg-[#FFAE19] group-hover:text-[#040E29] text-xs font-extrabold transition-colors">
+              <span>AICTE Portal</span>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 12h14m-6-6l6 6-6 6" />
+              </svg>
+            </span>
+          </div>
+        </a>
+
+        <!-- Card 3: University Portal (Rich Royal Indigo / Plum-Violet) -->
+        <a
+          href={`${langPrefix}/university`}
+          class="group relative rounded-2xl bg-gradient-to-br from-[#4338CA] to-[#27206B] hover:from-[#4F46E5] hover:to-[#312885] text-white p-6 shadow-[0_12px_28px_-6px_rgba(67,56,202,0.32)] hover:-translate-y-0.5 transition-all flex flex-col justify-between overflow-hidden"
+        >
+          <svg class="absolute -right-6 -bottom-6 w-28 h-28 text-white/[0.06] pointer-events-none" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true">
+            <circle cx="50" cy="50" r="50" />
+          </svg>
+          <div>
+            <div class="w-12 h-12 rounded-full bg-white text-[#3730A3] flex items-center justify-center mb-5 shadow-sm">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-extrabold text-white mb-2">University Portal</h3>
+            <p class="text-xs sm:text-[13px] text-indigo-50 leading-relaxed mb-6" data-i18n="portal3Desc">
+              {t.portal3Desc}
+            </p>
+          </div>
+          <div>
+            <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-[#27206B] group-hover:bg-[#FFAE19] group-hover:text-[#040E29] text-xs font-extrabold transition-colors">
+              <span>University Portal</span>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 12h14m-6-6l6 6-6 6" />
+              </svg>
+            </span>
+          </div>
+        </a>
+
+        <!-- Card 4: Students (Rich Emerald / Forest Teal) -->
+        <a
+          href={`${langPrefix}/student`}
+          class="group relative rounded-2xl bg-gradient-to-br from-[#047857] to-[#064E3B] hover:from-[#058762] hover:to-[#075C46] text-white p-6 shadow-[0_12px_28px_-6px_rgba(4,120,87,0.32)] hover:-translate-y-0.5 transition-all flex flex-col justify-between overflow-hidden"
+        >
+          <svg class="absolute -right-6 -bottom-6 w-28 h-28 text-white/[0.06] pointer-events-none" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true">
+            <circle cx="50" cy="50" r="50" />
+          </svg>
+          <div>
+            <div class="w-12 h-12 rounded-full bg-white text-[#065F46] flex items-center justify-center mb-5 shadow-sm">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-extrabold text-white mb-2" data-i18n="portal4Title">{t.portal4Title}</h3>
+            <p class="text-xs sm:text-[13px] text-emerald-50 leading-relaxed mb-6" data-i18n="portal4Desc">
+              {t.portal4Desc}
+            </p>
+          </div>
+          <div>
+            <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-[#064E3B] group-hover:bg-[#FFAE19] group-hover:text-[#040E29] text-xs font-extrabold transition-colors">
+              <span>Student Portal</span>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 12h14m-6-6l6 6-6 6" />
+              </svg>
+            </span>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- 3. HOW IT WORKS: Full-Bleed Soft Band with 3 Elevated Yellow-Circle Cards -->
+    <section id="how-it-works" class="w-full bg-[#F2F5FC] py-12 mt-4">
+      <div class="max-w-7xl mx-auto px-4 sm:px-8">
+        <div class="mb-8">
+          <h2
+            class="text-2xl sm:text-3xl font-extrabold text-[#0B1E48] tracking-[-0.02em]"
+            data-i18n="home_steps_heading"
+          >
+            {t.home_steps_heading}
+          </h2>
+          <p class="mt-1.5 text-sm sm:text-base text-[#334155]" data-i18n="home_steps_sub">
+            {t.home_steps_sub}
+          </p>
         </div>
 
-        <!-- 3 Balanced Cards on Soft Tinted Surface -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <!-- Benefit Card 1 -->
-          <div class="bg-[#F6F8FC] hover:bg-white rounded-2xl p-7 shadow-[0_8px_28px_-6px_rgba(11,30,72,0.08)] hover:shadow-[0_18px_40px_-8px_rgba(11,30,72,0.14)] transition-all flex flex-col justify-between">
+          <div class="bg-white rounded-2xl p-7 shadow-[0_10px_28px_-6px_rgba(11,30,72,0.08)] flex flex-col justify-between">
             <div>
-              <div class="flex items-center justify-between mb-6">
+              <div class="flex items-center justify-between mb-5">
                 <div class="w-14 h-14 rounded-full bg-[#FFAE19] text-[#0B1E48] shadow-[0_6px_16px_rgba(255,174,25,0.35)] flex items-center justify-center shrink-0">
                   <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <span class="px-3 py-1 rounded-full bg-white text-[#0B1E48] text-xs font-bold shadow-2xs">
-                  Admission Stage
+                <span class="px-3 py-1 rounded-full bg-[#EEF4FF] text-[#0B4EA2] text-xs font-bold">
+                  Admission Check
                 </span>
               </div>
-
-              <h3 class="text-xl font-extrabold text-[#0B1E48] tracking-[-0.015em] mb-2.5">
-                {t.home_hero_promise_2}
-              </h3>
-
-              <p class="text-sm text-[#334155] leading-relaxed" data-i18n="home_step1_desc">
-                {t.home_step1_desc}
-              </p>
-
-              <div class="mt-5 bg-white rounded-xl p-4 shadow-2xs">
-                <div class="flex items-start gap-2.5 text-xs font-semibold text-[#1E293B] leading-relaxed">
-                  <svg class="w-4 h-4 text-[#059669] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span data-i18n="home_step2_desc">{t.home_step2_desc}</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-6 pt-4 border-t border-slate-200/80 flex items-center justify-between">
-              <span class="text-xs font-semibold text-slate-600">Real-time seat cap check</span>
-              <a
-                href={`${langPrefix}/institution`}
-                class="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#0B4EA2] hover:underline"
-              >
-                <span>College Portal</span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
-                </svg>
-              </a>
-            </div>
-          </div>
-
-          <!-- Benefit Card 2 -->
-          <div class="bg-[#F6F8FC] hover:bg-white rounded-2xl p-7 shadow-[0_8px_28px_-6px_rgba(11,30,72,0.08)] hover:shadow-[0_18px_40px_-8px_rgba(11,30,72,0.14)] transition-all flex flex-col justify-between">
-            <div>
-              <div class="flex items-center justify-between mb-6">
-                <div class="w-14 h-14 rounded-full bg-[#FFAE19] text-[#0B1E48] shadow-[0_6px_16px_rgba(255,174,25,0.35)] flex items-center justify-center shrink-0">
-                  <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                  </svg>
-                </div>
-                <span class="px-3 py-1 rounded-full bg-white text-[#0B1E48] text-xs font-bold shadow-2xs">
-                  Graduation Stage
-                </span>
-              </div>
-
-              <h3 class="text-xl font-extrabold text-[#0B1E48] tracking-[-0.015em] mb-2.5">
-                {t.home_hero_promise_1}
-              </h3>
-
-              <p class="text-sm text-[#334155] leading-relaxed" data-i18n="home_step3_desc">
-                {t.home_step3_desc}
-              </p>
-
-              <div class="mt-5 bg-white rounded-xl p-4 shadow-2xs">
-                <div class="flex items-start gap-2.5 text-xs font-semibold text-[#1E293B] leading-relaxed">
-                  <svg class="w-4 h-4 text-[#059669] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span data-i18n="home_rule2_desc">{t.home_rule2_desc}</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-6 pt-4 border-t border-slate-200/80 flex items-center justify-between">
-              <span class="text-xs font-semibold text-slate-600">Valid under IT Act, 2000</span>
-              <a
-                href={`${langPrefix}/university`}
-                class="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#0B4EA2] hover:underline"
-              >
-                <span>University Portal</span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
-                </svg>
-              </a>
-            </div>
-          </div>
-
-          <!-- Benefit Card 3 -->
-          <div class="bg-[#F6F8FC] hover:bg-white rounded-2xl p-7 shadow-[0_8px_28px_-6px_rgba(11,30,72,0.08)] hover:shadow-[0_18px_40px_-8px_rgba(11,30,72,0.14)] transition-all flex flex-col justify-between">
-            <div>
-              <div class="flex items-center justify-between mb-6">
-                <div class="w-14 h-14 rounded-full bg-[#FFAE19] text-[#0B1E48] shadow-[0_6px_16px_rgba(255,174,25,0.35)] flex items-center justify-center shrink-0">
-                  <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                <span class="px-3 py-1 rounded-full bg-white text-[#0B1E48] text-xs font-bold shadow-2xs">
-                  Verification Stage
-                </span>
-              </div>
-
-              <h3 class="text-xl font-extrabold text-[#0B1E48] tracking-[-0.015em] mb-2.5">
-                {t.home_hero_promise_3}
-              </h3>
-
-              <p class="text-sm text-[#334155] leading-relaxed" data-i18n="home_step4_desc">
-                {t.home_step4_desc}
-              </p>
-
-              <div class="mt-5 bg-white rounded-xl p-4 shadow-2xs">
-                <div class="flex items-start gap-2.5 text-xs font-semibold text-[#1E293B] leading-relaxed">
-                  <svg class="w-4 h-4 text-[#059669] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span data-i18n="portal5Desc">{t.portal5Desc}</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-6 pt-4 border-t border-slate-200/80 flex items-center justify-between">
-              <span class="text-xs font-semibold text-slate-600">Instant online check</span>
-              <a
-                href={`${langPrefix}/verifier`}
-                class="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#059669] hover:underline"
-              >
-                <span>Public Verifier</span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
-                </svg>
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
-
-    <!-- =====================================================================
-         VARIANT B: 2x2 Wide Horizontal Portal Cards + NAD Split 1+2 Grid (Zero Dead Space)
-         ===================================================================== -->
-    <div data-proto-variant-panel="B" class={activeVariant === 'B' ? '' : 'hidden'}>
-      <!-- B1. Choose Your Portal: 2x2 Spacious Horizontal Cards -->
-      <section class="max-w-7xl mx-auto px-4 sm:px-8 py-6">
-        <div class="rounded-2xl bg-[#EEF2FA] p-6 sm:p-10">
-          <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-7">
-            <div>
-              <h2 class="text-2xl sm:text-3xl font-extrabold text-[#0B1E48] tracking-[-0.02em]">
-                {t.portalsHeading}
-              </h2>
-              <p class="text-sm text-[#334155] mt-1">
-                {t.portalsSub}
+              <h3 class="text-lg font-extrabold text-[#0B1E48] mb-2">{t.home_hero_promise_2}</h3>
+              <p class="text-sm text-[#334155] leading-relaxed">
+                <span data-i18n="home_step1_desc">{t.home_step1_desc}</span>{' '}
+                <span data-i18n="home_step2_desc">{t.home_step2_desc}</span>
               </p>
             </div>
             <a
-              href={`${langPrefix}/verifier`}
-              class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0B1E48] hover:bg-[#0B4EA2] text-white text-xs font-bold transition-colors self-start sm:self-auto"
+              href={`${langPrefix}/institution`}
+              class="mt-6 inline-flex items-center gap-1.5 text-xs font-extrabold text-[#0B4EA2] hover:underline"
             >
-              <span>{t.navVerifier}</span>
+              <span>Open College Portal</span>
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
               </svg>
             </a>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <!-- Wide Card 1: Colleges -->
-            <a
-              href={`${langPrefix}/institution`}
-              class="group bg-white rounded-2xl p-6 shadow-[0_8px_24px_-4px_rgba(11,30,72,0.06)] hover:shadow-[0_16px_36px_-6px_rgba(11,30,72,0.14)] transition-all flex items-start gap-5"
-            >
-              <div class="w-14 h-14 rounded-2xl bg-[#0B4EA2] text-white flex items-center justify-center shrink-0 shadow-[0_8px_18px_-4px_rgba(11,78,162,0.4)]">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-              </div>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center justify-between gap-2">
-                  <h3 class="text-lg font-extrabold text-[#0B1E48] group-hover:text-[#0B4EA2] transition-colors">
-                    {t.portal1Title}
-                  </h3>
-                  <span class="px-2.5 py-0.5 rounded-md bg-[#EEF4FF] text-[#0B4EA2] text-[11px] font-bold">
-                    Admissions &amp; Seats
-                  </span>
+          <!-- Benefit Card 2 -->
+          <div class="bg-white rounded-2xl p-7 shadow-[0_10px_28px_-6px_rgba(11,30,72,0.08)] flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-5">
+                <div class="w-14 h-14 rounded-full bg-[#FFAE19] text-[#0B1E48] shadow-[0_6px_16px_rgba(255,174,25,0.35)] flex items-center justify-center shrink-0">
+                  <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                  </svg>
                 </div>
-                <p class="mt-1.5 text-xs sm:text-sm text-[#334155] leading-relaxed">
-                  {t.portal1Desc}
-                </p>
-                <div class="mt-4 flex items-center justify-between pt-3 border-t border-slate-100">
-                  <span class="text-xs font-semibold text-slate-600">{t.home_role_college_b2}</span>
-                  <span class="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#0B4EA2]">
-                    <span>College Portal</span>
-                    <svg class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
-                    </svg>
-                  </span>
-                </div>
+                <span class="px-3 py-1 rounded-full bg-[#E0E7FF] text-[#3730A3] text-xs font-bold">
+                  IT Act, 2000 Valid
+                </span>
               </div>
-            </a>
-
-            <!-- Wide Card 2: AICTE Portal -->
-            <a
-              href={`${langPrefix}/aicte`}
-              class="group bg-white rounded-2xl p-6 shadow-[0_8px_24px_-4px_rgba(11,30,72,0.06)] hover:shadow-[0_16px_36px_-6px_rgba(11,30,72,0.14)] transition-all flex items-start gap-5"
-            >
-              <div class="w-14 h-14 rounded-2xl bg-[#D97706] text-white flex items-center justify-center shrink-0 shadow-[0_8px_18px_-4px_rgba(217,119,6,0.4)]">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center justify-between gap-2">
-                  <h3 class="text-lg font-extrabold text-[#0B1E48] group-hover:text-[#B45309] transition-colors">
-                    {t.portal2Title}
-                  </h3>
-                  <span class="px-2.5 py-0.5 rounded-md bg-[#FEF3C7] text-[#B45309] text-[11px] font-bold">
-                    Seat Cap Monitor
-                  </span>
-                </div>
-                <p class="mt-1.5 text-xs sm:text-sm text-[#334155] leading-relaxed">
-                  {t.portal2Desc}
-                </p>
-                <div class="mt-4 flex items-center justify-between pt-3 border-t border-slate-100">
-                  <span class="text-xs font-semibold text-slate-600">{t.home_role_college_b3}</span>
-                  <span class="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#B45309]">
-                    <span>AICTE Portal</span>
-                    <svg class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
-                    </svg>
-                  </span>
-                </div>
-              </div>
-            </a>
-
-            <!-- Wide Card 3: University Portal -->
+              <h3 class="text-lg font-extrabold text-[#0B1E48] mb-2">{t.home_hero_promise_1}</h3>
+              <p class="text-sm text-[#334155] leading-relaxed">
+                <span data-i18n="home_step3_desc">{t.home_step3_desc}</span>{' '}
+                <span data-i18n="home_rule2_desc">{t.home_rule2_desc}</span>
+              </p>
+            </div>
             <a
               href={`${langPrefix}/university`}
-              class="group bg-white rounded-2xl p-6 shadow-[0_8px_24px_-4px_rgba(11,30,72,0.06)] hover:shadow-[0_16px_36px_-6px_rgba(11,30,72,0.14)] transition-all flex items-start gap-5"
+              class="mt-6 inline-flex items-center gap-1.5 text-xs font-extrabold text-[#3730A3] hover:underline"
             >
-              <div class="w-14 h-14 rounded-2xl bg-[#3730A3] text-white flex items-center justify-center shrink-0 shadow-[0_8px_18px_-4px_rgba(55,48,163,0.4)]">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-              </div>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center justify-between gap-2">
-                  <h3 class="text-lg font-extrabold text-[#0B1E48] group-hover:text-[#3730A3] transition-colors">
-                    University Portal
-                  </h3>
-                  <span class="px-2.5 py-0.5 rounded-md bg-[#E0E7FF] text-[#3730A3] text-[11px] font-bold">
-                    Digital Degrees
-                  </span>
-                </div>
-                <p class="mt-1.5 text-xs sm:text-sm text-[#334155] leading-relaxed">
-                  {t.portal3Desc}
-                </p>
-                <div class="mt-4 flex items-center justify-between pt-3 border-t border-slate-100">
-                  <span class="text-xs font-semibold text-slate-600">{t.home_role_univ_b1}</span>
-                  <span class="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#3730A3]">
-                    <span>University Portal</span>
-                    <svg class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
-                    </svg>
-                  </span>
-                </div>
-              </div>
+              <span>Open University Portal</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
+              </svg>
             </a>
+          </div>
 
-            <!-- Wide Card 4: Students -->
+          <!-- Benefit Card 3 -->
+          <div class="bg-white rounded-2xl p-7 shadow-[0_10px_28px_-6px_rgba(11,30,72,0.08)] flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-5">
+                <div class="w-14 h-14 rounded-full bg-[#FFAE19] text-[#0B1E48] shadow-[0_6px_16px_rgba(255,174,25,0.35)] flex items-center justify-center shrink-0">
+                  <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <span class="px-3 py-1 rounded-full bg-[#D1FAE5] text-[#065F46] text-xs font-bold">
+                  Free Public Check
+                </span>
+              </div>
+              <h3 class="text-lg font-extrabold text-[#0B1E48] mb-2">{t.home_hero_promise_3}</h3>
+              <p class="text-sm text-[#334155] leading-relaxed">
+                <span data-i18n="home_step4_desc">{t.home_step4_desc}</span>{' '}
+                <span data-i18n="portal5Desc">{t.portal5Desc}</span>
+              </p>
+            </div>
             <a
-              href={`${langPrefix}/student`}
-              class="group bg-white rounded-2xl p-6 shadow-[0_8px_24px_-4px_rgba(11,30,72,0.06)] hover:shadow-[0_16px_36px_-6px_rgba(11,30,72,0.14)] transition-all flex items-start gap-5"
+              href={`${langPrefix}/verifier`}
+              class="mt-6 inline-flex items-center gap-1.5 text-xs font-extrabold text-[#047857] hover:underline"
             >
-              <div class="w-14 h-14 rounded-2xl bg-[#059669] text-white flex items-center justify-center shrink-0 shadow-[0_8px_18px_-4px_rgba(5,150,105,0.4)]">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                </svg>
-              </div>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center justify-between gap-2">
-                  <h3 class="text-lg font-extrabold text-[#0B1E48] group-hover:text-[#059669] transition-colors">
-                    {t.portal4Title}
-                  </h3>
-                  <span class="px-2.5 py-0.5 rounded-md bg-[#D1FAE5] text-[#065F46] text-[11px] font-bold">
-                    Student Records
-                  </span>
-                </div>
-                <p class="mt-1.5 text-xs sm:text-sm text-[#334155] leading-relaxed">
-                  {t.portal4Desc}
-                </p>
-                <div class="mt-4 flex items-center justify-between pt-3 border-t border-slate-100">
-                  <span class="text-xs font-semibold text-slate-600">{t.home_role_student_b1}</span>
-                  <span class="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#065F46]">
-                    <span>Student Portal</span>
-                    <svg class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
-                    </svg>
-                  </span>
-                </div>
-              </div>
+              <span>Open Public Verifier</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
+              </svg>
             </a>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- B2. NAD-Style Left Explanation + Right 1-Top + 2-Bottom Yellow-Circle Cards (Zero Dead Space) -->
-      <section class="max-w-7xl mx-auto px-4 sm:px-8 py-12">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-          <!-- Left 4 Cols: Heading + NAD 3-Circle Ecosystem Box -->
-          <div class="lg:col-span-4 bg-[#0B1E48] text-white rounded-2xl p-7 flex flex-col justify-between shadow-[0_16px_36px_-8px_rgba(11,30,72,0.25)]">
-            <div>
-              <h2 class="text-2xl font-extrabold leading-tight tracking-[-0.02em]">
-                {t.home_steps_heading}
-              </h2>
-              <p class="mt-3 text-sm text-blue-100 leading-relaxed">
-                {t.home_steps_sub}
-              </p>
-              <p class="mt-3 text-xs text-blue-200 leading-relaxed">
-                {t.home_rule2_desc}
-              </p>
-            </div>
-
-            <!-- 3-Step Visual Chain -->
-            <div class="mt-8 bg-white/10 rounded-xl p-4 space-y-3">
-              <div class="flex items-center gap-3">
-                <span class="w-8 h-8 rounded-full bg-[#FFAE19] text-[#0B1E48] font-extrabold text-xs flex items-center justify-center shrink-0">
-                  1
-                </span>
-                <span class="text-xs font-bold text-white">College links 12-digit APAAR ID</span>
-              </div>
-              <div class="flex items-center gap-3">
-                <span class="w-8 h-8 rounded-full bg-[#FFAE19] text-[#0B1E48] font-extrabold text-xs flex items-center justify-center shrink-0">
-                  2
-                </span>
-                <span class="text-xs font-bold text-white">AICTE checks approved seat limit</span>
-              </div>
-              <div class="flex items-center gap-3">
-                <span class="w-8 h-8 rounded-full bg-[#FFAE19] text-[#0B1E48] font-extrabold text-xs flex items-center justify-center shrink-0">
-                  3
-                </span>
-                <span class="text-xs font-bold text-white">University issues digital degree</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Right 8 Cols: 1 Wide Top Card + 2 Equal Bottom Cards (Fills 100% of Grid with Yellow Circle Logos) -->
-          <div class="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Top Wide Card (Spans 2 Cols) -->
-            <div class="md:col-span-2 bg-[#F6F8FC] rounded-2xl p-6 sm:p-7 shadow-[0_8px_24px_-4px_rgba(11,30,72,0.07)] flex flex-col sm:flex-row items-start gap-5">
-              <div class="w-14 h-14 rounded-full bg-[#FFAE19] text-[#0B1E48] shadow-[0_6px_16px_rgba(255,174,25,0.35)] flex items-center justify-center shrink-0">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div class="flex-1">
-                <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-                  <h3 class="text-lg font-extrabold text-[#0B1E48]">{t.home_hero_promise_2}</h3>
-                  <a href={`${langPrefix}/institution`} class="inline-flex items-center gap-1 text-xs font-extrabold text-[#0B4EA2] hover:underline">
-                    <span>College Portal</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
-                    </svg>
-                  </a>
-                </div>
-                <p class="text-sm text-[#334155] leading-relaxed">
-                  {t.home_step1_desc} {t.home_step2_desc}
-                </p>
-              </div>
-            </div>
-
-            <!-- Bottom Left Card -->
-            <div class="bg-[#F6F8FC] rounded-2xl p-6 sm:p-7 shadow-[0_8px_24px_-4px_rgba(11,30,72,0.07)] flex flex-col justify-between">
-              <div>
-                <div class="w-14 h-14 rounded-full bg-[#FFAE19] text-[#0B1E48] shadow-[0_6px_16px_rgba(255,174,25,0.35)] flex items-center justify-center mb-5">
-                  <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                  </svg>
-                </div>
-                <h3 class="text-lg font-extrabold text-[#0B1E48] mb-2">{t.home_hero_promise_1}</h3>
-                <p class="text-sm text-[#334155] leading-relaxed">
-                  {t.home_step3_desc}
-                </p>
-              </div>
-              <a href={`${langPrefix}/university`} class="mt-5 inline-flex items-center gap-1 text-xs font-extrabold text-[#0B4EA2] hover:underline">
-                <span>University Portal</span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
-                </svg>
-              </a>
-            </div>
-
-            <!-- Bottom Right Card -->
-            <div class="bg-[#F6F8FC] rounded-2xl p-6 sm:p-7 shadow-[0_8px_24px_-4px_rgba(11,30,72,0.07)] flex flex-col justify-between">
-              <div>
-                <div class="w-14 h-14 rounded-full bg-[#FFAE19] text-[#0B1E48] shadow-[0_6px_16px_rgba(255,174,25,0.35)] flex items-center justify-center mb-5">
-                  <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                <h3 class="text-lg font-extrabold text-[#0B1E48] mb-2">{t.home_hero_promise_3}</h3>
-                <p class="text-sm text-[#334155] leading-relaxed">
-                  {t.home_step4_desc} {t.portal5Desc}
-                </p>
-              </div>
-              <a href={`${langPrefix}/verifier`} class="mt-5 inline-flex items-center gap-1 text-xs font-extrabold text-[#059669] hover:underline">
-                <span>Public Verifier</span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
-                </svg>
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
-
-    <!-- =====================================================================
-         VARIANT C: Cohesive Deep Civic Portal Cards + 3-Col Yellow-Circle Benefits Band
-         ===================================================================== -->
-    <div data-proto-variant-panel="C" class={activeVariant === 'C' ? '' : 'hidden'}>
-      <!-- C1. Choose Your Portal: Deep Civic Cards with High-Contrast Tinted Copy -->
-      <section class="max-w-7xl mx-auto px-4 sm:px-8 py-6">
-        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
-          <div>
-            <h2 class="text-2xl sm:text-3xl font-extrabold text-[#0B1E48] tracking-[-0.02em]">
-              {t.portalsHeading}
-            </h2>
-            <p class="text-sm text-[#334155] mt-1">
-              {t.portalsSub}
-            </p>
-          </div>
-          <a
-            href={`${langPrefix}/verifier`}
-            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#FFAE19] hover:bg-[#f09f0a] text-[#0B1E48] text-xs font-extrabold shadow-xs transition-all self-start sm:self-auto"
-          >
-            <span>{t.quickVerifyTitle}</span>
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
-            </svg>
-          </a>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          <!-- Civic Card 1 -->
-          <a
-            href={`${langPrefix}/institution`}
-            class="group rounded-2xl bg-[#0B2559] hover:bg-[#0E3175] text-white p-6 shadow-[0_12px_28px_-6px_rgba(11,37,89,0.3)] transition-all flex flex-col justify-between"
-          >
-            <div>
-              <div class="w-12 h-12 rounded-full bg-white text-[#0B2559] flex items-center justify-center mb-5 shadow-sm">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-              </div>
-              <h3 class="text-lg font-extrabold text-white mb-2">{t.portal1Title}</h3>
-              <p class="text-xs sm:text-[13px] text-blue-100 leading-relaxed mb-6">
-                {t.portal1Desc}
-              </p>
-            </div>
-            <div>
-              <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-[#0B2559] group-hover:bg-[#FFAE19] group-hover:text-[#040E29] text-xs font-extrabold transition-colors">
-                <span>College Portal</span>
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 12h14m-6-6l6 6-6 6" />
-                </svg>
-              </span>
-            </div>
-          </a>
-
-          <!-- Civic Card 2 -->
-          <a
-            href={`${langPrefix}/aicte`}
-            class="group rounded-2xl bg-[#103766] hover:bg-[#154580] text-white p-6 shadow-[0_12px_28px_-6px_rgba(16,55,102,0.3)] transition-all flex flex-col justify-between"
-          >
-            <div>
-              <div class="w-12 h-12 rounded-full bg-white text-[#103766] flex items-center justify-center mb-5 shadow-sm">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <h3 class="text-lg font-extrabold text-white mb-2">{t.portal2Title}</h3>
-              <p class="text-xs sm:text-[13px] text-sky-100 leading-relaxed mb-6">
-                {t.portal2Desc}
-              </p>
-            </div>
-            <div>
-              <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-[#103766] group-hover:bg-[#FFAE19] group-hover:text-[#040E29] text-xs font-extrabold transition-colors">
-                <span>AICTE Portal</span>
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 12h14m-6-6l6 6-6 6" />
-                </svg>
-              </span>
-            </div>
-          </a>
-
-          <!-- Civic Card 3 -->
-          <a
-            href={`${langPrefix}/university`}
-            class="group rounded-2xl bg-[#1A2E5A] hover:bg-[#223B73] text-white p-6 shadow-[0_12px_28px_-6px_rgba(26,46,90,0.3)] transition-all flex flex-col justify-between"
-          >
-            <div>
-              <div class="w-12 h-12 rounded-full bg-white text-[#1A2E5A] flex items-center justify-center mb-5 shadow-sm">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-              </div>
-              <h3 class="text-lg font-extrabold text-white mb-2">University Portal</h3>
-              <p class="text-xs sm:text-[13px] text-indigo-100 leading-relaxed mb-6">
-                {t.portal3Desc}
-              </p>
-            </div>
-            <div>
-              <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-[#1A2E5A] group-hover:bg-[#FFAE19] group-hover:text-[#040E29] text-xs font-extrabold transition-colors">
-                <span>University Portal</span>
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 12h14m-6-6l6 6-6 6" />
-                </svg>
-              </span>
-            </div>
-          </a>
-
-          <!-- Civic Card 4 -->
-          <a
-            href={`${langPrefix}/student`}
-            class="group rounded-2xl bg-[#0D4459] hover:bg-[#125872] text-white p-6 shadow-[0_12px_28px_-6px_rgba(13,68,89,0.3)] transition-all flex flex-col justify-between"
-          >
-            <div>
-              <div class="w-12 h-12 rounded-full bg-white text-[#0D4459] flex items-center justify-center mb-5 shadow-sm">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                </svg>
-              </div>
-              <h3 class="text-lg font-extrabold text-white mb-2">{t.portal4Title}</h3>
-              <p class="text-xs sm:text-[13px] text-cyan-100 leading-relaxed mb-6">
-                {t.portal4Desc}
-              </p>
-            </div>
-            <div>
-              <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-[#0D4459] group-hover:bg-[#FFAE19] group-hover:text-[#040E29] text-xs font-extrabold transition-colors">
-                <span>Student Portal</span>
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 12h14m-6-6l6 6-6 6" />
-                </svg>
-              </span>
-            </div>
-          </a>
-        </div>
-      </section>
-
-      <!-- C2. Full-Bleed Soft Band with 3 Elevated Yellow-Circle Cards -->
-      <section class="w-full bg-[#F2F5FC] py-12 mt-4">
-        <div class="max-w-7xl mx-auto px-4 sm:px-8">
-          <div class="mb-8">
-            <h2 class="text-2xl sm:text-3xl font-extrabold text-[#0B1E48] tracking-[-0.02em]">
-              {t.home_steps_heading}
-            </h2>
-            <p class="mt-1.5 text-sm sm:text-base text-[#334155]">
-              {t.home_steps_sub}
-            </p>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-white rounded-2xl p-7 shadow-[0_10px_28px_-6px_rgba(11,30,72,0.08)] flex flex-col justify-between">
-              <div>
-                <div class="w-14 h-14 rounded-full bg-[#FFAE19] text-[#0B1E48] shadow-[0_6px_16px_rgba(255,174,25,0.35)] flex items-center justify-center mb-5">
-                  <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h3 class="text-lg font-extrabold text-[#0B1E48] mb-2">{t.home_hero_promise_2}</h3>
-                <p class="text-sm text-[#334155] leading-relaxed">
-                  {t.home_step1_desc} {t.home_step2_desc}
-                </p>
-              </div>
-              <a href={`${langPrefix}/institution`} class="mt-6 inline-flex items-center gap-1.5 text-xs font-extrabold text-[#0B4EA2] hover:underline">
-                <span>Open College Portal</span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
-                </svg>
-              </a>
-            </div>
-
-            <div class="bg-white rounded-2xl p-7 shadow-[0_10px_28px_-6px_rgba(11,30,72,0.08)] flex flex-col justify-between">
-              <div>
-                <div class="w-14 h-14 rounded-full bg-[#FFAE19] text-[#0B1E48] shadow-[0_6px_16px_rgba(255,174,25,0.35)] flex items-center justify-center mb-5">
-                  <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                  </svg>
-                </div>
-                <h3 class="text-lg font-extrabold text-[#0B1E48] mb-2">{t.home_hero_promise_1}</h3>
-                <p class="text-sm text-[#334155] leading-relaxed">
-                  {t.home_step3_desc} {t.home_rule2_desc}
-                </p>
-              </div>
-              <a href={`${langPrefix}/university`} class="mt-6 inline-flex items-center gap-1.5 text-xs font-extrabold text-[#0B4EA2] hover:underline">
-                <span>Open University Portal</span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
-                </svg>
-              </a>
-            </div>
-
-            <div class="bg-white rounded-2xl p-7 shadow-[0_10px_28px_-6px_rgba(11,30,72,0.08)] flex flex-col justify-between">
-              <div>
-                <div class="w-14 h-14 rounded-full bg-[#FFAE19] text-[#0B1E48] shadow-[0_6px_16px_rgba(255,174,25,0.35)] flex items-center justify-center mb-5">
-                  <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                <h3 class="text-lg font-extrabold text-[#0B1E48] mb-2">{t.home_hero_promise_3}</h3>
-                <p class="text-sm text-[#334155] leading-relaxed">
-                  {t.home_step4_desc} {t.portal5Desc}
-                </p>
-              </div>
-              <a href={`${langPrefix}/verifier`} class="mt-6 inline-flex items-center gap-1.5 text-xs font-extrabold text-[#059669] hover:underline">
-                <span>Open Public Verifier</span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
-                </svg>
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
-
-    <!-- FULL-WIDTH BLUE VIDEO CONFERENCE / HELPDESK BANNER -->
+    <!-- 4. FULL-WIDTH BLUE VIDEO CONFERENCE / HELPDESK BANNER -->
     <section class="w-full bg-[#09569B] text-white py-8 px-4 sm:px-8">
       <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
         <div class="text-center md:text-left">
@@ -1073,8 +407,5 @@ const prototypeVariants = [
         </div>
       </div>
     </section>
-
-    <!-- FLOATING PROTOTYPE SWITCHER BAR -->
-    <PrototypeSwitcher variants={prototypeVariants} current={activeVariant} />
   </div>
 </Layout>
