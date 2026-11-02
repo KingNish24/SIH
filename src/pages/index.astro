@@ -77,55 +77,14 @@ const langPrefix = resolvedLang === 'en' ? '' : `/${resolvedLang}`;
             </div>
           </div>
 
-          <!-- Right 5 Cols: Clean APAAR Student ID Card Visual -->
+          <!-- Right 5 Cols: Official Government of India APAAR ID Card -->
           <div class="lg:col-span-5 flex justify-center lg:justify-end">
-            <div class="relative w-full max-w-sm">
-              <div class="bg-white text-slate-900 rounded-2xl p-5 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.4)]">
-                <!-- Card Top Strip -->
-                <div class="flex items-center justify-between border-b border-slate-200/80 pb-3 mb-4">
-                  <div class="flex items-center gap-2.5">
-                    <img src="/emblem.svg" alt="State Emblem of India" class="w-5 h-5 object-contain" />
-                    <div>
-                      <div class="text-[10px] font-semibold text-slate-600">Ministry of Education</div>
-                      <div class="text-xs font-extrabold text-[#0B1E48]">AICTE &bull; Govt. of India</div>
-                    </div>
-                  </div>
-                  <div class="text-right">
-                    <span class="text-xs font-black tracking-tight text-[#138808]">APAAR</span>
-                    <div class="text-[9px] font-bold text-slate-500">One Nation One ID</div>
-                  </div>
-                </div>
-
-                <!-- Student Profile Row -->
-                <div class="flex items-center gap-3.5 mb-4">
-                  <div class="w-12 h-12 rounded-xl bg-[#EEF2FA] text-[#0B1E48] flex items-center justify-center font-extrabold text-sm shrink-0">
-                    SS
-                  </div>
-                  <div class="min-w-0 flex-1">
-                    <div class="text-sm font-extrabold text-slate-900 truncate">Sneha Sundaram</div>
-                    <div class="text-xs font-medium text-slate-600 truncate">B.Tech Computer Science</div>
-                    <div class="text-[11px] font-mono text-slate-600">Roll ID: TCA-2024-029</div>
-                  </div>
-                  <!-- Simple QR Box -->
-                  <div class="w-12 h-12 rounded-lg bg-slate-50 p-1.5 shrink-0 flex items-center justify-center">
-                    <svg class="w-full h-full text-slate-900" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                      <path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-3 0h2v3h-2v-3zm3 3h3v2h-3v-2zm-3 3h2v2h-2v-2zm3 0h3v2h-3v-2z" />
-                    </svg>
-                  </div>
-                </div>
-
-                <!-- 12-Digit APAAR Number Bar -->
-                <div class="bg-[#F4F7FC] rounded-xl px-3.5 py-2.5 flex items-center justify-between">
-                  <span class="text-[11px] font-bold text-slate-600">APAAR ID</span>
-                  <span class="font-mono text-sm font-black tracking-widest text-[#0B1E48]">4123 9847 1029</span>
-                </div>
-              </div>
-
-              <!-- Verified Pill Callout -->
-              <div class="-mt-3 ml-4 inline-flex items-center gap-2 bg-[#ECFDF5] text-[#065F46] px-3.5 py-1.5 rounded-full shadow-[0_8px_20px_-4px_rgba(6,95,70,0.25)] text-xs font-bold relative z-10">
-                <span class="w-2 h-2 rounded-full bg-[#059669]"></span>
-                <span>AICTE Seat Verified &bull; Within Limit</span>
-              </div>
+            <div class="w-full max-w-[420px]">
+              <img
+                src="/apaar_card_official.png"
+                alt="Official Government of India APAAR ID Card"
+                class="w-full h-auto drop-shadow-[0_24px_40px_rgba(0,0,0,0.45)] select-none"
+              />
             </div>
           </div>
         </div>
