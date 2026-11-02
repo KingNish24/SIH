@@ -127,7 +127,7 @@ const scriptFontFamilyMap: Record<string, string> = {
   sat: 'Noto+Sans+Ol+Chiki:wght@400;500;600;700',
 };
 const extraScriptFont = scriptFontFamilyMap[resolvedLang];
-const googleFontsHref = `https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700${extraScriptFont ? `&family=${extraScriptFont}` : ''}&display=swap`;
+const googleFontsHref = `https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700${extraScriptFont ? `&family=${extraScriptFont}` : ''}&display=swap`;
 ---
 
 <!doctype html>
@@ -137,7 +137,7 @@ const googleFontsHref = `https://fonts.googleapis.com/css2?family=Inter:wght@400
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/emblem.svg" />
     <title>{title}</title>
-    <!-- Standard Official Typography (Inter + Noto Sans Indic Scripts for UX4G / GIGW 3.0) -->
+    <!-- Official Civic Typography (Public Sans + Noto Sans Indic Scripts for UX4G / GIGW 3.0) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -146,7 +146,30 @@ const googleFontsHref = `https://fonts.googleapis.com/css2?family=Inter:wght@400
     />
     <style>
       body {
-        font-family: 'Inter', 'Noto Sans Devanagari', 'Noto Sans Bengali', 'Noto Sans Telugu', 'Noto Sans Tamil', 'Noto Sans Gujarati', 'Noto Sans Kannada', 'Noto Sans Malayalam', 'Noto Sans Oriya', 'Noto Sans Gurmukhi', 'Noto Sans Ol Chiki', 'Noto Nastaliq Urdu', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        font-family: 'Public Sans', 'Noto Sans Devanagari', 'Noto Sans Bengali', 'Noto Sans Telugu', 'Noto Sans Tamil', 'Noto Sans Gujarati', 'Noto Sans Kannada', 'Noto Sans Malayalam', 'Noto Sans Oriya', 'Noto Sans Gurmukhi', 'Noto Sans Ol Chiki', 'Noto Nastaliq Urdu', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+        font-variant-numeric: tabular-nums;
+      }
+      ::selection {
+        background-color: #0B4EA2;
+        color: #FFFFFF;
+      }
+      a {
+        text-underline-offset: 3px;
+      }
+      ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #F1F5F9;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #94A3B8;
+        border-radius: 5px;
+        border: 2px solid #F1F5F9;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #0B4EA2;
       }
       /* High contrast focus ring for GIGW accessibility */
       a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible {
