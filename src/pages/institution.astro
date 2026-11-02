@@ -231,647 +231,702 @@ const clientI18n = {
       data-name={collegeA.name}
     />
 
-    <!-- 1. SIMPLE, CLEAN COLLEGE HEADER -->
-    <header class="pb-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div>
-        <h1 id="meterCollegeName" class="text-2xl font-bold text-[#0B1E48]">
-          {collegeA.name}
-        </h1>
-        <p class="text-sm text-slate-600 mt-1">
-          AICTE Code: <span id="meterCollegeCode" class="font-semibold text-slate-800">{collegeA.code || 'TCA-1049'}</span> · <span id="meterLocationText">{collegeA.district || 'Pune'}, {collegeA.state || 'Maharashtra'}</span> · Academic Year 2026–27
-        </p>
-      </div>
-
-      <div class="flex flex-wrap items-center gap-3 shrink-0">
-        <button
-          type="button"
-          id="openCsvTabBtn"
-          class="h-11 px-5 rounded-xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 text-sm font-bold transition-colors inline-flex items-center gap-2 cursor-pointer"
-        >
-          <svg class="w-4 h-4 text-slate-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-          </svg>
-          <span>Upload Bulk CSV</span>
-        </button>
-
-        <button
-          type="button"
-          id="openAdmitTabBtn"
-          class="h-11 px-5 rounded-xl bg-[#0B4EA2] hover:bg-[#083B7E] text-white text-sm font-bold transition-colors inline-flex items-center gap-2 cursor-pointer"
-        >
-          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 4v16m8-8H4" />
-          </svg>
-          <span>Admit New Student</span>
-        </button>
-      </div>
-    </header>
-
     <!-- Dynamic Feedback Banner -->
     <div id="syncFeedbackAlert" class="hidden rounded-xl border p-4 text-sm" role="alert" aria-live="assertive"></div>
 
-    <!-- 2. ROW 1: 4 SIMPLE, BIG-NUMBER SUMMARY CARDS -->
-    <section aria-label="College Seat Summary" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <!-- Card 1: Total Approved Seats -->
-      <div class="rounded-xl bg-white border border-slate-200 p-5">
-        <div class="text-sm font-semibold text-slate-600">Total Approved Seats</div>
-        <div class="text-3xl font-extrabold text-[#0B1E48] mt-1">
-          <span id="meterSanctioned">{sanctionedCap}</span>
-          <span id="meterCap" class="sr-only">{sanctionedCap}</span>
-        </div>
-        <div class="text-xs text-slate-500 mt-1">3 B.Tech Branches (60 each)</div>
-      </div>
-
-      <!-- Card 2: Students Admitted -->
-      <div class="rounded-xl bg-white border border-slate-200 p-5">
-        <div class="text-sm font-semibold text-slate-600">Students Admitted</div>
-        <div id="meterEnrolled" class="text-3xl font-extrabold text-[#0B4EA2] mt-1">
-          {actualAdmittedCount}
-        </div>
-        <div id="meterPercent" class="text-xs text-slate-500 mt-1">
-          {initialPct}% of total seats filled
-        </div>
-      </div>
-
-      <!-- Card 3: Vacant Seats Left -->
-      <div class="rounded-xl bg-white border border-slate-200 p-5">
-        <div class="text-sm font-semibold text-slate-600">Vacant Seats Left</div>
-        <div class="text-3xl font-extrabold text-emerald-700 mt-1">
-          <span id="meterVacant">{vacantSeatsCount}</span>
-          <span id="meterVacantCount" class="sr-only">{vacantSeatsCount}</span>
-        </div>
-        <div class="text-xs text-slate-500 mt-1">Available for admission</div>
-      </div>
-
-      <!-- Card 4: Duplicate Seat Alerts -->
-      <div class="rounded-xl bg-white border border-slate-200 p-5">
-        <div class="text-sm font-semibold text-slate-600">Duplicate Seat Alerts</div>
-        <div class="text-3xl font-extrabold text-amber-700 mt-1">
-          <span id="meterDuplicates">{duplicateCount}</span>
-          <span id="meterDuplicateCount" class="sr-only">{duplicateCount}</span>
-        </div>
-        <div class="text-xs text-amber-800 font-medium mt-1">Enrolled in 2 colleges at once</div>
-      </div>
-    </section>
-
-    <!-- 3. ROW 2: FULL-WIDTH, LARGE-BUTTON WORKSPACE TABS (1 CLEAN TASK AT A TIME) -->
-    <div class="rounded-2xl bg-white border border-slate-200 overflow-hidden">
-      <!-- Horizontal Tab Bar -->
-      <div
-        class="border-b border-slate-200 bg-slate-50 px-6 pt-3 flex flex-wrap gap-2"
-        role="tablist"
-        aria-label="College Admission Office Workspace"
-      >
-        <button
-          type="button"
-          id="viewEnrolledTabBtn"
-          role="tab"
-          aria-selected="true"
-          aria-controls="enrolledRosterPanel"
-          class="px-5 py-3 rounded-t-xl text-sm font-bold border-t border-x border-slate-200 bg-white text-[#0B1E48] -mb-px cursor-pointer inline-flex items-center gap-2 transition-colors"
-        >
-          <span>1. Admitted Students List (<span id="enrolledCountPill">{actualAdmittedCount}</span>)</span>
-        </button>
-
-        <button
-          type="button"
-          id="tabSingleEntryBtn"
-          role="tab"
-          aria-selected="false"
-          aria-controls="panelSingleEntry"
-          class="px-5 py-3 rounded-t-xl text-sm font-bold border-t border-x border-transparent text-slate-600 hover:text-[#0B1E48] hover:bg-slate-100/70 cursor-pointer inline-flex items-center gap-2 transition-colors"
-        >
-          <span>2. + Admit New Student</span>
-        </button>
-
-        <button
-          type="button"
-          id="tabBulkCsvBtn"
-          role="tab"
-          aria-selected="false"
-          aria-controls="panelBulkCsv"
-          class="px-5 py-3 rounded-t-xl text-sm font-bold border-t border-x border-transparent text-slate-600 hover:text-[#0B1E48] hover:bg-slate-100/70 cursor-pointer inline-flex items-center gap-2 transition-colors"
-        >
-          <span>3. Upload Bulk CSV</span>
-        </button>
-
-        <button
-          type="button"
-          id="viewBranchMatrixTabBtn"
-          role="tab"
-          aria-selected="false"
-          aria-controls="branchMatrixPanel"
-          class="px-5 py-3 rounded-t-xl text-sm font-bold border-t border-x border-transparent text-slate-600 hover:text-[#0B1E48] hover:bg-slate-100/70 cursor-pointer inline-flex items-center gap-2 transition-colors"
-        >
-          <span>4. Branch &amp; Quota Seat Summary</span>
-        </button>
-      </div>
-
-      <!-- WORKSPACE PANEL 1 (Default Visible): FULL-WIDTH ADMITTED STUDENTS LIST -->
-      <div
-        id="enrolledRosterPanel"
-        role="tabpanel"
-        aria-labelledby="viewEnrolledTabBtn"
-      >
-        <!-- Simple Filter Bar -->
-        <div class="px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-white">
-          <div class="flex flex-wrap items-center gap-3">
-            <div class="relative">
-              <svg
-                class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="search"
-                id="rosterSearchInput"
-                placeholder="Search by Student Name, APAAR ID, or Roll No..."
-                aria-label="Search by Student Name, APAAR ID, or Roll No"
-                class="h-10 w-72 sm:w-80 pl-10 pr-3 rounded-lg bg-slate-50 border border-slate-300 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
-              />
+    <!-- INDIAN GOVERNMENT PORTAL 2-COLUMN LEFT SIDEBAR + RIGHT MAIN CONTENT LAYOUT -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <!-- 1. LEFT SIDEBAR (NIC / Samarth eGov / AISHE / Parakh Style) -->
+      <aside class="lg:col-span-3 lg:sticky lg:top-6">
+        <div class="rounded-2xl bg-white border border-slate-200 overflow-hidden">
+          <!-- Top College Identity Block inside Sidebar -->
+          <div class="bg-[#0B1E48] text-white p-5">
+            <div class="text-[11px] font-mono uppercase tracking-wider text-blue-200">
+              AISHE CODE: <span id="meterCollegeCode">{collegeA.code || 'TCA-1049'}</span>
             </div>
-
-            <select
-              id="rosterBranchFilter"
-              aria-label="Filter by Branch"
-              class="h-10 px-3 rounded-lg bg-slate-50 border border-slate-300 text-sm font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
-            >
-              <option value="ALL">All Branches</option>
-              <option value="B.Tech Computer Science">B.Tech Computer Science</option>
-              <option value="B.Tech Electronics & Comm.">B.Tech Electronics &amp; Comm.</option>
-              <option value="B.Tech Mechanical Engg">B.Tech Mechanical Engg</option>
-            </select>
-
-            <select
-              id="rosterStatusFilter"
-              aria-label="Filter by Verification Status"
-              class="h-10 px-3 rounded-lg bg-slate-50 border border-slate-300 text-sm font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
-            >
-              <option value="ALL">All Students</option>
-              <option value="VERIFIED">Verified Students</option>
-              <option value="DUPLICATE" id="filterDuplicateOption">Duplicate Alerts ({duplicateCount})</option>
-            </select>
-          </div>
-
-          <div class="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              id="exportRosterCsvBtn"
-              class="h-10 px-4 rounded-lg bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 text-sm font-semibold transition-colors inline-flex items-center gap-2 cursor-pointer"
-            >
-              <svg class="w-4 h-4 text-slate-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <span>Download Excel / CSV</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Spacious, Full-Width Table -->
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm border-collapse">
-            <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
-              <tr>
-                <th class="py-3.5 px-5 whitespace-nowrap">Roll No. &amp; Student Name</th>
-                <th class="py-3.5 px-5 whitespace-nowrap">12-Digit APAAR ID</th>
-                <th class="py-3.5 px-5 whitespace-nowrap">Branch / Department</th>
-                <th class="py-3.5 px-5 whitespace-nowrap">Seat Quota &amp; Allotment</th>
-                <th class="py-3.5 px-5 whitespace-nowrap">Verification Status</th>
-                <th class="py-3.5 px-5 text-right whitespace-nowrap">Action</th>
-              </tr>
-            </thead>
-            <tbody id="enrolledTableBody" class="divide-y divide-slate-200 text-slate-800">
-              {initialAdmissions.map((adm) => (
-                <tr
-                  class="hover:bg-slate-50/90 transition-colors"
-                  data-row-apaar={adm.apaar_id}
-                  data-row-name={adm.full_name.toLowerCase()}
-                  data-row-roll={adm.roll_id.toLowerCase()}
-                  data-row-branch={adm.program}
-                  data-row-status={adm.is_duplicate ? 'DUPLICATE' : 'VERIFIED'}
-                >
-                  <td class="py-4 px-5 whitespace-nowrap">
-                    <div class="font-bold text-slate-900 text-sm">{adm.full_name}</div>
-                    <div class="font-mono text-xs text-slate-500 mt-0.5">Roll No: {adm.roll_id}</div>
-                  </td>
-                  <td class="py-4 px-5 whitespace-nowrap">
-                    <span class="text-sm font-mono font-bold text-[#0B1E48]">{adm.formatted_apaar}</span>
-                  </td>
-                  <td class="py-4 px-5 font-medium text-slate-800 whitespace-nowrap">
-                    {adm.program}
-                  </td>
-                  <td class="py-4 px-5 whitespace-nowrap">
-                    <div class="font-semibold text-slate-800">{adm.quota_label}</div>
-                    <div class="font-mono text-xs text-slate-500 mt-0.5">{adm.allotment_ref}</div>
-                  </td>
-                  <td class="py-4 px-5">
-                    {adm.is_duplicate ? (
-                      <div class="space-y-0.5">
-                        <span class="inline-flex items-center gap-1.5 bg-amber-50 text-amber-900 px-3 py-1 rounded-full border border-amber-300 font-bold text-xs whitespace-nowrap">
-                          <span>⚠ Duplicate Seat Alert</span>
-                        </span>
-                        <div class="text-xs text-amber-800 font-medium">
-                          Also at {adm.other_colleges.length > 0 ? adm.other_colleges.join(', ') : 'Technical College B'}
-                        </div>
-                      </div>
-                    ) : (
-                      <span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 px-3 py-1 rounded-full border border-emerald-200 font-bold text-xs whitespace-nowrap">
-                        <span>✓ Verified</span>
-                      </span>
-                    )}
-                  </td>
-                  <td class="py-4 px-5 text-right whitespace-nowrap">
-                    <button
-                      type="button"
-                      data-withdraw-id={adm.id}
-                      data-withdraw-apaar={adm.apaar_id}
-                      data-withdraw-name={adm.full_name}
-                      class="px-3.5 py-1.5 rounded-lg bg-white hover:bg-red-50 text-slate-700 hover:text-red-700 border border-slate-300 hover:border-red-300 text-xs font-bold transition-colors cursor-pointer whitespace-nowrap"
-                    >
-                      Cancel Seat
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- WORKSPACE PANEL 2 (Hidden until clicked): SPACIOUS "+ ADMIT NEW STUDENT" FORM -->
-      <div
-        id="panelSingleEntry"
-        role="tabpanel"
-        aria-labelledby="tabSingleEntryBtn"
-        class="hidden"
-      >
-        <div class="max-w-3xl mx-auto p-6 sm:p-8">
-          <div class="mb-6">
-            <h2 class="text-xl font-bold text-[#0B1E48]">Admit New Student</h2>
-            <p class="text-sm text-slate-600 mt-1">
-              Check the student's 12-digit APAAR ID first, then select their branch and seat quota to confirm admission.
+            <h1 id="meterCollegeName" class="text-base font-bold text-white mt-1 leading-snug">
+              {collegeA.name}
+            </h1>
+            <p class="text-xs text-blue-200 mt-1">
+              <span id="meterLocationText">{collegeA.district || 'Pune'}, {collegeA.state || 'Maharashtra'}</span> · Session 2026–27
             </p>
+            <div class="mt-3 pt-3 border-t border-white/15 text-xs text-blue-100 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0" aria-hidden="true"></span>
+              <span>Dr. Ramesh Joshi (Principal)</span>
+            </div>
           </div>
 
-          <form id="singleStudentForm" class="space-y-5">
-            <!-- Step 1 Box -->
-            <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-4">
-              <h3 class="text-base font-bold text-[#0B1E48]">
-                Step 1: Check Student's 12-Digit APAAR ID
-              </h3>
-
-              <div>
-                <label for="singleApaarInput" class="block text-sm font-semibold text-slate-800 mb-1.5">
-                  12-Digit APAAR ID
-                </label>
-                <div class="flex flex-col sm:flex-row gap-3">
-                  <input
-                    type="text"
-                    id="singleApaarInput"
-                    name="apaar_id"
-                    required
-                    pattern="\d{12}"
-                    maxlength="12"
-                    inputmode="numeric"
-                    placeholder="Enter 12-digit APAAR number (e.g. 901238471920)"
-                    class="flex-1 h-11 bg-white border border-slate-300 rounded-lg px-4 font-mono text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
-                  />
-                  <button
-                    type="button"
-                    id="btnVerifyApaar"
-                    class="h-11 px-5 rounded-lg bg-[#0B1E48] hover:bg-[#1E3A8A] text-white font-bold text-sm transition-colors inline-flex items-center justify-center gap-2 shrink-0 cursor-pointer"
-                  >
-                    <span>Check APAAR ID</span>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Result Card -->
-              <div
-                id="apaarVerifyCard"
-                class="hidden rounded-lg border p-4 text-sm space-y-1.5"
-                role="status"
-                aria-live="polite"
-              ></div>
+          <!-- Vertical Navigation Menu -->
+          <div
+            class="p-3 space-y-1"
+            role="tablist"
+            aria-label="Admission Office Menu"
+          >
+            <div class="px-3 pt-1 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              ADMISSION OFFICE MENU
             </div>
 
-            <!-- Step 2 Box -->
-            <div class="bg-white p-5 rounded-xl border border-slate-200 mt-5 space-y-4">
-              <h3 class="text-base font-bold text-[#0B1E48]">
-                Step 2: Select Branch &amp; Seat Quota
-              </h3>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="sm:col-span-2">
-                  <label for="singleNameInput" class="block text-sm font-semibold text-slate-800 mb-1.5">
-                    Student Full Name
-                  </label>
-                  <input
-                    type="text"
-                    id="singleNameInput"
-                    name="full_name"
-                    required
-                    placeholder="Enter student's full name as per 12th marksheet / Aadhaar"
-                    class="w-full h-11 bg-slate-50 border border-slate-300 rounded-lg px-4 text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
-                  />
-                </div>
-
-                <div>
-                  <label for="singleProgramSelect" class="block text-sm font-semibold text-slate-800 mb-1.5">
-                    Branch / Department
-                  </label>
-                  <select
-                    id="singleProgramSelect"
-                    name="program"
-                    class="w-full h-11 bg-slate-50 border border-slate-300 rounded-lg px-3.5 text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
-                  >
-                    <option value="B.Tech Computer Science">B.Tech Computer Science (60 Seats)</option>
-                    <option value="B.Tech Electronics & Comm.">B.Tech Electronics &amp; Comm. (60 Seats)</option>
-                    <option value="B.Tech Mechanical Engg">B.Tech Mechanical Engg (60 Seats)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label for="singleQuotaSelect" class="block text-sm font-semibold text-slate-800 mb-1.5">
-                    Seat Quota
-                  </label>
-                  <select
-                    id="singleQuotaSelect"
-                    name="admission_quota"
-                    class="w-full h-11 bg-slate-50 border border-slate-300 rounded-lg px-3.5 text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
-                  >
-                    <option value="APPROVED_INTAKE">Regular Merit Seat</option>
-                    <option value="SUPERNUMERARY">TFW / EWS / PMSSS Quota</option>
-                    <option value="NRI">NRI Quota</option>
-                    <option value="OCI">OCI / PIO Quota</option>
-                    <option value="FN">Foreign National Quota</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label for="singleAllotmentInput" class="block text-sm font-semibold text-slate-800 mb-1.5">
-                    CET / JoSAA Allotment No.
-                  </label>
-                  <input
-                    type="text"
-                    id="singleAllotmentInput"
-                    name="allotment_ref"
-                    placeholder="e.g. CET-2026-MH-88412"
-                    class="w-full h-11 bg-slate-50 border border-slate-300 rounded-lg px-4 font-mono text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
-                  />
-                </div>
-
-                <div>
-                  <label for="singleSessionSelect" class="block text-sm font-semibold text-slate-800 mb-1.5">
-                    Admission Year
-                  </label>
-                  <select
-                    id="singleSessionSelect"
-                    name="batch_year"
-                    class="w-full h-11 bg-slate-50 border border-slate-300 rounded-lg px-3.5 text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
-                  >
-                    <option value="2026" selected>2026–27 (1st Year Regular)</option>
-                    <option value="2025">2026–27 (2nd Year Lateral Entry)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="pt-3">
-                <button
-                  type="submit"
-                  id="singleSubmitBtn"
-                  class="w-full h-12 rounded-xl bg-[#0B4EA2] hover:bg-[#083B7E] text-white font-bold text-base transition-colors flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>Confirm &amp; Admit Student</span>
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- WORKSPACE PANEL 3 (Hidden until clicked): SIMPLE "UPLOAD BULK CSV" -->
-      <div
-        id="panelBulkCsv"
-        role="tabpanel"
-        aria-labelledby="tabBulkCsvBtn"
-        class="hidden p-6 sm:p-8 space-y-6"
-      >
-        <div class="max-w-4xl mx-auto space-y-6">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h2 class="text-xl font-bold text-[#0B1E48]">Upload Bulk Admission CSV</h2>
-              <p class="text-sm text-slate-600 mt-1">
-                Upload an Excel CSV file of admitted students to verify APAAR IDs and add them in bulk.
-              </p>
-            </div>
-
+            <!-- Menu Item 1 (Default Active) -->
             <button
               type="button"
-              id="downloadSampleCsvBtn"
-              class="h-10 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-[#0B1E48] border border-slate-300 text-sm font-bold transition-colors inline-flex items-center gap-2 shrink-0 cursor-pointer"
+              id="viewEnrolledTabBtn"
+              role="tab"
+              aria-selected="true"
+              aria-controls="enrolledRosterPanel"
+              class="w-full text-left px-3.5 py-3 rounded-xl text-sm font-bold bg-[#0B4EA2] text-white flex items-center justify-between cursor-pointer transition-colors"
             >
-              <svg class="w-4 h-4 text-[#0B4EA2] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              <span>Download Sample Excel / CSV Template</span>
+              <span class="inline-flex items-center gap-2.5">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>Admitted Students</span>
+              </span>
+              <span
+                id="enrolledCountPill"
+                data-sidebar-badge
+                class="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-white/20 text-white"
+              >
+                {actualAdmittedCount}
+              </span>
+            </button>
+
+            <!-- Menu Item 2 -->
+            <button
+              type="button"
+              id="tabSingleEntryBtn"
+              role="tab"
+              aria-selected="false"
+              aria-controls="panelSingleEntry"
+              class="w-full text-left px-3.5 py-3 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#0B1E48] flex items-center justify-between cursor-pointer transition-colors"
+            >
+              <span class="inline-flex items-center gap-2.5">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+                <span>Admit New Student</span>
+              </span>
+              <span
+                data-sidebar-badge
+                class="px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-slate-100 text-slate-600"
+              >
+                APAAR
+              </span>
+            </button>
+
+            <!-- Menu Item 3 -->
+            <button
+              type="button"
+              id="tabBulkCsvBtn"
+              role="tab"
+              aria-selected="false"
+              aria-controls="panelBulkCsv"
+              class="w-full text-left px-3.5 py-3 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#0B1E48] flex items-center justify-between cursor-pointer transition-colors"
+            >
+              <span class="inline-flex items-center gap-2.5">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                <span>Bulk Excel / CSV Upload</span>
+              </span>
+            </button>
+
+            <!-- Menu Item 4 -->
+            <button
+              type="button"
+              id="viewBranchMatrixTabBtn"
+              role="tab"
+              aria-selected="false"
+              aria-controls="branchMatrixPanel"
+              class="w-full text-left px-3.5 py-3 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#0B1E48] flex items-center justify-between cursor-pointer transition-colors"
+            >
+              <span class="inline-flex items-center gap-2.5">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                <span>Branch &amp; Seat Matrix</span>
+              </span>
+              <span
+                data-sidebar-badge
+                class="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-slate-100 text-slate-600"
+              >
+                {sanctionedCap}
+              </span>
             </button>
           </div>
 
-          <label
-            for="csvFileInput"
-            tabindex="0"
-            aria-describedby="csvSchemaHint"
-            class="border-2 border-dashed border-slate-300 hover:border-[#0B4EA2] hover:bg-blue-50/30 rounded-xl p-8 text-center cursor-pointer flex flex-col items-center justify-center bg-slate-50 transition-colors"
-          >
-            <svg class="w-8 h-8 text-[#0B4EA2] mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-            </svg>
-            <span class="text-base font-bold text-[#0B1E48]">Click here to select CSV file from your computer</span>
-            <span id="csvSchemaHint" class="text-xs font-mono text-slate-500 mt-1">
-              Columns: apaar_id, full_name, program, admission_quota, allotment_ref, batch_year
-            </span>
-            <input type="file" id="csvFileInput" accept=".csv" class="hidden" />
-          </label>
+          <!-- Bottom Quick Help / Helpline Box inside Sidebar -->
+          <div class="p-4 bg-slate-50 border-t border-slate-200 text-xs text-slate-600 space-y-1">
+            <div class="font-bold text-[#0B1E48]">NIC / AICTE Nodal Helpdesk</div>
+            <div class="font-mono text-slate-500">Toll-Free: 1800-889-3511</div>
+          </div>
+        </div>
+      </aside>
 
-          <!-- Embedded CSV Preview & Save Section -->
-          <div id="triagePanel" class="rounded-xl border border-slate-200 overflow-hidden bg-white">
-            <div class="px-5 py-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4">
-              <div class="flex flex-wrap items-center gap-4 text-sm">
+      <!-- 2. RIGHT MAIN CONTENT AREA -->
+      <div class="lg:col-span-9 space-y-5 min-w-0">
+        <!-- Top Row inside Right Area: 4 Compact, Clear Summary Cards -->
+        <section aria-label="College Seat Summary" class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <!-- Card 1: Approved Seats -->
+          <div class="rounded-xl bg-white border border-slate-200 p-4">
+            <div class="text-xs font-semibold text-slate-600">Approved Seats</div>
+            <div class="text-2xl font-extrabold text-[#0B1E48] mt-1">
+              <span id="meterSanctioned">{sanctionedCap}</span>
+              <span id="meterCap" class="sr-only">{sanctionedCap}</span>
+            </div>
+            <div class="text-xs text-slate-500 mt-0.5">3 B.Tech Branches</div>
+          </div>
+
+          <!-- Card 2: Students Admitted -->
+          <div class="rounded-xl bg-white border border-slate-200 p-4">
+            <div class="text-xs font-semibold text-slate-600">Students Admitted</div>
+            <div id="meterEnrolled" class="text-2xl font-extrabold text-[#0B4EA2] mt-1">
+              {actualAdmittedCount}
+            </div>
+            <div id="meterPercent" class="text-xs text-slate-500 mt-0.5">
+              {initialPct}% seats filled
+            </div>
+          </div>
+
+          <!-- Card 3: Vacant Seats -->
+          <div class="rounded-xl bg-white border border-slate-200 p-4">
+            <div class="text-xs font-semibold text-slate-600">Vacant Seats</div>
+            <div class="text-2xl font-extrabold text-emerald-700 mt-1">
+              <span id="meterVacant">{vacantSeatsCount}</span>
+              <span id="meterVacantCount" class="sr-only">{vacantSeatsCount}</span>
+            </div>
+            <div class="text-xs text-slate-500 mt-0.5">Open for admission</div>
+          </div>
+
+          <!-- Card 4: Duplicate Alerts -->
+          <div class="rounded-xl bg-white border border-slate-200 p-4">
+            <div class="text-xs font-semibold text-slate-600">Duplicate Alerts</div>
+            <div class="text-2xl font-extrabold text-amber-700 mt-1">
+              <span id="meterDuplicates">{duplicateCount}</span>
+              <span id="meterDuplicateCount" class="sr-only">{duplicateCount}</span>
+            </div>
+            <div class="text-xs text-amber-800 font-medium mt-0.5">2 colleges at once</div>
+          </div>
+        </section>
+
+        <!-- Active View Card -->
+        <div class="rounded-2xl bg-white border border-slate-200 overflow-hidden">
+          <!-- PANEL 1 (Default Visible): ADMITTED STUDENTS REGISTER -->
+          <div
+            id="enrolledRosterPanel"
+            role="tabpanel"
+            aria-labelledby="viewEnrolledTabBtn"
+          >
+            <!-- Card Header Bar -->
+            <div class="px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+              <h2 class="text-base font-bold text-[#0B1E48]">
+                Admitted Students Register (2026–27)
+              </h2>
+
+              <div class="flex flex-wrap items-center gap-2.5">
                 <button
                   type="button"
-                  id="viewTriageTabBtn"
-                  class="font-bold text-[#0B1E48] inline-flex items-center gap-2 cursor-pointer"
+                  id="exportRosterCsvBtn"
+                  class="h-9 px-3.5 rounded-lg bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 text-xs font-bold transition-colors inline-flex items-center gap-2 cursor-pointer"
                 >
-                  <span>Uploaded CSV Preview</span>
-                  <span id="stagedCountPill" class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-800 font-mono text-xs">0</span>
+                  <svg class="w-4 h-4 text-slate-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span>Download Excel / CSV</span>
                 </button>
-                <div id="triageSummaryStrip" class="flex flex-wrap items-center gap-4 text-xs sm:text-sm">
-                  <span>Valid APAAR: <strong id="countValid" class="text-emerald-700 font-mono">0</strong></span>
-                  <span>Format Errors: <strong id="countMalformed" class="text-red-700 font-mono">0</strong></span>
-                  <span>Missing APAAR: <strong id="countMissing" class="text-amber-700 font-mono">0</strong></span>
-                </div>
-              </div>
 
-              <button
-                type="button"
-                id="commitSyncBtn"
-                disabled
-                class="h-10 px-5 rounded-lg bg-[#0B4EA2] hover:bg-[#083B7E] disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-not-allowed text-white text-sm font-bold transition-colors inline-flex items-center gap-2 cursor-pointer"
-              >
-                <span>Save Uploaded Students</span>
-              </button>
+                <button
+                  type="button"
+                  id="openAdmitTabBtn"
+                  class="h-9 px-3.5 rounded-lg bg-[#0B4EA2] hover:bg-[#083B7E] text-white text-xs font-bold transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span>+ Admit New Student</span>
+                </button>
+              </div>
             </div>
 
+            <!-- Filter Bar -->
+            <div class="px-5 py-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center gap-3">
+              <div class="relative flex-1 min-w-[220px]">
+                <svg
+                  class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="search"
+                  id="rosterSearchInput"
+                  placeholder="Search by Student Name, APAAR ID, or Roll No..."
+                  aria-label="Search by Student Name, APAAR ID, or Roll No"
+                  class="w-full h-9 pl-9 pr-3 rounded-lg bg-white border border-slate-300 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
+                />
+              </div>
+
+              <select
+                id="rosterBranchFilter"
+                aria-label="Filter by Branch"
+                class="h-9 px-3 rounded-lg bg-white border border-slate-300 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
+              >
+                <option value="ALL">All Branches</option>
+                <option value="B.Tech Computer Science">B.Tech Computer Science</option>
+                <option value="B.Tech Electronics & Comm.">B.Tech Electronics &amp; Comm.</option>
+                <option value="B.Tech Mechanical Engg">B.Tech Mechanical Engg</option>
+              </select>
+
+              <select
+                id="rosterStatusFilter"
+                aria-label="Filter by Verification Status"
+                class="h-9 px-3 rounded-lg bg-white border border-slate-300 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
+              >
+                <option value="ALL">All Students</option>
+                <option value="VERIFIED">Verified Students</option>
+                <option value="DUPLICATE" id="filterDuplicateOption">Duplicate Alerts ({duplicateCount})</option>
+              </select>
+            </div>
+
+            <!-- Clean Table -->
             <div class="overflow-x-auto">
-              <table class="w-full text-left text-sm border-collapse">
+              <table class="w-full text-left text-xs sm:text-sm border-collapse">
                 <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
                   <tr>
-                    <th class="py-3 px-4">#</th>
-                    <th class="py-3 px-4">12-Digit APAAR ID</th>
-                    <th class="py-3 px-4">Student Name</th>
-                    <th class="py-3 px-4">Branch / Department</th>
-                    <th class="py-3 px-4">Quota &amp; Allotment</th>
-                    <th class="py-3 px-4">Check Status</th>
+                    <th class="py-3 px-3 whitespace-nowrap">Student &amp; Roll No.</th>
+                    <th class="py-3 px-3 whitespace-nowrap">12-Digit APAAR ID</th>
+                    <th class="py-3 px-3 whitespace-nowrap">Branch &amp; Quota</th>
+                    <th class="py-3 px-3 whitespace-nowrap">Status</th>
+                    <th class="py-3 px-3 text-right whitespace-nowrap">Action</th>
                   </tr>
                 </thead>
-                <tbody id="triageTableBody" class="divide-y divide-slate-200 text-slate-800">
-                  <tr>
-                    <td colspan="6" class="py-10 px-4 text-center text-slate-500 text-sm">
-                      No CSV file selected yet. Choose a CSV file above or download the sample template to test.
-                    </td>
-                  </tr>
+                <tbody id="enrolledTableBody" class="divide-y divide-slate-200 text-slate-800">
+                  {initialAdmissions.map((adm) => (
+                    <tr
+                      class="hover:bg-slate-50/90 transition-colors"
+                      data-row-apaar={adm.apaar_id}
+                      data-row-name={adm.full_name.toLowerCase()}
+                      data-row-roll={adm.roll_id.toLowerCase()}
+                      data-row-branch={adm.program}
+                      data-row-status={adm.is_duplicate ? 'DUPLICATE' : 'VERIFIED'}
+                    >
+                      <td class="py-3 px-3 whitespace-nowrap">
+                        <div class="font-bold text-slate-900">{adm.full_name}</div>
+                        <div class="font-mono text-xs text-slate-500 mt-0.5">Roll: {adm.roll_id}</div>
+                      </td>
+                      <td class="py-3 px-3 whitespace-nowrap">
+                        <span class="font-mono font-bold text-[#0B1E48]">{adm.formatted_apaar}</span>
+                      </td>
+                      <td class="py-3 px-3 whitespace-nowrap">
+                        <div class="font-semibold text-slate-900">{adm.program}</div>
+                        <div class="text-xs text-slate-500 mt-0.5">{adm.quota_label} · <span class="font-mono">{adm.allotment_ref}</span></div>
+                      </td>
+                      <td class="py-3 px-3">
+                        {adm.is_duplicate ? (
+                          <div class="space-y-0.5 max-w-[9.5rem]">
+                            <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-900 px-2 py-0.5 rounded-full border border-amber-300 font-bold text-xs whitespace-nowrap">
+                              <span>⚠ Duplicate Alert</span>
+                            </span>
+                            <div class="text-[11px] text-amber-800 font-medium truncate" title={`Also at ${adm.other_colleges.length > 0 ? adm.other_colleges.join(', ') : 'Technical College B'}`}>
+                              Also at {adm.other_colleges.length > 0 ? adm.other_colleges.join(', ') : 'Technical College B'}
+                            </div>
+                          </div>
+                        ) : (
+                          <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 px-2.5 py-0.5 rounded-full border border-emerald-200 font-bold text-xs whitespace-nowrap">
+                            <span>✓ Verified</span>
+                          </span>
+                        )}
+                      </td>
+                      <td class="py-3 px-3 text-right whitespace-nowrap">
+                        <button
+                          type="button"
+                          data-withdraw-id={adm.id}
+                          data-withdraw-apaar={adm.apaar_id}
+                          data-withdraw-name={adm.full_name}
+                          class="px-2.5 py-1.5 rounded-lg bg-white hover:bg-red-50 text-slate-700 hover:text-red-700 border border-slate-300 hover:border-red-300 text-xs font-bold transition-colors cursor-pointer whitespace-nowrap"
+                        >
+                          Cancel Seat
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
           </div>
-        </div>
-      </div>
 
-      <!-- WORKSPACE PANEL 4 (Hidden until clicked): SIMPLE "BRANCH & QUOTA SEAT SUMMARY" -->
-      <div
-        id="branchMatrixPanel"
-        role="tabpanel"
-        aria-labelledby="viewBranchMatrixTabBtn"
-        class="hidden p-6 sm:p-8 space-y-8"
-      >
-        <!-- Branch-Wise Seat Table -->
-        <div>
-          <div class="mb-4">
-            <h2 class="text-lg font-bold text-[#0B1E48]">Branch-Wise Approved Seats &amp; Vacancies</h2>
-            <p class="text-sm text-slate-600 mt-0.5">
-              Live count of admitted students and remaining vacant seats across all approved B.Tech branches.
-            </p>
+          <!-- PANEL 2 (Hidden until clicked): SPACIOUS "+ ADMIT NEW STUDENT" FORM -->
+          <div
+            id="panelSingleEntry"
+            role="tabpanel"
+            aria-labelledby="tabSingleEntryBtn"
+            class="hidden"
+          >
+            <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between gap-3">
+              <div>
+                <h2 class="text-base font-bold text-[#0B1E48]">Admit New Student</h2>
+                <p class="text-xs text-slate-600 mt-0.5">
+                  Check the student's 12-digit APAAR ID first, then select their branch and seat quota to confirm admission.
+                </p>
+              </div>
+            </div>
+
+            <div class="p-5 sm:p-6">
+              <form id="singleStudentForm" class="space-y-5">
+                <!-- Step 1 Box -->
+                <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-4">
+                  <h3 class="text-base font-bold text-[#0B1E48]">
+                    Step 1: Check Student's 12-Digit APAAR ID
+                  </h3>
+
+                  <div>
+                    <label for="singleApaarInput" class="block text-sm font-semibold text-slate-800 mb-1.5">
+                      12-Digit APAAR ID
+                    </label>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                      <input
+                        type="text"
+                        id="singleApaarInput"
+                        name="apaar_id"
+                        required
+                        pattern="\d{12}"
+                        maxlength="12"
+                        inputmode="numeric"
+                        placeholder="Enter 12-digit APAAR number (e.g. 901238471920)"
+                        class="flex-1 h-11 bg-white border border-slate-300 rounded-lg px-4 font-mono text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
+                      />
+                      <button
+                        type="button"
+                        id="btnVerifyApaar"
+                        class="h-11 px-5 rounded-lg bg-[#0B1E48] hover:bg-[#1E3A8A] text-white font-bold text-sm transition-colors inline-flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+                      >
+                        <span>Check APAAR ID</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Result Card -->
+                  <div
+                    id="apaarVerifyCard"
+                    class="hidden rounded-lg border p-4 text-sm space-y-1.5"
+                    role="status"
+                    aria-live="polite"
+                  ></div>
+                </div>
+
+                <!-- Step 2 Box -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 space-y-4">
+                  <h3 class="text-base font-bold text-[#0B1E48]">
+                    Step 2: Select Branch &amp; Seat Quota
+                  </h3>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="sm:col-span-2">
+                      <label for="singleNameInput" class="block text-sm font-semibold text-slate-800 mb-1.5">
+                        Student Full Name
+                      </label>
+                      <input
+                        type="text"
+                        id="singleNameInput"
+                        name="full_name"
+                        required
+                        placeholder="Enter student's full name as per 12th marksheet / Aadhaar"
+                        class="w-full h-11 bg-slate-50 border border-slate-300 rounded-lg px-4 text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
+                      />
+                    </div>
+
+                    <div>
+                      <label for="singleProgramSelect" class="block text-sm font-semibold text-slate-800 mb-1.5">
+                        Branch / Department
+                      </label>
+                      <select
+                        id="singleProgramSelect"
+                        name="program"
+                        class="w-full h-11 bg-slate-50 border border-slate-300 rounded-lg px-3.5 text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
+                      >
+                        <option value="B.Tech Computer Science">B.Tech Computer Science (60 Seats)</option>
+                        <option value="B.Tech Electronics & Comm.">B.Tech Electronics &amp; Comm. (60 Seats)</option>
+                        <option value="B.Tech Mechanical Engg">B.Tech Mechanical Engg (60 Seats)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label for="singleQuotaSelect" class="block text-sm font-semibold text-slate-800 mb-1.5">
+                        Seat Quota
+                      </label>
+                      <select
+                        id="singleQuotaSelect"
+                        name="admission_quota"
+                        class="w-full h-11 bg-slate-50 border border-slate-300 rounded-lg px-3.5 text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
+                      >
+                        <option value="APPROVED_INTAKE">Regular Merit Seat</option>
+                        <option value="SUPERNUMERARY">TFW / EWS / PMSSS Quota</option>
+                        <option value="NRI">NRI Quota</option>
+                        <option value="OCI">OCI / PIO Quota</option>
+                        <option value="FN">Foreign National Quota</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label for="singleAllotmentInput" class="block text-sm font-semibold text-slate-800 mb-1.5">
+                        CET / JoSAA Allotment No.
+                      </label>
+                      <input
+                        type="text"
+                        id="singleAllotmentInput"
+                        name="allotment_ref"
+                        placeholder="e.g. CET-2026-MH-88412"
+                        class="w-full h-11 bg-slate-50 border border-slate-300 rounded-lg px-4 font-mono text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
+                      />
+                    </div>
+
+                    <div>
+                      <label for="singleSessionSelect" class="block text-sm font-semibold text-slate-800 mb-1.5">
+                        Admission Year
+                      </label>
+                      <select
+                        id="singleSessionSelect"
+                        name="batch_year"
+                        class="w-full h-11 bg-slate-50 border border-slate-300 rounded-lg px-3.5 text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
+                      >
+                        <option value="2026" selected>2026–27 (1st Year Regular)</option>
+                        <option value="2025">2026–27 (2nd Year Lateral Entry)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="pt-3">
+                    <button
+                      type="submit"
+                      id="singleSubmitBtn"
+                      class="w-full h-12 rounded-xl bg-[#0B4EA2] hover:bg-[#083B7E] text-white font-bold text-base transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <span>Confirm &amp; Admit Student</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
           </div>
 
-          <div class="overflow-x-auto rounded-xl border border-slate-200">
-            <table class="w-full text-left text-sm border-collapse">
-              <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
-                <tr>
-                  <th class="py-3.5 px-5">Branch / Department</th>
-                  <th class="py-3.5 px-5 text-right">Approved Seats</th>
-                  <th class="py-3.5 px-5 text-right">Regular Merit</th>
-                  <th class="py-3.5 px-5 text-right">TFW / EWS / NRI</th>
-                  <th class="py-3.5 px-5 text-right">Total Admitted</th>
-                  <th class="py-3.5 px-5 text-right">Vacant Seats</th>
-                  <th class="py-3.5 px-5 text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-200 text-slate-800">
-                {branchMatrix.map((row) => (
-                  <tr class="hover:bg-slate-50 transition-colors" data-branch-row={row.branch}>
-                    <td class="py-4 px-5 font-bold text-[#0B1E48]">
-                      <span>{row.branch}</span>
-                      <span class="ml-2 font-mono text-xs font-normal text-slate-500">({row.code})</span>
-                    </td>
-                    <td class="py-4 px-5 text-right font-mono font-semibold text-slate-700" data-cell="sanctioned">
-                      {row.sanctioned}
-                    </td>
-                    <td class="py-4 px-5 text-right font-mono text-slate-700" data-cell="approved">
-                      {row.approved_intake}
-                    </td>
-                    <td class="py-4 px-5 text-right font-mono text-slate-700" data-cell="super_nri">
-                      {row.supernumerary + row.nri_oci_fn}
-                    </td>
-                    <td class="py-4 px-5 text-right font-mono font-bold text-[#0B4EA2]" data-cell="admitted">
-                      {row.admitted}
-                    </td>
-                    <td class="py-4 px-5 text-right font-mono font-bold text-emerald-700" data-cell="vacant">
-                      {row.vacant}
-                    </td>
-                    <td class="py-4 px-5 text-right" data-cell="status">
-                      {row.duplicates > 0 ? (
-                        <span class="inline-flex items-center px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-300 font-bold text-xs">
-                          Duplicate Alert ({row.duplicates})
-                        </span>
-                      ) : (
-                        <span class="inline-flex items-center px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-xs">
-                          {row.vacant} Seats Open
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <!-- PANEL 3 (Hidden until clicked): SIMPLE "BULK EXCEL / CSV UPLOAD" -->
+          <div
+            id="panelBulkCsv"
+            role="tabpanel"
+            aria-labelledby="tabBulkCsvBtn"
+            class="hidden"
+          >
+            <div class="px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 class="text-base font-bold text-[#0B1E48]">Bulk Excel / CSV Upload</h2>
+                <p class="text-xs text-slate-600 mt-0.5">
+                  Upload an Excel CSV file of admitted students to verify APAAR IDs and add them in bulk.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                id="downloadSampleCsvBtn"
+                class="h-9 px-3.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-[#0B1E48] border border-slate-300 text-xs font-bold transition-colors inline-flex items-center gap-2 shrink-0 cursor-pointer"
+              >
+                <svg class="w-4 h-4 text-[#0B4EA2] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                <span>Download Sample Excel / CSV Template</span>
+              </button>
+            </div>
+
+            <div class="p-5 sm:p-6 space-y-5">
+              <label
+                for="csvFileInput"
+                tabindex="0"
+                aria-describedby="csvSchemaHint"
+                class="border-2 border-dashed border-slate-300 hover:border-[#0B4EA2] hover:bg-blue-50/30 rounded-xl p-8 text-center cursor-pointer flex flex-col items-center justify-center bg-slate-50 transition-colors"
+              >
+                <svg class="w-8 h-8 text-[#0B4EA2] mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <span class="text-base font-bold text-[#0B1E48]">Click here to select CSV file from your computer</span>
+                <span id="csvSchemaHint" class="text-xs font-mono text-slate-500 mt-1">
+                  Columns: apaar_id, full_name, program, admission_quota, allotment_ref, batch_year
+                </span>
+                <input type="file" id="csvFileInput" accept=".csv" class="hidden" />
+              </label>
+
+              <!-- Embedded CSV Preview & Save Section -->
+              <div id="triagePanel" class="rounded-xl border border-slate-200 overflow-hidden bg-white">
+                <div class="px-5 py-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4">
+                  <div class="flex flex-wrap items-center gap-4 text-sm">
+                    <button
+                      type="button"
+                      id="viewTriageTabBtn"
+                      class="font-bold text-[#0B1E48] inline-flex items-center gap-2 cursor-pointer"
+                    >
+                      <span>Uploaded CSV Preview</span>
+                      <span id="stagedCountPill" class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-800 font-mono text-xs">0</span>
+                    </button>
+                    <div id="triageSummaryStrip" class="flex flex-wrap items-center gap-4 text-xs sm:text-sm">
+                      <span>Valid APAAR: <strong id="countValid" class="text-emerald-700 font-mono">0</strong></span>
+                      <span>Format Errors: <strong id="countMalformed" class="text-red-700 font-mono">0</strong></span>
+                      <span>Missing APAAR: <strong id="countMissing" class="text-amber-700 font-mono">0</strong></span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    id="commitSyncBtn"
+                    disabled
+                    class="h-10 px-5 rounded-lg bg-[#0B4EA2] hover:bg-[#083B7E] disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-not-allowed text-white text-sm font-bold transition-colors inline-flex items-center gap-2 cursor-pointer"
+                  >
+                    <span>Save Uploaded Students</span>
+                  </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left text-sm border-collapse">
+                    <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                      <tr>
+                        <th class="py-3 px-4">#</th>
+                        <th class="py-3 px-4">12-Digit APAAR ID</th>
+                        <th class="py-3 px-4">Student Name</th>
+                        <th class="py-3 px-4">Branch / Department</th>
+                        <th class="py-3 px-4">Quota &amp; Allotment</th>
+                        <th class="py-3 px-4">Check Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="triageTableBody" class="divide-y divide-slate-200 text-slate-800">
+                      <tr>
+                        <td colspan="6" class="py-10 px-4 text-center text-slate-500 text-sm">
+                          No CSV file selected yet. Choose a CSV file above or download the sample template to test.
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <!-- 5 Quota Summary Cards -->
-        <div>
-          <div class="mb-4">
-            <h3 class="text-lg font-bold text-[#0B1E48]">Quota-Wise Seat Summary</h3>
-            <p class="text-sm text-slate-600 mt-0.5">
-              Breakdown of admitted students by AICTE seat category.
-            </p>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
-              <div class="text-sm font-semibold text-slate-700">Regular Merit Seats</div>
-              <div class="text-2xl font-extrabold font-mono text-[#0B1E48] mt-1">
-                <span id="catMeritCount">{quotaCounts.APPROVED_INTAKE}</span>
-                <span class="text-sm font-normal text-slate-500">/ <span id="catApprovedIntake">{sanctionedCap}</span></span>
-              </div>
-              <div id="catActualEnrolment" class="text-xs text-slate-500 mt-1">
-                Total Admitted: {actualAdmittedCount} / {sanctionedCap}
-              </div>
+          <!-- PANEL 4 (Hidden until clicked): SIMPLE "BRANCH & SEAT MATRIX" -->
+          <div
+            id="branchMatrixPanel"
+            role="tabpanel"
+            aria-labelledby="viewBranchMatrixTabBtn"
+            class="hidden"
+          >
+            <div class="px-5 py-4 border-b border-slate-200">
+              <h2 class="text-base font-bold text-[#0B1E48]">Branch-Wise Approved Seats &amp; Vacancies</h2>
+              <p class="text-xs text-slate-600 mt-0.5">
+                Live count of admitted students and remaining vacant seats across all approved B.Tech branches.
+              </p>
             </div>
 
-            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
-              <div class="text-sm font-semibold text-slate-700">TFW / EWS / PMSSS (15%)</div>
-              <div id="catSupernumerary" class="text-2xl font-extrabold font-mono text-[#0B4EA2] mt-1">
-                {quotaCounts.SUPERNUMERARY} <span class="text-sm font-normal text-slate-500">/ {quotaCeilings.SUPERNUMERARY}</span>
+            <div class="p-5 sm:p-6 space-y-6">
+              <div class="overflow-x-auto rounded-xl border border-slate-200">
+                <table class="w-full text-left text-sm border-collapse">
+                  <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                    <tr>
+                      <th class="py-3.5 px-5">Branch / Department</th>
+                      <th class="py-3.5 px-5 text-right">Approved Seats</th>
+                      <th class="py-3.5 px-5 text-right">Regular Merit</th>
+                      <th class="py-3.5 px-5 text-right">TFW / EWS / NRI</th>
+                      <th class="py-3.5 px-5 text-right">Total Admitted</th>
+                      <th class="py-3.5 px-5 text-right">Vacant Seats</th>
+                      <th class="py-3.5 px-5 text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-200 text-slate-800">
+                    {branchMatrix.map((row) => (
+                      <tr class="hover:bg-slate-50 transition-colors" data-branch-row={row.branch}>
+                        <td class="py-4 px-5 font-bold text-[#0B1E48]">
+                          <span>{row.branch}</span>
+                          <span class="ml-2 font-mono text-xs font-normal text-slate-500">({row.code})</span>
+                        </td>
+                        <td class="py-4 px-5 text-right font-mono font-semibold text-slate-700" data-cell="sanctioned">
+                          {row.sanctioned}
+                        </td>
+                        <td class="py-4 px-5 text-right font-mono text-slate-700" data-cell="approved">
+                          {row.approved_intake}
+                        </td>
+                        <td class="py-4 px-5 text-right font-mono text-slate-700" data-cell="super_nri">
+                          {row.supernumerary + row.nri_oci_fn}
+                        </td>
+                        <td class="py-4 px-5 text-right font-mono font-bold text-[#0B4EA2]" data-cell="admitted">
+                          {row.admitted}
+                        </td>
+                        <td class="py-4 px-5 text-right font-mono font-bold text-emerald-700" data-cell="vacant">
+                          {row.vacant}
+                        </td>
+                        <td class="py-4 px-5 text-right" data-cell="status">
+                          {row.duplicates > 0 ? (
+                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-300 font-bold text-xs">
+                              Duplicate Alert ({row.duplicates})
+                            </span>
+                          ) : (
+                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-xs">
+                              {row.vacant} Seats Open
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <div class="text-xs text-slate-500 mt-1">Supernumerary Quota</div>
-            </div>
 
-            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
-              <div class="text-sm font-semibold text-slate-700">NRI Quota (5%)</div>
-              <div id="catNri" class="text-2xl font-extrabold font-mono text-amber-800 mt-1">
-                {quotaCounts.NRI} <span class="text-sm font-normal text-slate-500">/ {quotaCeilings.NRI}</span>
-              </div>
-              <div class="text-xs text-slate-500 mt-1">Non-Resident Indian</div>
-            </div>
+              <!-- 5 Quota Summary Cards -->
+              <div>
+                <div class="mb-3">
+                  <h3 class="text-base font-bold text-[#0B1E48]">Quota-Wise Seat Summary</h3>
+                  <p class="text-xs text-slate-600 mt-0.5">
+                    Breakdown of admitted students by AICTE seat category.
+                  </p>
+                </div>
 
-            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
-              <div class="text-sm font-semibold text-slate-700">OCI / PIO Quota (2%)</div>
-              <div id="catOci" class="text-2xl font-extrabold font-mono text-[#0B1E48] mt-1">
-                {quotaCounts.OCI} <span class="text-sm font-normal text-slate-500">/ {quotaCeilings.OCI}</span>
-              </div>
-              <div class="text-xs text-slate-500 mt-1">Overseas Citizen of India</div>
-            </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                  <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <div class="text-sm font-semibold text-slate-700">Regular Merit Seats</div>
+                    <div class="text-2xl font-extrabold font-mono text-[#0B1E48] mt-1">
+                      <span id="catMeritCount">{quotaCounts.APPROVED_INTAKE}</span>
+                      <span class="text-sm font-normal text-slate-500">/ <span id="catApprovedIntake">{sanctionedCap}</span></span>
+                    </div>
+                    <div id="catActualEnrolment" class="text-xs text-slate-500 mt-1">
+                      Total Admitted: {actualAdmittedCount} / {sanctionedCap}
+                    </div>
+                  </div>
 
-            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
-              <div class="text-sm font-semibold text-slate-700">Foreign National (3%)</div>
-              <div id="catFn" class="text-2xl font-extrabold font-mono text-emerald-800 mt-1">
-                {quotaCounts.FN} <span class="text-sm font-normal text-slate-500">/ {quotaCeilings.FN}</span>
+                  <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <div class="text-sm font-semibold text-slate-700">TFW / EWS / PMSSS (15%)</div>
+                    <div id="catSupernumerary" class="text-2xl font-extrabold font-mono text-[#0B4EA2] mt-1">
+                      {quotaCounts.SUPERNUMERARY} <span class="text-sm font-normal text-slate-500">/ {quotaCeilings.SUPERNUMERARY}</span>
+                    </div>
+                    <div class="text-xs text-slate-500 mt-1">Supernumerary Quota</div>
+                  </div>
+
+                  <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <div class="text-sm font-semibold text-slate-700">NRI Quota (5%)</div>
+                    <div id="catNri" class="text-2xl font-extrabold font-mono text-amber-800 mt-1">
+                      {quotaCounts.NRI} <span class="text-sm font-normal text-slate-500">/ {quotaCeilings.NRI}</span>
+                    </div>
+                    <div class="text-xs text-slate-500 mt-1">Non-Resident Indian</div>
+                  </div>
+
+                  <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <div class="text-sm font-semibold text-slate-700">OCI / PIO Quota (2%)</div>
+                    <div id="catOci" class="text-2xl font-extrabold font-mono text-[#0B1E48] mt-1">
+                      {quotaCounts.OCI} <span class="text-sm font-normal text-slate-500">/ {quotaCeilings.OCI}</span>
+                    </div>
+                    <div class="text-xs text-slate-500 mt-1">Overseas Citizen of India</div>
+                  </div>
+
+                  <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <div class="text-sm font-semibold text-slate-700">Foreign National (3%)</div>
+                    <div id="catFn" class="text-2xl font-extrabold font-mono text-emerald-800 mt-1">
+                      {quotaCounts.FN} <span class="text-sm font-normal text-slate-500">/ {quotaCeilings.FN}</span>
+                    </div>
+                    <div class="text-xs text-slate-500 mt-1">International Students</div>
+                  </div>
+                </div>
               </div>
-              <div class="text-xs text-slate-500 mt-1">International Students</div>
             </div>
           </div>
         </div>
@@ -961,8 +1016,14 @@ const clientI18n = {
         if (btn) {
           btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
           btn.className = isActive
-            ? 'px-5 py-3 rounded-t-xl text-sm font-bold border-t border-x border-slate-200 bg-white text-[#0B1E48] -mb-px cursor-pointer inline-flex items-center gap-2 transition-colors'
-            : 'px-5 py-3 rounded-t-xl text-sm font-bold border-t border-x border-transparent text-slate-600 hover:text-[#0B1E48] hover:bg-slate-100/70 cursor-pointer inline-flex items-center gap-2 transition-colors';
+            ? 'w-full text-left px-3.5 py-3 rounded-xl text-sm font-bold bg-[#0B4EA2] text-white flex items-center justify-between cursor-pointer transition-colors'
+            : 'w-full text-left px-3.5 py-3 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#0B1E48] flex items-center justify-between cursor-pointer transition-colors';
+          const badge = btn.querySelector<HTMLElement>('[data-sidebar-badge]');
+          if (badge) {
+            badge.className = isActive
+              ? 'px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-white/20 text-white'
+              : 'px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-slate-100 text-slate-600';
+          }
         }
         if (panel) {
           panel.classList.toggle('hidden', !isActive);
@@ -1042,7 +1103,7 @@ const clientI18n = {
       if (filterDupeOpt) {
         filterDupeOpt.textContent = `Duplicate Alerts (${dupes})`;
       }
-      if (pctEl) pctEl.textContent = `${pct}% of total seats filled`;
+      if (pctEl) pctEl.textContent = `${pct}% seats filled`;
 
       // Quota counts
       const countMerit = enrolledList.filter((a) => normalizeQuotaClient(a.admission_quota || a.quota_label) === 'APPROVED_INTAKE').length;
@@ -1263,36 +1324,33 @@ const clientI18n = {
         row.setAttribute('data-row-status', student.is_duplicate ? 'DUPLICATE' : 'VERIFIED');
 
         const statusBadge = student.is_duplicate
-          ? `<span class="inline-flex items-center gap-1.5 bg-amber-50 text-amber-900 px-3 py-1 rounded-full border border-amber-300 font-bold text-xs">
-               <span>⚠ Duplicate Alert: Also at ${student.other_colleges?.join(', ') || 'Technical College B'}</span>
+          ? `<span class="inline-flex items-center gap-1.5 bg-amber-50 text-amber-900 px-2.5 py-0.5 rounded-full border border-amber-300 font-bold text-xs whitespace-nowrap">
+               <span>⚠ Duplicate Alert</span>
              </span>`
-          : `<span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 px-3 py-1 rounded-full border border-emerald-200 font-bold text-xs">
+          : `<span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 px-2.5 py-0.5 rounded-full border border-emerald-200 font-bold text-xs whitespace-nowrap">
                <span>✓ Verified</span>
              </span>`;
 
         row.innerHTML = `
-          <td class="py-4 px-6">
-            <div class="font-bold text-slate-900 text-sm">${student.full_name}</div>
-            <div class="font-mono text-xs text-slate-500 mt-0.5">Roll No: ${student.roll_id}</div>
+          <td class="py-3.5 px-4 whitespace-nowrap">
+            <div class="font-bold text-slate-900">${student.full_name}</div>
+            <div class="font-mono text-xs text-slate-500 mt-0.5">Roll: ${student.roll_id}</div>
           </td>
-          <td class="py-4 px-6">
-            <span class="text-sm font-mono font-bold text-[#0B1E48]">${formattedApaar}</span>
+          <td class="py-3.5 px-4 whitespace-nowrap">
+            <span class="font-mono font-bold text-[#0B1E48]">${formattedApaar}</span>
           </td>
-          <td class="py-4 px-6 font-medium text-slate-800">
-            ${canonicalBranch}
+          <td class="py-3.5 px-4 whitespace-nowrap">
+            <div class="font-semibold text-slate-900">${canonicalBranch}</div>
+            <div class="text-xs text-slate-500 mt-0.5">${humanQuota} · <span class="font-mono">${allotmentRef}</span></div>
           </td>
-          <td class="py-4 px-6">
-            <div class="font-semibold text-slate-800">${humanQuota}</div>
-            <div class="font-mono text-xs text-slate-500 mt-0.5">${allotmentRef}</div>
-          </td>
-          <td class="py-4 px-6">${statusBadge}</td>
-          <td class="py-4 px-6 text-right">
+          <td class="py-3.5 px-4 whitespace-nowrap">${statusBadge}</td>
+          <td class="py-3.5 px-4 text-right whitespace-nowrap">
             <button
               type="button"
               data-withdraw-id="${admId}"
               data-withdraw-apaar="${student.apaar_id}"
               data-withdraw-name="${student.full_name}"
-              class="px-3 py-1.5 rounded-lg bg-white hover:bg-red-50 text-slate-700 hover:text-red-700 border border-slate-300 hover:border-red-300 text-xs font-bold transition-colors cursor-pointer"
+              class="px-3 py-1.5 rounded-lg bg-white hover:bg-red-50 text-slate-700 hover:text-red-700 border border-slate-300 hover:border-red-300 text-xs font-bold transition-colors cursor-pointer whitespace-nowrap"
             >
               Cancel Seat
             </button>
