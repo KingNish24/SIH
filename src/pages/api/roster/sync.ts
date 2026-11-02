@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getDB } from '../../../lib/db';
-import { ingestRoster, type RosterStudentInput } from '../../../lib/roster';
+import { ingestRoster, computeInstitutionSeatTelemetry, type RosterStudentInput } from '../../../lib/roster';
 import type { Institution, Admission, Student } from '../../../lib/types';
 
 export const GET: APIRoute = async ({ request, url, locals }) => {
@@ -84,6 +84,7 @@ export const GET: APIRoute = async ({ request, url, locals }) => {
         success: true,
         institution,
         admissions: enrichedAdmissions,
+        telemetry: computeInstitutionSeatTelemetry(enrichedAdmissions, institution.sanctioned_intake),
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
@@ -197,6 +198,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
             program: body.program,
             batch_year: body.batch_year ? Number(body.batch_year) : undefined,
             dpdp_consent_status: body.dpdp_consent_status,
+            admission_quota: body.admission_quota,
+            admission_category: body.admission_category,
+            allotment_ref: body.allotment_ref,
+            roll_number: body.roll_number,
+            student_roll_id: body.student_roll_id,
           },
         ];
       }
@@ -225,7 +231,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const msg = err?.message || 'Internal server error';
     let status = 500;
     if (msg.includes('Tenant Isolation Violation') || msg.includes('Forbidden')) status = 403;
-    else if (msg.includes('STATUTORY_CAP_EXCEEDED')) status = 409;
+    else if (msg.includes('STATUTORY_CAP_EXCEEDED') || msg.includes('ALREADY_ENROLLED_IN_INSTITUTION')) status = 409;
     else if (msg.includes('not found')) status = 404;
     else if (msg.includes('Invalid payload') || msg.includes('Batch too large')) status = 400;
 

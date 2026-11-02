@@ -111,6 +111,86 @@ class MemoryDBAdapter implements DatabaseAdapter {
       dpdp_consent_status: 'GRANTED',
       passkey_credential_id: 'cred_webauthn_819203',
     },
+    {
+      apaar_id: '310948271605',
+      full_name: 'Karan Kulkarni',
+      dob: '2004-04-12',
+      gender: 'Male',
+      email: 'karan.k@example.edu.in',
+      phone: '+91 98230 11220',
+      dpdp_consent_status: 'GRANTED',
+      passkey_credential_id: null,
+    },
+    {
+      apaar_id: '420918374612',
+      full_name: 'Meera Joshi',
+      dob: '2004-08-19',
+      gender: 'Female',
+      email: 'meera.j@example.edu.in',
+      phone: '+91 98231 22331',
+      dpdp_consent_status: 'GRANTED',
+      passkey_credential_id: null,
+    },
+    {
+      apaar_id: '530192837465',
+      full_name: 'Arjun Nair',
+      dob: '2003-12-05',
+      gender: 'Male',
+      email: 'arjun.nair@example.edu.in',
+      phone: '+91 98450 33442',
+      dpdp_consent_status: 'GRANTED',
+      passkey_credential_id: null,
+    },
+    {
+      apaar_id: '640291837461',
+      full_name: 'Divya Reddy',
+      dob: '2004-01-22',
+      gender: 'Female',
+      email: 'divya.r@example.edu.in',
+      phone: '+91 98490 44553',
+      dpdp_consent_status: 'GRANTED',
+      passkey_credential_id: null,
+    },
+    {
+      apaar_id: '750392817264',
+      full_name: 'Zaid Al-Mansoor',
+      dob: '2003-09-30',
+      gender: 'Male',
+      email: 'zaid.m@example.edu.in',
+      phone: '+91 98201 55664',
+      dpdp_consent_status: 'GRANTED',
+      passkey_credential_id: null,
+    },
+    {
+      apaar_id: '860491827365',
+      full_name: 'Neha Deshmukh',
+      dob: '2004-06-14',
+      gender: 'Female',
+      email: 'neha.d@example.edu.in',
+      phone: '+91 98222 66775',
+      dpdp_consent_status: 'GRANTED',
+      passkey_credential_id: null,
+    },
+    {
+      apaar_id: '970592817366',
+      full_name: 'Siddharth Iyer',
+      dob: '2004-03-09',
+      gender: 'Male',
+      email: 'siddharth.i@example.edu.in',
+      phone: '+91 98401 77886',
+      dpdp_consent_status: 'GRANTED',
+      passkey_credential_id: null,
+    },
+    {
+      apaar_id: '180693827467',
+      full_name: 'Tenzin Norbu',
+      dob: '2003-10-18',
+      gender: 'Male',
+      email: 'tenzin.n@example.edu.in',
+      phone: '+91 98102 88997',
+      dpdp_consent_status: 'GRANTED',
+      passkey_credential_id: null,
+    },
   ];
 
   private admissions: Admission[] = [
@@ -123,6 +203,9 @@ class MemoryDBAdapter implements DatabaseAdapter {
       enrollment_date: '2024-07-15',
       status: 'FLAGGED_DUPLICATE',
       is_duplicate: 1,
+      admission_quota: 'APPROVED_INTAKE',
+      allotment_ref: 'CET-2024-MH-88210',
+      roll_number: 'TCA24CS001',
     },
     {
       id: 'ADM-2024-002',
@@ -133,6 +216,9 @@ class MemoryDBAdapter implements DatabaseAdapter {
       enrollment_date: '2024-07-28',
       status: 'FLAGGED_DUPLICATE',
       is_duplicate: 1,
+      admission_quota: 'APPROVED_INTAKE',
+      allotment_ref: 'KEA-2024-KA-19042',
+      roll_number: 'TCB24IT014',
     },
     {
       id: 'ADM-2024-003',
@@ -143,6 +229,9 @@ class MemoryDBAdapter implements DatabaseAdapter {
       enrollment_date: '2024-07-12',
       status: 'FLAGGED_DUPLICATE',
       is_duplicate: 1,
+      admission_quota: 'APPROVED_INTAKE',
+      allotment_ref: 'JOSAA-2024-44109',
+      roll_number: 'TCA24CS002',
     },
     {
       id: 'ADM-2024-004',
@@ -153,6 +242,9 @@ class MemoryDBAdapter implements DatabaseAdapter {
       enrollment_date: '2024-08-01',
       status: 'FLAGGED_DUPLICATE',
       is_duplicate: 1,
+      admission_quota: 'APPROVED_INTAKE',
+      allotment_ref: 'JAC-2024-DL-30192',
+      roll_number: 'SUC24EC008',
     },
     {
       id: 'ADM-2024-005',
@@ -163,6 +255,9 @@ class MemoryDBAdapter implements DatabaseAdapter {
       enrollment_date: '2024-07-20',
       status: 'ENROLLED',
       is_duplicate: 0,
+      admission_quota: 'APPROVED_INTAKE',
+      allotment_ref: 'CET-2024-MH-91044',
+      roll_number: 'TCA24ME001',
     },
     {
       id: 'ADM-2020-006',
@@ -173,6 +268,9 @@ class MemoryDBAdapter implements DatabaseAdapter {
       enrollment_date: '2020-08-10',
       status: 'ENROLLED',
       is_duplicate: 0,
+      admission_quota: 'APPROVED_INTAKE',
+      allotment_ref: 'CET-2020-MH-10294',
+      roll_number: 'TCA20CS001',
     },
     {
       id: 'ADM-2020-007',
@@ -183,6 +281,9 @@ class MemoryDBAdapter implements DatabaseAdapter {
       enrollment_date: '2020-08-15',
       status: 'ENROLLED',
       is_duplicate: 0,
+      admission_quota: 'APPROVED_INTAKE',
+      allotment_ref: 'KEA-2020-KA-00912',
+      roll_number: 'TCB20CE005',
     },
     {
       id: 'ADM-2024-008',
@@ -193,6 +294,113 @@ class MemoryDBAdapter implements DatabaseAdapter {
       enrollment_date: '2024-07-22',
       status: 'ENROLLED',
       is_duplicate: 0,
+      admission_quota: 'APPROVED_INTAKE',
+      allotment_ref: 'KEA-2024-KA-55120',
+      roll_number: 'TCB24DS003',
+    },
+    {
+      id: 'ADM-2024-009',
+      apaar_id: '310948271605',
+      institution_id: 'INST-001',
+      program: 'B.Tech Computer Science',
+      batch_year: 2024,
+      enrollment_date: '2024-07-18',
+      status: 'ENROLLED',
+      is_duplicate: 0,
+      admission_quota: 'SUPERNUMERARY',
+      allotment_ref: 'TFWS-2024-MH-1120',
+      roll_number: 'TCA24CS003',
+    },
+    {
+      id: 'ADM-2024-010',
+      apaar_id: '420918374612',
+      institution_id: 'INST-001',
+      program: 'B.Tech Computer Science',
+      batch_year: 2024,
+      enrollment_date: '2024-07-19',
+      status: 'ENROLLED',
+      is_duplicate: 0,
+      admission_quota: 'NRI',
+      allotment_ref: 'NRI-2024-MH-0041',
+      roll_number: 'TCA24CS004',
+    },
+    {
+      id: 'ADM-2024-011',
+      apaar_id: '530192837465',
+      institution_id: 'INST-001',
+      program: 'B.Tech Electronics & Comm.',
+      batch_year: 2024,
+      enrollment_date: '2024-07-21',
+      status: 'ENROLLED',
+      is_duplicate: 0,
+      admission_quota: 'APPROVED_INTAKE',
+      allotment_ref: 'CET-2024-MH-77412',
+      roll_number: 'TCA24EC001',
+    },
+    {
+      id: 'ADM-2024-012',
+      apaar_id: '640291837461',
+      institution_id: 'INST-001',
+      program: 'B.Tech Electronics & Comm.',
+      batch_year: 2024,
+      enrollment_date: '2024-07-22',
+      status: 'ENROLLED',
+      is_duplicate: 0,
+      admission_quota: 'SUPERNUMERARY',
+      allotment_ref: 'EWS-2024-MH-3319',
+      roll_number: 'TCA24EC002',
+    },
+    {
+      id: 'ADM-2024-013',
+      apaar_id: '750392817264',
+      institution_id: 'INST-001',
+      program: 'B.Tech Electronics & Comm.',
+      batch_year: 2024,
+      enrollment_date: '2024-07-24',
+      status: 'ENROLLED',
+      is_duplicate: 0,
+      admission_quota: 'OCI',
+      allotment_ref: 'DASA-2024-OCI-881',
+      roll_number: 'TCA24EC003',
+    },
+    {
+      id: 'ADM-2024-014',
+      apaar_id: '860491827365',
+      institution_id: 'INST-001',
+      program: 'B.Tech Electronics & Comm.',
+      batch_year: 2024,
+      enrollment_date: '2024-07-25',
+      status: 'ENROLLED',
+      is_duplicate: 0,
+      admission_quota: 'APPROVED_INTAKE',
+      allotment_ref: 'JOSAA-2024-51208',
+      roll_number: 'TCA24EC004',
+    },
+    {
+      id: 'ADM-2024-015',
+      apaar_id: '970592817366',
+      institution_id: 'INST-001',
+      program: 'B.Tech Mechanical Engg',
+      batch_year: 2024,
+      enrollment_date: '2024-07-26',
+      status: 'ENROLLED',
+      is_duplicate: 0,
+      admission_quota: 'SUPERNUMERARY',
+      allotment_ref: 'PMSSS-2024-0192',
+      roll_number: 'TCA24ME002',
+    },
+    {
+      id: 'ADM-2024-016',
+      apaar_id: '180693827467',
+      institution_id: 'INST-001',
+      program: 'B.Tech Mechanical Engg',
+      batch_year: 2024,
+      enrollment_date: '2024-07-27',
+      status: 'ENROLLED',
+      is_duplicate: 0,
+      admission_quota: 'FN',
+      allotment_ref: 'ICCR-2024-FN-0074',
+      roll_number: 'TCA24ME003',
     },
   ];
 
@@ -987,15 +1195,22 @@ class MemoryDBAdapter implements DatabaseAdapter {
       return { success: true, meta: { changes: removed.length } };
     }
 
-    // UPDATE ADMISSIONS CLEAR DUPLICATE FLAG
+    // UPDATE ADMISSIONS SET STATUS / IS_DUPLICATE
     if (upper.includes('UPDATE ADMISSIONS SET STATUS =') && upper.includes('IS_DUPLICATE =')) {
       const apaar_id = params[params.length - 1];
+      const flagDuplicate = upper.includes("'FLAGGED_DUPLICATE'") || upper.includes('IS_DUPLICATE = 1');
       let changes = 0;
       for (const adm of this.admissions) {
-        if (adm.apaar_id === apaar_id && adm.status === 'FLAGGED_DUPLICATE') {
-          adm.status = 'ENROLLED';
-          adm.is_duplicate = 0;
-          changes++;
+        if (adm.apaar_id === apaar_id) {
+          if (flagDuplicate) {
+            adm.status = 'FLAGGED_DUPLICATE';
+            adm.is_duplicate = 1;
+            changes++;
+          } else if (adm.status === 'FLAGGED_DUPLICATE') {
+            adm.status = 'ENROLLED';
+            adm.is_duplicate = 0;
+            changes++;
+          }
         }
       }
       return { success: true, meta: { changes } };
@@ -1079,7 +1294,7 @@ class MemoryDBAdapter implements DatabaseAdapter {
 
     // INSERT INTO ADMISSIONS
     if (upper.includes('INSERT INTO ADMISSIONS')) {
-      const [id, apaar_id, institution_id, program, batch_year, enrollment_date, status, is_duplicate] = params;
+      const [id, apaar_id, institution_id, program, batch_year, enrollment_date, status, is_duplicate, admission_quota, allotment_ref, roll_number] = params;
       this.admissions.unshift({
         id,
         apaar_id,
@@ -1089,6 +1304,9 @@ class MemoryDBAdapter implements DatabaseAdapter {
         enrollment_date: enrollment_date || new Date().toISOString().split('T')[0],
         status: status || 'ENROLLED',
         is_duplicate: Number(is_duplicate) || 0,
+        admission_quota: (admission_quota as any) || 'APPROVED_INTAKE',
+        ...(allotment_ref ? { allotment_ref } : {}),
+        ...(roll_number ? { roll_number } : {}),
       });
       return { success: true };
     }

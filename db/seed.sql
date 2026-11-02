@@ -16,30 +16,48 @@ VALUES
   ('901238471920', 'Aaditya Patel', '2004-02-08', 'Male', 'aaditya.p@example.edu.in', '+91 97234 56789', 'PENDING', NULL),
   ('412398471029', 'Sneha Sundaram', '2002-09-17', 'Female', 'sneha.s@example.edu.in', '+91 94440 12345', 'GRANTED', 'cred_webauthn_412398'),
   ('601928374819', 'Vikram Malhotra', '2001-12-03', 'Male', 'vikram.m@example.edu.in', '+91 98990 87654', 'REVOKED', 'cred_webauthn_601928'),
-  ('819203847561', 'Ananya Sen', '2003-07-25', 'Female', 'ananya.sen@example.edu.in', '+91 98300 54321', 'GRANTED', 'cred_webauthn_819203');
+  ('819203847561', 'Ananya Sen', '2003-07-25', 'Female', 'ananya.sen@example.edu.in', '+91 98300 54321', 'GRANTED', 'cred_webauthn_819203'),
+  ('310948271605', 'Karan Kulkarni', '2004-04-12', 'Male', 'karan.k@example.edu.in', '+91 98230 11220', 'GRANTED', NULL),
+  ('420918374612', 'Meera Joshi', '2004-08-19', 'Female', 'meera.j@example.edu.in', '+91 98231 22331', 'GRANTED', NULL),
+  ('530192837465', 'Arjun Nair', '2003-12-05', 'Male', 'arjun.nair@example.edu.in', '+91 98450 33442', 'GRANTED', NULL),
+  ('640291837461', 'Divya Reddy', '2004-01-22', 'Female', 'divya.r@example.edu.in', '+91 98490 44553', 'GRANTED', NULL),
+  ('750392817264', 'Zaid Al-Mansoor', '2003-09-30', 'Male', 'zaid.m@example.edu.in', '+91 98201 55664', 'GRANTED', NULL),
+  ('860491827365', 'Neha Deshmukh', '2004-06-14', 'Female', 'neha.d@example.edu.in', '+91 98222 66775', 'GRANTED', NULL),
+  ('970592817366', 'Siddharth Iyer', '2004-03-09', 'Male', 'siddharth.i@example.edu.in', '+91 98401 77886', 'GRANTED', NULL),
+  ('180693827467', 'Tenzin Norbu', '2003-10-18', 'Male', 'tenzin.n@example.edu.in', '+91 98102 88997', 'GRANTED', NULL);
 
--- 3. Admissions (Cross-College Duplicates & Overrun)
-INSERT INTO admissions (id, apaar_id, institution_id, program, batch_year, enrollment_date, status, is_duplicate)
+-- 3. Admissions (Cross-College Duplicates, Multi-Branch EoA & Quota Allocations)
+INSERT INTO admissions (id, apaar_id, institution_id, program, batch_year, enrollment_date, status, is_duplicate, admission_quota, allotment_ref, roll_number)
 VALUES
   -- Rahul Sharma enrolled in BOTH College A and College B
-  ('ADM-2024-001', '739284019283', 'INST-001', 'B.Tech Computer Science', 2024, '2024-07-15', 'FLAGGED_DUPLICATE', 1),
-  ('ADM-2024-002', '739284019283', 'INST-002', 'B.Tech Information Technology', 2024, '2024-07-28', 'FLAGGED_DUPLICATE', 1),
+  ('ADM-2024-001', '739284019283', 'INST-001', 'B.Tech Computer Science', 2024, '2024-07-15', 'FLAGGED_DUPLICATE', 1, 'APPROVED_INTAKE', 'CET-2024-MH-88210', 'TCA24CS001'),
+  ('ADM-2024-002', '739284019283', 'INST-002', 'B.Tech Information Technology', 2024, '2024-07-28', 'FLAGGED_DUPLICATE', 1, 'APPROVED_INTAKE', 'KEA-2024-KA-19042', 'TCB24IT014'),
   
   -- Priya Verma enrolled in BOTH College A and State University College
-  ('ADM-2024-003', '582910384729', 'INST-001', 'B.Tech Computer Science', 2024, '2024-07-12', 'FLAGGED_DUPLICATE', 1),
-  ('ADM-2024-004', '582910384729', 'INST-003', 'B.Tech Electronics & Comm.', 2024, '2024-08-01', 'FLAGGED_DUPLICATE', 1),
+  ('ADM-2024-003', '582910384729', 'INST-001', 'B.Tech Computer Science', 2024, '2024-07-12', 'FLAGGED_DUPLICATE', 1, 'APPROVED_INTAKE', 'JOSAA-2024-44109', 'TCA24CS002'),
+  ('ADM-2024-004', '582910384729', 'INST-003', 'B.Tech Electronics & Comm.', 2024, '2024-08-01', 'FLAGGED_DUPLICATE', 1, 'APPROVED_INTAKE', 'JAC-2024-DL-30192', 'SUC24EC008'),
 
-  -- Aaditya Patel in College A (Legitimate)
-  ('ADM-2024-005', '901238471920', 'INST-001', 'B.Tech Mechanical Engg', 2024, '2024-07-20', 'ENROLLED', 0),
+  -- Aaditya Patel in College A (Mechanical - Approved Intake)
+  ('ADM-2024-005', '901238471920', 'INST-001', 'B.Tech Mechanical Engg', 2024, '2024-07-20', 'ENROLLED', 0, 'APPROVED_INTAKE', 'CET-2024-MH-91044', 'TCA24ME001'),
 
-  -- Sneha Sundaram in College A (Alumni)
-  ('ADM-2020-006', '412398471029', 'INST-001', 'B.Tech Computer Science', 2020, '2020-08-10', 'ENROLLED', 0),
+  -- Sneha Sundaram in College A (CS - Alumni / Approved Intake)
+  ('ADM-2020-006', '412398471029', 'INST-001', 'B.Tech Computer Science', 2020, '2020-08-10', 'ENROLLED', 0, 'APPROVED_INTAKE', 'CET-2020-MH-10294', 'TCA20CS001'),
 
   -- Vikram Malhotra in College B (Graduated with Revoked degree)
-  ('ADM-2020-007', '601928374819', 'INST-002', 'B.Tech Civil Engg', 2020, '2020-08-15', 'ENROLLED', 0),
+  ('ADM-2020-007', '601928374819', 'INST-002', 'B.Tech Civil Engg', 2020, '2020-08-15', 'ENROLLED', 0, 'APPROVED_INTAKE', 'KEA-2020-KA-00912', 'TCB20CE005'),
 
   -- Ananya Sen in College B
-  ('ADM-2024-008', '819203847561', 'INST-002', 'B.Tech Data Science', 2024, '2024-07-22', 'ENROLLED', 0);
+  ('ADM-2024-008', '819203847561', 'INST-002', 'B.Tech Data Science', 2024, '2024-07-22', 'ENROLLED', 0, 'APPROVED_INTAKE', 'KEA-2024-KA-55120', 'TCB24DS003'),
+
+  -- Additional INST-001 Admissions across CS, ECE, and ME with diverse quotas
+  ('ADM-2024-009', '310948271605', 'INST-001', 'B.Tech Computer Science', 2024, '2024-07-18', 'ENROLLED', 0, 'SUPERNUMERARY', 'TFWS-2024-MH-1120', 'TCA24CS003'),
+  ('ADM-2024-010', '420918374612', 'INST-001', 'B.Tech Computer Science', 2024, '2024-07-19', 'ENROLLED', 0, 'NRI', 'NRI-2024-MH-0041', 'TCA24CS004'),
+  ('ADM-2024-011', '530192837465', 'INST-001', 'B.Tech Electronics & Comm.', 2024, '2024-07-21', 'ENROLLED', 0, 'APPROVED_INTAKE', 'CET-2024-MH-77412', 'TCA24EC001'),
+  ('ADM-2024-012', '640291837461', 'INST-001', 'B.Tech Electronics & Comm.', 2024, '2024-07-22', 'ENROLLED', 0, 'SUPERNUMERARY', 'EWS-2024-MH-3319', 'TCA24EC002'),
+  ('ADM-2024-013', '750392817264', 'INST-001', 'B.Tech Electronics & Comm.', 2024, '2024-07-24', 'ENROLLED', 0, 'OCI', 'DASA-2024-OCI-881', 'TCA24EC003'),
+  ('ADM-2024-014', '860491827365', 'INST-001', 'B.Tech Electronics & Comm.', 2024, '2024-07-25', 'ENROLLED', 0, 'APPROVED_INTAKE', 'JOSAA-2024-51208', 'TCA24EC004'),
+  ('ADM-2024-015', '970592817366', 'INST-001', 'B.Tech Mechanical Engg', 2024, '2024-07-26', 'ENROLLED', 0, 'SUPERNUMERARY', 'PMSSS-2024-0192', 'TCA24ME002'),
+  ('ADM-2024-016', '180693827467', 'INST-001', 'B.Tech Mechanical Engg', 2024, '2024-07-27', 'ENROLLED', 0, 'FN', 'ICCR-2024-FN-0074', 'TCA24ME003');
 
 -- 4. Degrees (For University Degree Verification & Revocation Portal)
 INSERT INTO degrees (id, apaar_id, institution_id, degree_name, specialization, cgpa, year_of_passing, status, issuing_authority, issued_at, revoked_at, revocation_reason, digital_signature_hash)

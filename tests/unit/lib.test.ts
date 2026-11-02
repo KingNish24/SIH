@@ -18,7 +18,7 @@ import {
   getUIDictionary,
 } from '../../src/lib/i18n';
 import { getDB } from '../../src/lib/db';
-import { ingestRoster, isValidApaar } from '../../src/lib/roster';
+import { ingestRoster, isValidApaar, computeInstitutionSeatTelemetry } from '../../src/lib/roster';
 import { GET as getRosterSync, POST as postRosterSync, DELETE as deleteRosterSync } from '../../src/pages/api/roster/sync';
 import { GET as getRosterLookup } from '../../src/pages/api/roster/lookup';
 
@@ -142,11 +142,26 @@ describe('College Roster & Admissions Backend (/api/roster/sync & ingestRoster)'
     expect(data.success).toBe(true);
     expect(data.institution.id).toBe('INST-001');
     expect(Array.isArray(data.admissions)).toBe(true);
-    expect(data.admissions.length).toBeGreaterThan(0);
+    expect(data.admissions.length).toBeGreaterThanOrEqual(12);
     expect(data.admissions[0]).toHaveProperty('full_name');
     expect(data.admissions[0]).toHaveProperty('email');
     expect(data.admissions[0]).toHaveProperty('phone');
     expect(data.admissions[0]).toHaveProperty('dpdp_consent_status');
+    expect(data.telemetry).toBeDefined();
+    expect(data.telemetry.total_admitted).toBe(data.admissions.length);
+    expect(data.telemetry.branch_matrix.length).toBe(3);
+    expect(data.telemetry.quota_counts.APPROVED_INTAKE).toBeGreaterThan(0);
+    expect(data.telemetry.quota_counts.SUPERNUMERARY).toBeGreaterThan(0);
+  });
+
+  test('computeInstitutionSeatTelemetry aggregates branch and quota rows accurately', async () => {
+    const db = getDB();
+    const admRes = await db.prepare('SELECT * FROM admissions WHERE institution_id = ?').bind('INST-001').all();
+    const telemetry = computeInstitutionSeatTelemetry(admRes.results as any, 180);
+    expect(telemetry.total_admitted).toBe(admRes.results.length);
+    expect(telemetry.branch_matrix.map((b) => b.code)).toEqual(['CSE', 'ECE', 'ME']);
+    const branchSum = telemetry.branch_matrix.reduce((acc, b) => acc + b.admitted, 0);
+    expect(branchSum).toBe(telemetry.total_admitted);
   });
 
   test('POST /api/roster/sync supports normalize_intake, single admission, and cross-campus duplicate flagging', async () => {
@@ -200,7 +215,7 @@ describe('College Roster & Admissions Backend (/api/roster/sync & ingestRoster)'
     expect(dupData.created_admissions[0].status).toBe('FLAGGED_DUPLICATE');
     expect(dupData.created_admissions[0].enrollment_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
 
-    // 3. Single fresh student admission -> ENROLLED
+    // 3. Single fresh student admission -> ENROLLED with quota, allotment_ref & roll_number
     const freshRes = await postRosterSync({
       request: new Request('http://localhost/api/roster/sync', {
         method: 'POST',
@@ -216,6 +231,9 @@ describe('College Roster & Admissions Backend (/api/roster/sync & ingestRoster)'
               phone: '+91 98220 11223',
               program: 'B.Tech Computer Science',
               batch_year: 2025,
+              admission_quota: 'SUPERNUMERARY',
+              allotment_ref: 'TFWS-2025-MH-9091',
+              roll_number: 'TCA25CS099',
             },
           ],
         }),
@@ -230,6 +248,28 @@ describe('College Roster & Admissions Backend (/api/roster/sync & ingestRoster)'
     expect(freshData.new_enrollment).toBe(174);
     expect(freshData.created_admissions[0].status).toBe('ENROLLED');
     expect(freshData.created_admissions[0].full_name).toBe('Rohan Deshmukh');
+    expect(freshData.created_admissions[0].admission_quota).toBe('SUPERNUMERARY');
+    expect(freshData.created_admissions[0].allotment_ref).toBe('TFWS-2025-MH-9091');
+    expect(freshData.created_admissions[0].roll_number).toBe('TCA25CS099');
+
+    // 3b. Re-admitting same student in SAME institution returns 409 ALREADY_ENROLLED_IN_INSTITUTION
+    const sameInstDupRes = await postRosterSync({
+      request: new Request('http://localhost/api/roster/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          institutionId: 'INST-001',
+          mode: 'single',
+          apaar_id: '112233445566',
+          full_name: 'Rohan Deshmukh',
+          program: 'B.Tech Computer Science',
+        }),
+      }),
+      locals,
+    } as any);
+    expect(sameInstDupRes.status).toBe(409);
+    const sameInstDupData = await sameInstDupRes.json();
+    expect(sameInstDupData.error).toContain('ALREADY_ENROLLED_IN_INSTITUTION');
 
     // 4. Lookup existing student & fresh 12-digit APAAR via GET /api/roster/lookup
     const badLookup = await getRosterLookup({

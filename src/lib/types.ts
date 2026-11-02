@@ -62,6 +62,8 @@ export interface Student {
   created_at?: string;
 }
 
+export type AdmissionQuota = 'APPROVED_INTAKE' | 'SUPERNUMERARY' | 'NRI' | 'OCI' | 'FN';
+
 export interface Admission {
   id: string;
   apaar_id: string;
@@ -71,10 +73,26 @@ export interface Admission {
   enrollment_date: string;
   status: 'ENROLLED' | 'PROVISIONAL' | 'FLAGGED_DUPLICATE' | 'PFMS_FROZEN';
   is_duplicate: number;
+  admission_quota?: AdmissionQuota;
+  allotment_ref?: string;
+  roll_number?: string;
   created_at?: string;
   // joined fields
   institution_name?: string;
   student_name?: string;
+}
+
+export interface BranchSeatMatrixRow {
+  branch: string;
+  code: string;
+  sanctioned: number;
+  admitted: number;
+  approved_intake: number;
+  supernumerary: number;
+  nri_oci_fn: number;
+  duplicates: number;
+  vacant: number;
+  utilization_pct: number;
 }
 
 export interface Degree {

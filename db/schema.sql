@@ -50,6 +50,9 @@ CREATE TABLE admissions (
   enrollment_date TEXT,
   status TEXT DEFAULT 'ENROLLED',
   is_duplicate INTEGER DEFAULT 0,
+  admission_quota TEXT DEFAULT 'APPROVED_INTAKE',
+  allotment_ref TEXT,
+  roll_number TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (apaar_id) REFERENCES students(apaar_id),
   FOREIGN KEY (institution_id) REFERENCES institutions(id)

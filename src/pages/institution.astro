@@ -1,7 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { getDB } from '../lib/db';
-import { maskApaar, type Institution, type Student, type Admission } from '../lib/types';
+import { maskApaar, type Institution, type Student, type Admission, type AdmissionQuota, type BranchSeatMatrixRow } from '../lib/types';
 import { getUIDictionary, type LangCode, isSupportedLang } from '../lib/i18n';
 
 const lang: LangCode = isSupportedLang(Astro.locals.lang) ? Astro.locals.lang : 'en';
@@ -27,12 +27,12 @@ if (targetInstId) {
 
 const collegeA = institutions.find((i) => i.id === (targetInstId || 'INST-001')) || institutions[0] || {
   id: targetInstId || 'INST-001',
-  name: 'Technical Institute of Engineering, Pune',
+  name: 'Technical College A (Apex Institute of Engineering)',
   code: 'TCA-1049',
   sanctioned_intake: 180,
-  current_enrollment: 187,
-  status: 'OVERRUN_RISK',
-  risk_score: 94.2,
+  current_enrollment: 12,
+  status: 'NORMAL',
+  risk_score: 14.2,
   state: 'Maharashtra',
   district: 'Pune',
 };
@@ -52,6 +52,49 @@ const allAdmissionsRes = await db.prepare('SELECT * FROM admissions').bind().all
 const allAdmissions = allAdmissionsRes.results || [];
 const instMap = new Map<string, Institution>(allInstitutions.map((i) => [i.id, i]));
 
+const APPROVED_BRANCHES = [
+  { branch: 'B.Tech Computer Science', code: 'CSE-101', short: 'CSE', sanctioned: 60 },
+  { branch: 'B.Tech Electronics & Comm.', code: 'ECE-102', short: 'ECE', sanctioned: 60 },
+  { branch: 'B.Tech Mechanical Engg', code: 'MECH-103', short: 'MECH', sanctioned: 60 },
+] as const;
+
+function normalizeBranchName(rawProgram?: string): (typeof APPROVED_BRANCHES)[number]['branch'] {
+  const p = (rawProgram || '').toLowerCase();
+  if (p.includes('mech')) return 'B.Tech Mechanical Engg';
+  if (p.includes('elec') || p.includes('comm') || p.includes('ece') || p.includes('entc')) {
+    return 'B.Tech Electronics & Comm.';
+  }
+  return 'B.Tech Computer Science';
+}
+
+function normalizeQuotaCode(rawQuota?: string, fallbackIdx = 0): AdmissionQuota {
+  const q = (rawQuota || '').toUpperCase().trim();
+  if (q === 'SUPERNUMERARY' || q.includes('TFW') || q.includes('EWS') || q.includes('PMSSS')) return 'SUPERNUMERARY';
+  if (q === 'NRI' || q.includes('NRI')) return 'NRI';
+  if (q === 'OCI' || q.includes('OCI') || q.includes('PIO')) return 'OCI';
+  if (q === 'FN' || q.includes('FOREIGN')) return 'FN';
+  if (q === 'APPROVED_INTAKE' || q.includes('MERIT') || q.includes('JOSAA') || q.includes('CAP')) return 'APPROVED_INTAKE';
+  // Deterministic fallback if legacy row lacks admission_quota
+  if (fallbackIdx % 5 === 1) return 'SUPERNUMERARY';
+  if (fallbackIdx % 7 === 2) return 'NRI';
+  return 'APPROVED_INTAKE';
+}
+
+function getQuotaLabel(quota: AdmissionQuota): string {
+  switch (quota) {
+    case 'SUPERNUMERARY':
+      return 'Supernumerary (15% TFW/EWS)';
+    case 'NRI':
+      return 'NRI Quota (5%)';
+    case 'OCI':
+      return 'OCI / PIO (2%)';
+    case 'FN':
+      return 'Foreign National (3%)';
+    default:
+      return 'Approved Intake (Merit)';
+  }
+}
+
 const initialAdmissions = rawInstAdmissions.map((adm, idx) => {
   const st = studentByApaar.get(adm.apaar_id);
   const otherColleges = allAdmissions
@@ -61,22 +104,15 @@ const initialAdmissions = rawInstAdmissions.map((adm, idx) => {
       return otherInst ? `${otherInst.name.split('(')[0].trim()} (${other.institution_id})` : other.institution_id;
     });
   const isCrossDuplicate = Boolean(adm.is_duplicate) || adm.status === 'FLAGGED_DUPLICATE' || otherColleges.length > 0;
-  const branchShort = (adm.program || 'CSE').includes('Mechanical')
-    ? 'MECH'
-    : (adm.program || 'CSE').includes('Information')
-      ? 'IT'
-      : (adm.program || 'CSE').includes('Electronics')
-        ? 'ENTC'
-        : (adm.program || 'CSE').includes('Artificial')
-          ? 'AIDS'
-          : 'CSE';
-  const rollId =
-    (adm as any).student_roll_id ||
-    (adm.id?.startsWith('ADM-')
-      ? `${collegeA.code || collegeA.id}-${adm.batch_year || 2024}-${branchShort}-${String(idx + 1).padStart(3, '0')}`
-      : adm.id || `${collegeA.code || collegeA.id}-${adm.batch_year || 2024}-CSE-${String(idx + 1).padStart(3, '0')}`);
+  const canonicalBranch = normalizeBranchName(adm.program);
+  const branchMeta = APPROVED_BRANCHES.find((b) => b.branch === canonicalBranch) || APPROVED_BRANCHES[0];
 
-  const fullName = st?.full_name || adm.student_name || `Student ${idx + 1}`;
+  const rollId =
+    adm.roll_number ||
+    (adm as any).student_roll_id ||
+    `${collegeA.code || 'TCA-1049'}-${adm.batch_year || 2026}-${branchMeta.short}-${String(idx + 1).padStart(3, '0')}`;
+
+  const fullName = st?.full_name || adm.student_name || `Candidate ${idx + 1}`;
   const initials = fullName
     .split(' ')
     .filter(Boolean)
@@ -84,19 +120,11 @@ const initialAdmissions = rawInstAdmissions.map((adm, idx) => {
     .map((part) => part[0]?.toUpperCase() || '')
     .join('');
 
-  const rawCat = ((adm as any).admission_category || '').toUpperCase();
-  const quotaLabel =
-    rawCat === 'SUPERNUMERARY'
-      ? 'Supernumerary (TFW/EWS)'
-      : rawCat === 'NRI'
-        ? 'NRI Quota (5%)'
-        : rawCat === 'OCI'
-          ? 'OCI Quota (2%)'
-          : rawCat === 'FN'
-            ? 'Foreign National (3%)'
-            : idx % 3 === 1
-              ? 'Supernumerary (TFW/EWS)'
-              : 'Approved Intake';
+  const quotaCode = normalizeQuotaCode(adm.admission_quota || (adm as any).admission_category, idx);
+  const quotaLabel = getQuotaLabel(quotaCode);
+  const allotmentRef =
+    adm.allotment_ref ||
+    `MHT-CET/CAP-I/${88410 + idx}`;
 
   const formattedApaar =
     adm.apaar_id && adm.apaar_id.length === 12
@@ -113,40 +141,65 @@ const initialAdmissions = rawInstAdmissions.map((adm, idx) => {
     initials: initials || 'ST',
     email: st?.email || `${adm.apaar_id.slice(-4)}@college.edu.in`,
     dpdp_consent_status: st?.dpdp_consent_status || 'GRANTED',
-    program: adm.program || 'B.Tech Computer Science & Engineering',
-    batch_year: adm.batch_year || 2024,
-    enrollment_date: adm.enrollment_date || '15 Jul 2024',
+    program: canonicalBranch,
+    branch_code: branchMeta.code,
+    batch_year: adm.batch_year || 2026,
+    enrollment_date: adm.enrollment_date || '2026-08-14',
     status: isCrossDuplicate ? 'FLAGGED_DUPLICATE' : adm.status || 'ENROLLED',
     is_duplicate: isCrossDuplicate,
     other_colleges: otherColleges,
+    admission_quota: quotaCode,
     quota_label: quotaLabel,
+    allotment_ref: allotmentRef,
   };
 });
 
+// 100% Real DB Truth: All top counters, quota counts, and branch matrix derive strictly from `initialAdmissions`
+const sanctionedCap = collegeA.sanctioned_intake || 180;
+const actualAdmittedCount = initialAdmissions.length;
+const vacantSeatsCount = Math.max(0, sanctionedCap - actualAdmittedCount);
 const duplicateCount = initialAdmissions.filter((a) => a.is_duplicate).length;
 
-const initialDiff = collegeA.current_enrollment - collegeA.sanctioned_intake;
-const initialIsOverrun = initialDiff > 0;
-const initialPct = ((collegeA.current_enrollment / Math.max(1, collegeA.sanctioned_intake)) * 100).toFixed(1);
-const initialBarWidth = Math.min(100, (collegeA.current_enrollment / Math.max(1, collegeA.sanctioned_intake)) * 100).toFixed(1);
+const quotaCounts = {
+  APPROVED_INTAKE: initialAdmissions.filter((a) => a.admission_quota === 'APPROVED_INTAKE').length,
+  SUPERNUMERARY: initialAdmissions.filter((a) => a.admission_quota === 'SUPERNUMERARY').length,
+  NRI: initialAdmissions.filter((a) => a.admission_quota === 'NRI').length,
+  OCI: initialAdmissions.filter((a) => a.admission_quota === 'OCI').length,
+  FN: initialAdmissions.filter((a) => a.admission_quota === 'FN').length,
+};
 
-// Deterministic statutory category breakdown per institution (AICTE APH 2024-27 Norms)
-function computeCategoryBreakdown(sanctioned: number, current: number) {
-  const supernumerary = Math.round(sanctioned * 0.15); // 15% TFW / EWS / PMSSS
-  const nri = Math.round(sanctioned * 0.05); // 5% NRI quota
-  const oci = Math.max(1, Math.round(sanctioned * 0.02)); // 2% OCI status
-  const fn = Math.max(1, Math.round(sanctioned * 0.03)); // 3% Foreign National (FN)
+const quotaCeilings = {
+  SUPERNUMERARY: Math.round(sanctionedCap * 0.15), // 27
+  NRI: Math.round(sanctionedCap * 0.05), // 9
+  OCI: Math.max(1, Math.round(sanctionedCap * 0.02)), // 4
+  FN: Math.max(1, Math.round(sanctionedCap * 0.03)), // 5
+};
+
+const branchMatrix: BranchSeatMatrixRow[] = APPROVED_BRANCHES.map((b) => {
+  const rows = initialAdmissions.filter((a) => a.program === b.branch);
+  const admitted = rows.length;
+  const approved_intake = rows.filter((a) => a.admission_quota === 'APPROVED_INTAKE').length;
+  const supernumerary = rows.filter((a) => a.admission_quota === 'SUPERNUMERARY').length;
+  const nri_oci_fn = rows.filter((a) => a.admission_quota === 'NRI' || a.admission_quota === 'OCI' || a.admission_quota === 'FN').length;
+  const duplicates = rows.filter((a) => a.is_duplicate).length;
+  const vacant = Math.max(0, b.sanctioned - admitted);
+  const utilization_pct = Number(((admitted / Math.max(1, b.sanctioned)) * 100).toFixed(1));
   return {
-    approvedIntake: sanctioned,
-    actualEnrolment: current,
+    branch: b.branch,
+    code: b.code,
+    sanctioned: b.sanctioned,
+    admitted,
+    approved_intake,
     supernumerary,
-    nri,
-    oci,
-    fn,
+    nri_oci_fn,
+    duplicates,
+    vacant,
+    utilization_pct,
   };
-}
+});
 
-const initialCat = computeCategoryBreakdown(collegeA.sanctioned_intake, collegeA.current_enrollment);
+const initialPct = ((actualAdmittedCount / Math.max(1, sanctionedCap)) * 100).toFixed(1);
+const initialBarWidth = Math.min(100, (actualAdmittedCount / Math.max(1, sanctionedCap)) * 100).toFixed(1);
 
 const clientI18n = {
   langPrefix,
@@ -172,78 +225,58 @@ const clientI18n = {
     data-initial-admissions={JSON.stringify(initialAdmissions)}
     data-college-id={collegeA.id}
   >
-    <!-- 1. TOP INSTITUTIONAL ERP HEADER ROW -->
+    <!-- Hidden Tenant Input for Strict Tenant Lock & Seamless Script Interop -->
+    <input
+      type="hidden"
+      id="activeCollege"
+      value={collegeA.id}
+      data-institution-id={collegeA.id}
+      data-sanctioned={sanctionedCap}
+      data-current={actualAdmittedCount}
+      data-code={collegeA.code || 'TCA-1049'}
+      data-name={collegeA.name}
+    />
+
+    <!-- 1. TOP INSTITUTIONAL ERP HEADER ROW (Strict Tenant Lock — Zero Switcher Clutter) -->
     <div class="pb-4 border-b border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
       <div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold text-[#0B1E48] tracking-[-0.02em]">
-          College Admission &amp; Seat Registry
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#0B1E48] text-white text-[11px] font-mono font-bold uppercase tracking-wider">
+            NIC · AICTE Nodal ERP
+          </span>
+          <span class="text-xs font-mono font-semibold text-slate-500">
+            EoA Session 2026–27
+          </span>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-[#0B1E48] tracking-[-0.02em] mt-1">
+          {t.inst_page_title}
         </h1>
-        <p class="text-xs sm:text-sm text-[#334155] mt-1 max-w-[72ch]">
-          Academic Session 2026–27 · AISHE &amp; National Academic Depository Nodal ERP
+        <p class="text-xs sm:text-sm text-[#334155] mt-0.5 max-w-[72ch]">
+          {t.inst_page_sub}
         </p>
       </div>
 
-      <!-- Right Controls: Active Institution Selector, AISHE Code, and Nodal Officer Identity -->
+      <!-- Authoritative Locked Institutional Badges -->
       <div class="flex flex-wrap items-center gap-2 shrink-0">
-        <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 text-xs">
-          <label for="activeCollege" class="font-bold text-slate-600 whitespace-nowrap">
-            {t.inst_select_label}
-          </label>
-          {isTenantLocked ? (
-            <select
-              id="activeCollege"
-              data-institution-id={collegeA.id}
-              class="h-8 max-w-[18rem] bg-slate-100 border border-slate-300 rounded-lg px-2.5 text-[#0B1E48] font-bold focus:outline-none text-xs truncate"
-            >
-              <option
-                value={collegeA.id}
-                data-name={collegeA.name}
-                data-sanctioned={collegeA.sanctioned_intake}
-                data-current={collegeA.current_enrollment}
-                data-code={collegeA.code}
-                data-state={collegeA.state}
-                data-district={collegeA.district}
-                selected
-              >
-                {collegeA.name} ({collegeA.current_enrollment}/{collegeA.sanctioned_intake})
-              </option>
-            </select>
-          ) : (
-            <select
-              id="activeCollege"
-              data-institution-id={collegeA.id}
-              class="h-8 max-w-[20rem] bg-slate-50 border border-slate-300 rounded-lg px-2.5 text-[#0B1E48] font-bold focus:outline-none focus:ring-2 focus:ring-[#0B4EA2] text-xs"
-            >
-              {institutions.map((i) => (
-                <option
-                  value={i.id}
-                  data-name={i.name}
-                  data-sanctioned={i.sanctioned_intake}
-                  data-current={i.current_enrollment}
-                  data-code={i.code}
-                  data-state={i.state}
-                  data-district={i.district}
-                  selected={i.id === collegeA.id}
-                >
-                  {i.name} ({i.current_enrollment}/{i.sanctioned_intake})
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-
         <span class="inline-flex items-center gap-1.5 bg-slate-100 text-slate-800 border border-slate-200 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap">
           <svg class="w-3.5 h-3.5 text-[#0B4EA2] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
           </svg>
-          <span>AISHE Code: <strong class="font-mono text-[#0B1E48]">{collegeA.code}</strong></span>
+          <span>AISHE Code: <strong class="font-mono text-[#0B1E48]">{collegeA.code || 'TCA-1049'}</strong></span>
+        </span>
+
+        <span class="inline-flex items-center gap-1.5 bg-slate-100 text-slate-800 border border-slate-200 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap">
+          <svg class="w-3.5 h-3.5 text-[#0B4EA2] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+          </svg>
+          <span>Affiliating Univ: <strong class="text-[#0B1E48]">State Tech University</strong></span>
         </span>
 
         <span class="inline-flex items-center gap-1.5 bg-[#EEF4FF] text-[#0B4EA2] border border-blue-200 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap">
           <svg class="w-3.5 h-3.5 text-[#0B4EA2] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
           </svg>
-          <span>Nodal Officer: <strong class="font-mono">{user?.username || 'principal.pune'}</strong></span>
+          <span>Nodal Officer: <strong class="font-mono">Dr. Ramesh Joshi ({user?.username || 'principal.pune'})</strong></span>
         </span>
       </div>
     </div>
@@ -251,28 +284,29 @@ const clientI18n = {
     <!-- Dynamic Regulatory Error / Duplicate Alert Banner -->
     <div id="syncFeedbackAlert" class="hidden rounded-xl border p-4 text-xs sm:text-sm" role="alert" aria-live="assertive"></div>
 
-    <!-- 2. COMPACT SEAT CAPACITY & APH QUOTA TELEMETRY CARD -->
+    <!-- 2. TOP CARD: AICTE EoA BRANCH-WISE SEAT MATRIX & REAL QUOTA TELEMETRY -->
     <section class="rounded-2xl bg-white border border-slate-200 overflow-hidden">
-      <!-- Top Royal Blue Header Strip -->
-      <div class="bg-gradient-to-r from-[#0B1E48] via-[#1E40AF] to-[#0A2760] text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <!-- Royal Blue Header Strip -->
+      <div class="bg-[#0B1E48] text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-blue-900">
         <div class="space-y-1">
           <div class="flex flex-wrap items-center gap-2.5">
             <h2 id="meterCollegeName" class="text-base sm:text-lg font-extrabold text-white tracking-tight">
               {collegeA.name}
             </h2>
             <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/15 text-blue-100 text-[11px] font-mono font-semibold">
-              <span>{t.aicte_col_code}:</span>
-              <strong id="meterCollegeCode" class="text-white">{collegeA.code}</strong>
+              <span>AICTE EoA Code:</span>
+              <strong id="meterCollegeCode" class="text-white">{collegeA.code || 'TCA-1049'}</strong>
+            </span>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 text-blue-100 text-[11px] font-mono font-semibold">
+              Academic Session: <strong class="text-white">2026–27</strong>
             </span>
           </div>
           <p class="text-xs text-blue-100 flex flex-wrap items-center gap-2">
             <span id="meterLocationText">{collegeA.state} · {collegeA.district}</span>
             <span aria-hidden="true">·</span>
             <span>
-              {t.inst_kpi_sanctioned}: <strong id="meterCap" class="font-mono text-white">{collegeA.sanctioned_intake}</strong>
+              {t.inst_kpi_sanctioned}: <strong id="meterCap" class="font-mono text-white">{sanctionedCap} Seats (3 Approved B.Tech Branches)</strong>
             </span>
-            <span aria-hidden="true">·</span>
-            <span>Nodal Officer: <strong class="font-mono text-white">{user?.username || 'principal.pune'}</strong></span>
           </p>
         </div>
 
@@ -281,84 +315,163 @@ const clientI18n = {
             id="meterBadge"
             role="status"
             aria-live="polite"
-            class={`text-xs font-extrabold px-3 py-1 rounded-full border ${
-              initialIsOverrun
-                ? 'bg-red-100 text-red-900 border-red-200'
-                : 'bg-emerald-100 text-emerald-900 border-emerald-200'
+            class={`text-xs font-extrabold px-3.5 py-1.5 rounded-full border ${
+              duplicateCount > 0
+                ? 'bg-amber-100 text-amber-950 border-amber-300'
+                : 'bg-emerald-100 text-emerald-950 border-emerald-300'
             }`}
           >
-            {initialIsOverrun
-              ? `${t.inst_status_overrun} (+${initialDiff})`
-              : `${t.inst_status_compliant} (${collegeA.sanctioned_intake - collegeA.current_enrollment} Left)`}
+            {duplicateCount > 0
+              ? `Duplicate Conflict Flagged (${duplicateCount})`
+              : `EoA Compliant (${vacantSeatsCount} Vacant)`}
           </span>
         </div>
       </div>
 
-      <!-- Card Body: Seat Utilization Bar & Integrated 6-Column APH Quota Breakdown -->
-      <div class="p-6">
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div class="space-y-1 max-w-md">
-            <h3 class="text-sm font-extrabold text-[#0B1E48]">
-              {t.inst_kpi_utilization} &amp; Statutory Intake Ceiling
-            </h3>
-            <p class="text-xs text-slate-600 leading-relaxed">
-              Admissions exceeding the AICTE sanctioned ceiling (<span class="font-mono font-semibold text-slate-800">{collegeA.sanctioned_intake}</span> seats) are automatically blocked with HTTP 409 before ledger commit.
-            </p>
+      <!-- Top Summary KPI Bar -->
+      <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div class="flex flex-wrap items-center gap-6">
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Active Roster Admitted</div>
+            <div class="mt-0.5 flex items-baseline gap-1.5">
+              <span id="meterEnrolled" class="text-2xl font-extrabold font-mono text-[#0B1E48]">
+                {actualAdmittedCount}
+              </span>
+              <span class="text-xs font-mono text-slate-400">/</span>
+              <span id="meterSanctioned" class="text-sm font-bold font-mono text-slate-700">{sanctionedCap}</span>
+              <span class="text-xs font-semibold text-slate-600">Sanctioned EoA Cap</span>
+            </div>
           </div>
 
-          <div class="flex-1 max-w-2xl">
-            <div class="flex justify-between items-baseline mb-2 text-xs sm:text-sm">
-              <span class="font-bold text-slate-700">{t.inst_kpi_utilization}</span>
-              <div class="text-right">
-                <span
-                  id="meterEnrolled"
-                  class={`text-xl font-extrabold font-mono ${initialIsOverrun ? 'text-red-600' : 'text-emerald-700'}`}
-                >
-                  {collegeA.current_enrollment}
-                </span>
-                <span class="text-slate-400 font-mono"> / </span>
-                <span id="meterSanctioned" class="text-sm font-bold font-mono text-slate-700">{collegeA.sanctioned_intake}</span>
-                <span
-                  id="meterExcessText"
-                  class={`ml-2 font-bold font-mono ${initialIsOverrun ? 'text-red-600' : 'text-emerald-700'}`}
-                >
-                  {initialIsOverrun ? `(+${initialDiff})` : `(${initialDiff})`}
-                </span>
-              </div>
-            </div>
+          <div class="h-8 w-px bg-slate-200 hidden sm:block"></div>
 
-            <!-- Accessible Progress Bar (WCAG 2.1 AA) -->
-            <div class="w-full bg-slate-100 rounded-full h-3.5 border border-slate-200 overflow-hidden relative">
-              <div
-                id="meterProgressBar"
-                role="progressbar"
-                aria-label={t.inst_kpi_utilization}
-                aria-valuenow={Number(initialPct)}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                class={`h-full transition-all duration-300 ${initialIsOverrun ? 'bg-red-600' : 'bg-emerald-600'}`}
-                style={`width: ${initialBarWidth}%;`}
-              ></div>
-            </div>
-
-            <div class="flex justify-between text-[11px] sm:text-xs text-slate-600 mt-1.5 font-mono">
-              <span>0 Seats</span>
-              <span id="meterSanctionedLabel" class="font-semibold text-slate-700">
-                {t.inst_kpi_sanctioned}: {collegeA.sanctioned_intake}
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Vacant Seats Available</div>
+            <div class="mt-0.5 flex items-baseline gap-1.5">
+              <span id="meterVacantCount" class="text-2xl font-extrabold font-mono text-emerald-700">
+                {vacantSeatsCount}
               </span>
+              <span class="text-xs font-semibold text-slate-600">Open for Allotment</span>
+            </div>
+          </div>
+
+          <div class="h-8 w-px bg-slate-200 hidden sm:block"></div>
+
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Cross-Campus Duplicates</div>
+            <div class="mt-0.5 flex items-baseline gap-1.5">
               <span
-                id="meterPercent"
-                class={`font-bold ${initialIsOverrun ? 'text-red-700' : 'text-emerald-700'}`}
+                id="meterDuplicateCount"
+                class={`text-2xl font-extrabold font-mono ${duplicateCount > 0 ? 'text-amber-700' : 'text-slate-800'}`}
               >
-                {initialPct}% ({initialIsOverrun ? t.inst_status_overrun : t.inst_status_compliant})
+                {duplicateCount}
               </span>
+              <span class="text-xs font-semibold text-slate-600">NDEAR Conflict Flags</span>
             </div>
           </div>
         </div>
 
-        <!-- Integrated AICTE APH 2024–27 Quota Breakdown Row -->
-        <div class="mt-6 pt-5 border-t border-slate-200/90">
+        <!-- Accessible Utilization Progress Bar -->
+        <div class="w-full lg:w-80">
+          <div class="flex justify-between text-xs font-mono mb-1.5">
+            <span class="font-semibold text-slate-700">{t.inst_kpi_utilization}</span>
+            <span id="meterPercent" class="font-bold text-[#0B1E48]">{initialPct}% Filled</span>
+          </div>
+          <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+            <div
+              id="meterProgressBar"
+              role="progressbar"
+              aria-label={t.inst_kpi_utilization}
+              aria-valuenow={Number(initialPct)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              class="h-full bg-[#0B4EA2] transition-all duration-300"
+              style={`width: ${initialBarWidth}%;`}
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card Body: AICTE EoA Department / Branch-Wise Seat Matrix Table + 6-Column Quota Strip -->
+      <div class="p-6 space-y-6">
+        <!-- Branch-Wise Seat Matrix Table -->
+        <div>
           <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <h3 class="text-xs sm:text-sm font-extrabold text-[#0B1E48] flex items-center gap-2">
+              <svg class="w-4 h-4 text-[#0B4EA2] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              <span>AICTE Extension of Approval (EoA) Department-Wise Seat Matrix</span>
+            </h3>
+            <span class="text-[11px] font-mono font-semibold bg-slate-100 text-slate-700 border border-slate-200 px-2.5 py-0.5 rounded-md">
+              100% Live DB Ledger Sync
+            </span>
+          </div>
+
+          <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                <tr>
+                  <th class="py-2.5 px-3.5">Department / Branch</th>
+                  <th class="py-2.5 px-3 text-right">EoA Sanctioned</th>
+                  <th class="py-2.5 px-3 text-right">Merit Intake</th>
+                  <th class="py-2.5 px-3 text-right">Supernumerary / NRI</th>
+                  <th class="py-2.5 px-3 text-right">Total Admitted</th>
+                  <th class="py-2.5 px-3 text-right">Vacant Seats</th>
+                  <th class="py-2.5 px-3 text-right">Duplicate Flags</th>
+                  <th class="py-2.5 px-3.5 text-right">Branch Status</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-200 text-slate-800">
+                {branchMatrix.map((row) => (
+                  <tr class="hover:bg-slate-50/80 transition-colors" data-branch-row={row.branch}>
+                    <td class="py-2.5 px-3.5 font-bold text-[#0B1E48]">
+                      <span>{row.branch}</span>
+                      <span class="ml-1.5 font-mono text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                        {row.code}
+                      </span>
+                    </td>
+                    <td class="py-2.5 px-3 text-right font-mono font-semibold text-slate-700" data-cell="sanctioned">
+                      {row.sanctioned}
+                    </td>
+                    <td class="py-2.5 px-3 text-right font-mono text-slate-700" data-cell="approved">
+                      {row.approved_intake}
+                    </td>
+                    <td class="py-2.5 px-3 text-right font-mono text-slate-700" data-cell="super_nri">
+                      {row.supernumerary + row.nri_oci_fn}
+                    </td>
+                    <td class="py-2.5 px-3 text-right font-mono font-extrabold text-[#0B1E48]" data-cell="admitted">
+                      {row.admitted}
+                    </td>
+                    <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-700" data-cell="vacant">
+                      {row.vacant}
+                    </td>
+                    <td class="py-2.5 px-3 text-right font-mono font-bold" data-cell="duplicates">
+                      <span class={row.duplicates > 0 ? 'text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded' : 'text-slate-500'}>
+                        {row.duplicates}
+                      </span>
+                    </td>
+                    <td class="py-2.5 px-3.5 text-right" data-cell="status">
+                      {row.duplicates > 0 ? (
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-300 font-bold text-[10px]">
+                          Duplicate Alert ({row.duplicates})
+                        </span>
+                      ) : (
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-[10px]">
+                          Within Cap ({row.vacant} Open)
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 6-Column Statutory Quota Strip (Real Counts / Statutory Ceiling) -->
+        <div class="pt-2">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
             <div class="text-xs font-bold text-[#0B1E48] flex items-center gap-2">
               <svg class="w-4 h-4 text-[#1E40AF] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -366,60 +479,57 @@ const clientI18n = {
               <span>{t.inst_cat_heading} (AICTE Approval Process Handbook 2024–27)</span>
             </div>
             <span class="text-[11px] font-mono font-semibold bg-slate-100 text-slate-700 border border-slate-200 px-2.5 py-0.5 rounded-md">
-              APH Chapter II &amp; VII Norms
+              APH Chapter II &amp; VII Statutory Norms
             </span>
           </div>
 
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 bg-slate-50/70 rounded-xl border border-slate-200/90 overflow-hidden">
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 bg-slate-50/70 rounded-xl border border-slate-200 overflow-hidden">
             <div class="p-3.5">
-              <div class="text-xs font-semibold text-slate-600">Approved Intake</div>
+              <div class="text-xs font-semibold text-slate-600">EoA Sanctioned Cap</div>
               <div id="catApprovedIntake" class="text-lg font-extrabold font-mono text-[#0B1E48] mt-1">
-                {initialCat.approvedIntake}
+                {sanctionedCap}
               </div>
-              <div class="text-[11px] text-slate-500 mt-0.5">Sanctioned Cap</div>
+              <div class="text-[11px] text-slate-500 mt-0.5">Merit Admitted: <span id="catMeritCount" class="font-mono font-bold text-slate-700">{quotaCounts.APPROVED_INTAKE}</span></div>
             </div>
 
             <div class="p-3.5">
-              <div class="text-xs font-semibold text-slate-600">Students Admitted</div>
-              <div
-                id="catActualEnrolment"
-                class={`text-lg font-extrabold font-mono mt-1 ${initialIsOverrun ? 'text-red-600' : 'text-emerald-700'}`}
-              >
-                {initialCat.actualEnrolment}
+              <div class="text-xs font-semibold text-slate-600">Admitted in Roster</div>
+              <div id="catActualEnrolment" class="text-lg font-extrabold font-mono text-emerald-700 mt-1">
+                {actualAdmittedCount} <span class="text-xs font-normal text-slate-500">/ {sanctionedCap}</span>
               </div>
               <div class="text-[11px] text-slate-500 mt-0.5">APAAR Anchored</div>
             </div>
 
             <div class="p-3.5">
-              <div class="text-xs font-semibold text-slate-600">Supernumerary (15%)</div>
+              <div class="text-xs font-semibold text-slate-600">Supernumerary 15%</div>
               <div id="catSupernumerary" class="text-lg font-extrabold font-mono text-[#0B4EA2] mt-1">
-                {initialCat.supernumerary}
+                {quotaCounts.SUPERNUMERARY} <span class="text-xs font-normal text-slate-500">/ {quotaCeilings.SUPERNUMERARY}</span>
               </div>
               <div class="text-[11px] text-slate-500 mt-0.5">TFW / EWS / PMSSS</div>
             </div>
 
             <div class="p-3.5">
-              <div class="text-xs font-semibold text-slate-600">NRI Quota (5%)</div>
+              <div class="text-xs font-semibold text-slate-600">NRI Quota 5%</div>
               <div id="catNri" class="text-lg font-extrabold font-mono text-amber-800 mt-1">
-                {initialCat.nri}
+                {quotaCounts.NRI} <span class="text-xs font-normal text-slate-500">/ {quotaCeilings.NRI}</span>
               </div>
               <div class="text-[11px] text-slate-500 mt-0.5">Max 5% Ceiling</div>
             </div>
 
             <div class="p-3.5">
-              <div class="text-xs font-semibold text-slate-600">OCI Quota (2%)</div>
+              <div class="text-xs font-semibold text-slate-600">OCI / PIO 2%</div>
               <div id="catOci" class="text-lg font-extrabold font-mono text-indigo-800 mt-1">
-                {initialCat.oci}
+                {quotaCounts.OCI} <span class="text-xs font-normal text-slate-500">/ {quotaCeilings.OCI}</span>
               </div>
               <div class="text-[11px] text-slate-500 mt-0.5">Max 2% Ceiling</div>
             </div>
 
             <div class="p-3.5">
-              <div class="text-xs font-semibold text-slate-600">Foreign Nationals (3%)</div>
+              <div class="text-xs font-semibold text-slate-600">Foreign Nationals 3%</div>
               <div id="catFn" class="text-lg font-extrabold font-mono text-emerald-800 mt-1">
-                {initialCat.fn}
+                {quotaCounts.FN} <span class="text-xs font-normal text-slate-500">/ {quotaCeilings.FN}</span>
               </div>
-              <div class="text-[11px] text-slate-500 mt-0.5">PIO / FN Quota</div>
+              <div class="text-[11px] text-slate-500 mt-0.5">FN Quota Ceiling</div>
             </div>
           </div>
         </div>
@@ -428,7 +538,7 @@ const clientI18n = {
 
     <!-- 3. 12-COLUMN PRODUCTION OPERATIONAL WORKSPACE -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-      <!-- Left 4 Columns: Production New Student Admission & Bulk CSV Import Card -->
+      <!-- Left 4 Columns: Pure Production ERP Admission & CSV Import (Zero Demo Buttons) -->
       <div class="lg:col-span-4">
         <div class="rounded-2xl bg-white border border-slate-200 overflow-hidden">
           <!-- 2-Tab Segmented Control -->
@@ -467,10 +577,10 @@ const clientI18n = {
           <div id="panelSingleEntry" role="tabpanel" class="p-5 space-y-4">
             <div>
               <h3 class="text-sm font-extrabold text-[#0B1E48]">
-                NDEAR-Verified Student Admission
+                NDEAR-Verified Candidate Admission
               </h3>
               <p class="text-xs text-slate-600 mt-0.5 leading-relaxed">
-                Verify the candidate&apos;s 12-digit APAAR ID via DigiLocker &amp; NDEAR before committing seat allocation.
+                Authenticate candidate APAAR / ABC identity and verify cross-campus seat locks before committing admission.
               </p>
             </div>
 
@@ -496,44 +606,18 @@ const clientI18n = {
                   <button
                     type="button"
                     id="btnVerifyApaar"
-                    class="h-10 px-3.5 rounded-xl bg-slate-900 hover:bg-[#0B1E48] text-white font-extrabold text-xs transition-colors inline-flex items-center gap-1.5 shrink-0 cursor-pointer"
+                    class="h-10 px-3.5 rounded-xl bg-[#0B1E48] hover:bg-[#1E3A8A] text-white font-extrabold text-xs transition-colors inline-flex items-center gap-1.5 shrink-0 cursor-pointer"
                   >
                     <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
-                    <span>Verify ID</span>
+                    <span>Verify NDEAR</span>
                   </button>
                 </div>
 
-                <!-- Subtle Helper Row with Quick-Fill Sample Chips -->
-                <div class="flex flex-wrap items-center justify-between gap-1.5 pt-0.5 text-[11px] text-slate-500">
-                  <div class="flex flex-wrap items-center gap-1">
-                    <span>Test IDs:</span>
-                    <button
-                      type="button"
-                      data-sample-apaar="849201394812"
-                      data-sample-name="Siddharth Kulkarni"
-                      class="font-mono font-semibold text-slate-700 hover:text-[#0B4EA2] bg-slate-100 hover:bg-blue-50 px-1.5 py-0.5 rounded border border-slate-200 transition-colors cursor-pointer"
-                    >
-                      849201394812
-                    </button>
-                    <button
-                      type="button"
-                      data-sample-apaar="739284019283"
-                      data-sample-name="Rahul Sharma"
-                      class="font-mono font-semibold text-amber-900 hover:text-amber-950 bg-amber-50/80 hover:bg-amber-100 px-1.5 py-0.5 rounded border border-amber-200 transition-colors cursor-pointer"
-                    >
-                      739284019283 (Duplicate)
-                    </button>
-                  </div>
-                  <button
-                    type="button"
-                    id="btnGenSingleApaar"
-                    class="font-semibold text-[#0B4EA2] hover:underline cursor-pointer"
-                  >
-                    Random ID
-                  </button>
-                </div>
+                <p class="text-[11px] text-slate-500 leading-relaxed">
+                  Queries National Digital Education Architecture (NDEAR) &amp; DigiLocker for candidate identity and active cross-campus admissions.
+                </p>
 
                 <!-- Live Verification Status Card (Hidden until verified) -->
                 <div
@@ -544,7 +628,7 @@ const clientI18n = {
                 ></div>
               </div>
 
-              <!-- Step 2: Academic Program & Quota Assignment -->
+              <!-- Step 2: Candidate Details, AICTE EoA Department, Quota & Counselling Allotment -->
               <div>
                 <label for="singleNameInput" class="block text-xs font-bold text-slate-800 mb-1">
                   Student Full Name (as per APAAR / Aadhaar)
@@ -561,58 +645,69 @@ const clientI18n = {
 
               <div>
                 <label for="singleProgramSelect" class="block text-xs font-bold text-slate-800 mb-1">
-                  B.Tech Program / Department
+                  AICTE EoA Department / Branch
                 </label>
                 <select
                   id="singleProgramSelect"
                   name="program"
                   class="w-full h-10 bg-slate-50 border border-slate-300 rounded-xl px-3 text-xs sm:text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
                 >
-                  <option value="B.Tech Computer Science & Engineering">B.Tech Computer Science &amp; Engineering</option>
-                  <option value="B.Tech Information Technology">B.Tech Information Technology</option>
-                  <option value="B.Tech Electronics & Telecommunication">B.Tech Electronics &amp; Telecommunication</option>
-                  <option value="B.Tech Artificial Intelligence & Data Science">B.Tech Artificial Intelligence &amp; Data Science</option>
-                  <option value="B.Tech Mechanical Engineering">B.Tech Mechanical Engineering</option>
+                  <option value="B.Tech Computer Science">B.Tech Computer Science (CSE-101 · Cap: 60)</option>
+                  <option value="B.Tech Electronics & Comm.">B.Tech Electronics &amp; Comm. (ECE-102 · Cap: 60)</option>
+                  <option value="B.Tech Mechanical Engg">B.Tech Mechanical Engg (MECH-103 · Cap: 60)</option>
                 </select>
               </div>
 
               <div>
                 <label for="singleQuotaSelect" class="block text-xs font-bold text-slate-800 mb-1">
-                  Admission Quota &amp; Seat Category
+                  Quota Category (APH 2024–27)
                 </label>
-                <div class="grid grid-cols-3 gap-2">
-                  <select
-                    id="singleQuotaSelect"
-                    name="admission_category"
-                    class="col-span-2 h-10 bg-slate-50 border border-slate-300 rounded-xl px-2.5 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
-                  >
-                    <option value="APPROVED_INTAKE">Approved Intake (Merit / JoSAA)</option>
-                    <option value="SUPERNUMERARY">Supernumerary — TFW / EWS (15%)</option>
-                    <option value="NRI">NRI Quota (5%)</option>
-                    <option value="OCI">OCI Quota (2%)</option>
-                    <option value="FN">Foreign National / PIO (3%)</option>
-                  </select>
+                <select
+                  id="singleQuotaSelect"
+                  name="admission_quota"
+                  class="w-full h-10 bg-slate-50 border border-slate-300 rounded-xl px-3 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
+                >
+                  <option value="APPROVED_INTAKE">Approved Intake — Merit / JoSAA / State CET</option>
+                  <option value="SUPERNUMERARY">Supernumerary — TFW / EWS / PMSSS (15%)</option>
+                  <option value="NRI">NRI Quota — Non-Resident Indian (5%)</option>
+                  <option value="OCI">OCI / PIO Quota — Overseas Citizen (2%)</option>
+                  <option value="FN">Foreign National Quota (3%)</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="singleAllotmentInput" class="block text-xs font-bold text-slate-800 mb-1">
+                  Counselling Allotment Reference &amp; Session
+                </label>
+                <div class="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    id="singleAllotmentInput"
+                    name="allotment_ref"
+                    placeholder="e.g. MHT-CET/CAP-I/88412"
+                    class="h-10 bg-slate-50 border border-slate-300 rounded-xl px-2.5 font-mono text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
+                  />
 
                   <select
                     id="singleSessionSelect"
                     name="batch_year"
-                    aria-label="Admission Year"
-                    class="col-span-1 h-10 bg-slate-50 border border-slate-300 rounded-xl px-2.5 font-mono text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
+                    aria-label="Admission Session & Entry Mode"
+                    class="h-10 bg-slate-50 border border-slate-300 rounded-xl px-2.5 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
                   >
-                    <option value="2026" selected>2026–27</option>
-                    <option value="2025">2025–26</option>
-                    <option value="2024">2024–25</option>
+                    <option value="2026" selected>2026–27 (1st Year Regular)</option>
+                    <option value="2025">2026–27 (2nd Year Lateral)</option>
                   </select>
                 </div>
               </div>
 
+              <!-- Step 3: Lock Seat & Commit Admission -->
               <div class="pt-1">
                 <button
                   type="submit"
                   id="singleSubmitBtn"
                   class="w-full h-11 rounded-xl bg-[#0B4EA2] hover:bg-[#093A82] text-white font-extrabold text-xs sm:text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <span>Confirm &amp; Enroll Student</span>
+                  <span>Lock Seat &amp; Commit Admission</span>
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 12h14m-6-6l6 6-6 6" />
                   </svg>
@@ -621,7 +716,7 @@ const clientI18n = {
             </form>
           </div>
 
-          <!-- TAB 2: ERP Bulk CSV Import -->
+          <!-- TAB 2: Production CSV Batch Import -->
           <div id="panelBulkCsv" role="tabpanel" class="hidden p-5 space-y-4">
             <div>
               <div class="flex items-center justify-between mb-1.5">
@@ -629,7 +724,7 @@ const clientI18n = {
                   {t.inst_upload_heading}
                 </h3>
                 <span class="text-[11px] font-mono font-semibold bg-blue-50 text-[#0B4EA2] border border-blue-200 px-2 py-0.5 rounded-md">
-                  CSV Batch
+                  AICTE CSV Schema
                 </span>
               </div>
               <p class="text-xs text-slate-600 mb-3 leading-relaxed">
@@ -640,22 +735,22 @@ const clientI18n = {
                 for="csvFileInput"
                 tabindex="0"
                 aria-describedby="csvSchemaHint"
-                class="border-2 border-dashed border-slate-300 hover:border-[#0B4EA2] hover:bg-blue-50/40 rounded-xl p-4 text-center cursor-pointer flex flex-col items-center justify-center bg-slate-50 transition-all group"
+                class="border-2 border-dashed border-slate-300 hover:border-[#0B4EA2] hover:bg-blue-50/40 rounded-xl p-5 text-center cursor-pointer flex flex-col items-center justify-center bg-slate-50 transition-all group"
               >
-                <div class="w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center mb-2 group-hover:border-blue-300">
+                <div class="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center mb-2 group-hover:border-blue-300">
                   <svg class="w-4 h-4 text-[#0B1E48] group-hover:text-[#0B4EA2] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
                 </div>
                 <span class="text-xs font-bold text-[#0B1E48] group-hover:text-[#0B4EA2]">{t.inst_upload_dropzone}</span>
                 <span id="csvSchemaHint" class="text-[11px] font-mono text-slate-500 mt-1">
-                  apaar_id, student_roll_id, full_name, program, batch_year, admission_category
+                  apaar_id, full_name, program, admission_quota, allotment_ref, batch_year
                 </span>
                 <input type="file" id="csvFileInput" accept=".csv" class="hidden" />
               </label>
 
-              <div class="mt-2.5 flex items-center justify-between">
-                <span class="text-[11px] text-slate-500 font-mono">aicte_roster_v1.csv</span>
+              <div class="mt-3 flex items-center justify-between">
+                <span class="text-[11px] text-slate-500 font-mono">UTF-8 CSV · Max 1,000 Rows</span>
                 <button
                   type="button"
                   id="downloadSampleCsvBtn"
@@ -664,67 +759,28 @@ const clientI18n = {
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
-                  <span>Download Official CSV Schema Template</span>
+                  <span>Download Official AICTE CSV Template</span>
                 </button>
               </div>
             </div>
 
-            <!-- ERP Validation Presets -->
+            <!-- CSV Column Schema Specification -->
             <div class="pt-3 border-t border-slate-200/80 space-y-2">
               <div class="text-xs font-extrabold text-[#0B1E48]">
-                ERP Validation Presets
+                Required CSV Column Schema Specification
               </div>
-
-              <button
-                type="button"
-                id="loadCompliantSampleBtn"
-                class="w-full text-left px-3.5 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors flex items-center justify-between group cursor-pointer"
-              >
-                <div>
-                  <div class="text-xs font-bold text-slate-900">Load Standard Batch (15 Records · Within Cap)</div>
-                  <div class="text-[11px] text-slate-500 mt-0.5 font-mono">15 Valid 12-Digit APAAR Records · Merit &amp; Supernumerary</div>
-                </div>
-                <span class="text-[11px] font-mono font-bold bg-white text-slate-700 px-2 py-0.5 rounded-md border border-slate-200 shrink-0">
-                  15 Rows
-                </span>
-              </button>
-
-              <button
-                type="button"
-                id="loadOverrunSampleBtn"
-                class="w-full text-left px-3.5 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors flex items-center justify-between group cursor-pointer"
-              >
-                <div>
-                  <div class="text-xs font-bold text-slate-900">Load Over-Capacity Batch (187 Records · Cap Exception Test)</div>
-                  <div class="text-[11px] text-slate-500 mt-0.5 font-mono">187 Records vs 180 Sanctioned Cap · HTTP 409 Validation</div>
-                </div>
-                <span class="text-[11px] font-mono font-bold bg-white text-slate-700 px-2 py-0.5 rounded-md border border-slate-200 shrink-0">
-                  187 Rows
-                </span>
-              </button>
-
-              <button
-                type="button"
-                id="normalizeIntakeBtn"
-                class="w-full text-left px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 transition-colors flex items-center justify-between group cursor-pointer"
-              >
-                <div class="flex items-center gap-2">
-                  <svg class="w-4 h-4 text-[#0B4EA2] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  <div>
-                    <div class="text-xs font-bold text-[#0B1E48]">Sync Sanctioned Seat Baseline (172 / 180 Seats Used)</div>
-                    <div class="text-[11px] text-slate-500 mt-0.5 font-mono">Reconciles active ledger to 8 open seats for admission intake</div>
-                  </div>
-                </div>
-                <span class="text-[11px] font-mono font-semibold bg-blue-50 text-[#0B4EA2] px-2 py-0.5 rounded-md border border-blue-200 shrink-0">
-                  172/180
-                </span>
-              </button>
+              <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] font-mono text-slate-700 space-y-1">
+                <div><strong class="text-[#0B1E48]">apaar_id</strong>: 12-digit numeric NDEAR / ABC ID</div>
+                <div><strong class="text-[#0B1E48]">full_name</strong>: Candidate name as per Aadhaar</div>
+                <div><strong class="text-[#0B1E48]">program</strong>: B.Tech Computer Science | B.Tech Electronics &amp; Comm. | B.Tech Mechanical Engg</div>
+                <div><strong class="text-[#0B1E48]">admission_quota</strong>: APPROVED_INTAKE | SUPERNUMERARY | NRI | OCI | FN</div>
+                <div><strong class="text-[#0B1E48]">allotment_ref</strong>: Counselling order ID (e.g. MHT-CET/CAP-I/88412)</div>
+                <div><strong class="text-[#0B1E48]">batch_year</strong>: Admission cohort year (2026)</div>
+              </div>
             </div>
           </div>
 
-          <!-- Collapsible REST API Spec cleanly tucked at bottom of Left Card -->
+          <!-- Collapsible REST API Webhook Specification -->
           <div class="p-4 bg-slate-50 border-t border-slate-200">
             <details class="group">
               <summary class="text-xs font-bold text-[#0B1E48] cursor-pointer flex items-center justify-between select-none">
@@ -732,7 +788,7 @@ const clientI18n = {
                   <span class="font-mono text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md">
                     POST /api/roster/sync
                   </span>
-                  <span>ERP Webhook &amp; REST API Specification</span>
+                  <span>REST API Webhook Specification</span>
                 </span>
                 <svg class="w-4 h-4 text-slate-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -750,11 +806,11 @@ Content-Type: application/json
   "students": [
     {
       "apaar_id": "901238471920",
-      "student_roll_id": "TCA-1049-2026-CSE-001",
-      "full_name": "Aarav Sharma",
-      "program": "B.Tech Computer Science & Engineering",
-      "batch_year": 2026,
-      "admission_category": "APPROVED_INTAKE"
+      "full_name": "Aaditya Patel",
+      "program": "B.Tech Computer Science",
+      "admission_quota": "APPROVED_INTAKE",
+      "allotment_ref": "MHT-CET/CAP-I/88412",
+      "batch_year": 2026
     }
   ]
 }`}</pre>
@@ -764,24 +820,24 @@ Content-Type: application/json
         </div>
       </div>
 
-      <!-- Right 8 Columns: Production Admitted Student Registry & Batch Triage Table Card -->
+      <!-- Right 8 Columns: Production Admitted Student Registry Card -->
       <div class="lg:col-span-8">
         <div class="rounded-2xl bg-white border border-slate-200 overflow-hidden">
-          <!-- Rich Single-Row Toolbar above the Table -->
-          <div class="px-4 py-3 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
-            <!-- Left: View Switcher Tabs -->
-            <div class="inline-flex items-center p-1 rounded-xl bg-slate-100 shrink-0" role="tablist" aria-label="Roster Table View">
+          <!-- Single-Row Toolbar -->
+          <div class="px-3.5 py-2.5 border-b border-slate-200 flex items-center justify-between gap-2 overflow-x-auto">
+            <!-- View Switcher Tabs -->
+            <div class="inline-flex items-center p-0.5 rounded-xl bg-slate-100 shrink-0" role="tablist" aria-label="Roster Table View">
               <button
                 type="button"
                 id="viewEnrolledTabBtn"
                 role="tab"
                 aria-selected="true"
-                class="px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition-all bg-[#0B1E48] text-white cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
+                class="px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold transition-all bg-[#0B1E48] text-white cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
               >
-                <span>Admitted Students</span>
+                <span>Admitted</span>
                 <span
                   id="enrolledCountPill"
-                  class="px-1.5 py-0.5 rounded-full bg-white/20 text-white font-mono text-[11px]"
+                  class="px-1.5 py-0.5 rounded-full bg-white/20 text-white font-mono text-[10px]"
                 >
                   {initialAdmissions.length}
                 </span>
@@ -792,23 +848,23 @@ Content-Type: application/json
                 id="viewTriageTabBtn"
                 role="tab"
                 aria-selected="false"
-                class="px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition-all text-slate-600 hover:text-[#0B1E48] cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
+                class="px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold transition-all text-slate-600 hover:text-[#0B1E48] cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
               >
                 <span>CSV Queue</span>
                 <span
                   id="stagedCountPill"
-                  class="px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-800 font-mono text-[11px]"
+                  class="px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-800 font-mono text-[10px]"
                 >
                   0
                 </span>
               </button>
             </div>
 
-            <!-- Right: Search, Status Filter, Export CSV, and Commit Sync Button -->
-            <div class="flex items-center gap-2 shrink-0">
+            <!-- Right: Search, Branch Filter, Status Filter, Export CSV, and Commit Sync Button -->
+            <div class="flex items-center gap-1.5 shrink-0">
               <div class="relative">
                 <svg
-                  class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                  class="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -821,24 +877,35 @@ Content-Type: application/json
                   id="rosterSearchInput"
                   placeholder="Search APAAR / Name..."
                   aria-label="Search Admitted Students"
-                  class="w-36 h-8 pl-7 pr-2 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
+                  class="w-36 h-8 pl-6 pr-2 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
                 />
               </div>
 
               <select
+                id="rosterBranchFilter"
+                aria-label="Filter Roster by Branch"
+                class="h-8 px-2 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
+              >
+                <option value="ALL">All Branches</option>
+                <option value="B.Tech Computer Science">B.Tech CSE</option>
+                <option value="B.Tech Electronics & Comm.">B.Tech ECE</option>
+                <option value="B.Tech Mechanical Engg">B.Tech Mech</option>
+              </select>
+
+              <select
                 id="rosterStatusFilter"
                 aria-label="Filter Roster by Compliance Status"
-                class="h-8 px-2 rounded-lg bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
+                class="h-8 px-2 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
               >
                 <option value="ALL">All Statuses</option>
                 <option value="VERIFIED">Verified Within Cap</option>
-                <option value="DUPLICATE">Duplicates ({duplicateCount})</option>
+                <option value="DUPLICATE" id="filterDuplicateOption">Duplicates ({duplicateCount})</option>
               </select>
 
               <button
                 type="button"
                 id="exportRosterCsvBtn"
-                class="h-8 px-2.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-bold transition-colors inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                class="h-8 px-2.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-[11px] font-bold transition-colors inline-flex items-center gap-1 cursor-pointer whitespace-nowrap"
               >
                 <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -870,7 +937,7 @@ Content-Type: application/json
             <div>
               <span class="text-slate-600 font-semibold">{t.inst_triage_valid}:</span>
               <strong id="countValid" class="ml-1.5 text-emerald-700 font-mono text-sm">
-                {initialAdmissions.length}
+                0
               </strong>
             </div>
             <div>
@@ -883,10 +950,10 @@ Content-Type: application/json
             </div>
           </div>
 
-          <!-- VIEW 1: Admitted Students Registry Table -->
+          <!-- VIEW 1: Admitted Students Registry Table (Fits 1440px with zero horizontal scrollbar) -->
           <div
             id="enrolledRosterPanel"
-            class="overflow-x-auto max-h-[34rem]"
+            class="overflow-x-auto max-h-[36rem]"
             role="region"
             aria-label="Admitted Student Registry"
             tabindex="0"
@@ -894,9 +961,9 @@ Content-Type: application/json
             <table class="w-full text-left text-xs border-collapse">
               <thead class="bg-slate-100/90 text-slate-700 font-bold sticky top-0 border-b border-slate-200 z-10">
                 <tr>
-                  <th class="py-3 px-2.5 whitespace-nowrap">Student &amp; Consent</th>
+                  <th class="py-3 px-2.5 whitespace-nowrap">Student &amp; DPDP Consent</th>
                   <th class="py-3 px-2.5 whitespace-nowrap">APAAR &amp; Roll No.</th>
-                  <th class="py-3 px-2.5 whitespace-nowrap">Department &amp; Quota</th>
+                  <th class="py-3 px-2.5 whitespace-nowrap">Branch, Quota &amp; Allotment</th>
                   <th class="py-3 px-2.5 whitespace-nowrap">Compliance Status</th>
                   <th class="py-3 px-2.5 text-right whitespace-nowrap">Action</th>
                 </tr>
@@ -908,6 +975,7 @@ Content-Type: application/json
                     data-row-apaar={adm.apaar_id}
                     data-row-name={adm.full_name.toLowerCase()}
                     data-row-roll={adm.roll_id.toLowerCase()}
+                    data-row-branch={adm.program}
                     data-row-status={adm.is_duplicate ? 'DUPLICATE' : 'VERIFIED'}
                   >
                     <td class="py-3 px-2.5">
@@ -931,26 +999,27 @@ Content-Type: application/json
                     </td>
                     <td class="py-3 px-2.5">
                       <div class="font-semibold text-slate-800 whitespace-nowrap">{adm.program}</div>
-                      <div class="mt-0.5">
+                      <div class="mt-0.5 flex flex-wrap items-center gap-1">
                         <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-medium whitespace-nowrap">
                           {adm.quota_label}
+                        </span>
+                        <span class="font-mono text-[10px] text-slate-500 whitespace-nowrap">
+                          · {adm.allotment_ref}
                         </span>
                       </div>
                     </td>
                     <td class="py-3 px-2.5">
                       {adm.is_duplicate ? (
-                        <div class="space-y-0.5 max-w-[11rem]">
+                        <div class="space-y-0.5 max-w-[12rem]">
                           <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-900 px-2 py-0.5 rounded-md border border-amber-300 font-bold text-[10px] whitespace-nowrap">
                             <svg class="w-3 h-3 text-amber-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
                             <span>Cross-Campus Duplicate</span>
                           </span>
-                          {adm.other_colleges.length > 0 && (
-                            <div class="text-[10px] text-amber-800 font-medium truncate" title={`Also at ${adm.other_colleges.join(', ')}`}>
-                              Also at {adm.other_colleges.join(', ')}
-                            </div>
-                          )}
+                          <div class="text-[10px] text-amber-800 font-medium truncate" title={`Also at ${adm.other_colleges.length > 0 ? adm.other_colleges.join(', ') : 'Technical College B (INST-002)'}`}>
+                            Also at {adm.other_colleges.length > 0 ? adm.other_colleges.join(', ') : 'Technical College B (INST-002)'}
+                          </div>
                         </div>
                       ) : (
                         <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-md border border-emerald-200 font-bold text-[10px] whitespace-nowrap">
@@ -984,26 +1053,26 @@ Content-Type: application/json
           <!-- VIEW 2: CSV Import Queue Panel -->
           <div
             id="triagePanel"
-            class="hidden overflow-x-auto max-h-[34rem]"
+            class="hidden overflow-x-auto max-h-[36rem]"
             role="region"
             aria-label={t.inst_triage_heading}
             tabindex="0"
           >
-            <table class="w-full text-left text-xs sm:text-sm border-collapse">
+            <table class="w-full text-left text-xs border-collapse">
               <thead class="bg-slate-100/90 text-slate-700 font-bold sticky top-0 border-b border-slate-200">
                 <tr>
-                  <th class="py-3 px-4">#</th>
-                  <th class="py-3 px-4">{t.univ_apaar_id}</th>
-                  <th class="py-3 px-4">{t.univ_student_name}</th>
-                  <th class="py-3 px-4">{t.univ_specialization}</th>
-                  <th class="py-3 px-4">{t.inst_cat_heading.split('(')[0].trim()}</th>
-                  <th class="py-3 px-4">{t.aicte_col_status}</th>
+                  <th class="py-3 px-3">#</th>
+                  <th class="py-3 px-3">{t.univ_apaar_id}</th>
+                  <th class="py-3 px-3">{t.univ_student_name}</th>
+                  <th class="py-3 px-3">{t.univ_specialization}</th>
+                  <th class="py-3 px-3">Quota &amp; Allotment</th>
+                  <th class="py-3 px-3">{t.aicte_col_status}</th>
                 </tr>
               </thead>
               <tbody id="triageTableBody" class="divide-y divide-slate-200 text-slate-800">
                 <tr>
-                  <td colspan="6" class="py-10 px-4 text-center text-slate-500 text-xs sm:text-sm">
-                    Upload a CSV file or select an ERP Validation Preset under the CSV Batch Import tab to queue records for pre-commit validation.
+                  <td colspan="6" class="py-10 px-4 text-center text-slate-500 text-xs">
+                    Upload an AICTE CSV file under the CSV Batch Import tab to inspect records before ledger commit.
                   </td>
                 </tr>
               </tbody>
@@ -1021,15 +1090,46 @@ Content-Type: application/json
     const i18nClient = JSON.parse(rootEl?.getAttribute('data-i18n-client') || '{}');
     let enrolledList: any[] = JSON.parse(rootEl?.getAttribute('data-initial-admissions') || '[]');
 
-    const collegeSelect = document.getElementById('activeCollege') as HTMLSelectElement;
-    const csvFileInput = document.getElementById('csvFileInput') as HTMLInputElement;
+    const activeCollegeEl = document.getElementById('activeCollege') as HTMLInputElement | null;
+    const csvFileInput = document.getElementById('csvFileInput') as HTMLInputElement | null;
     const downloadSampleCsvBtn = document.getElementById('downloadSampleCsvBtn');
-    const loadOverrunBtn = document.getElementById('loadOverrunSampleBtn');
-    const loadCompliantBtn = document.getElementById('loadCompliantSampleBtn');
-    const commitBtn = document.getElementById('commitSyncBtn') as HTMLButtonElement;
+    const commitBtn = document.getElementById('commitSyncBtn') as HTMLButtonElement | null;
     const tableBody = document.getElementById('triageTableBody')!;
     const enrolledTableBody = document.getElementById('enrolledTableBody')!;
     const feedbackAlert = document.getElementById('syncFeedbackAlert');
+
+    const BRANCH_CONFIG = [
+      { branch: 'B.Tech Computer Science', code: 'CSE-101', short: 'CSE', sanctioned: 60 },
+      { branch: 'B.Tech Electronics & Comm.', code: 'ECE-102', short: 'ECE', sanctioned: 60 },
+      { branch: 'B.Tech Mechanical Engg', code: 'MECH-103', short: 'MECH', sanctioned: 60 },
+    ];
+
+    function normalizeBranchClient(rawProgram?: string): string {
+      const p = (rawProgram || '').toLowerCase();
+      if (p.includes('mech')) return 'B.Tech Mechanical Engg';
+      if (p.includes('elec') || p.includes('comm') || p.includes('ece') || p.includes('entc')) {
+        return 'B.Tech Electronics & Comm.';
+      }
+      return 'B.Tech Computer Science';
+    }
+
+    function normalizeQuotaClient(rawQuota?: string): string {
+      const q = (rawQuota || '').toUpperCase().trim();
+      if (q.includes('SUPERNUMERARY') || q.includes('TFW') || q.includes('EWS') || q.includes('PMSSS')) return 'SUPERNUMERARY';
+      if (q.includes('NRI')) return 'NRI';
+      if (q.includes('OCI') || q.includes('PIO')) return 'OCI';
+      if (q === 'FN' || q.includes('FOREIGN')) return 'FN';
+      return 'APPROVED_INTAKE';
+    }
+
+    function formatQuotaHuman(code: string): string {
+      const c = normalizeQuotaClient(code);
+      if (c === 'SUPERNUMERARY') return 'Supernumerary (15% TFW/EWS)';
+      if (c === 'NRI') return 'NRI Quota (5%)';
+      if (c === 'OCI') return 'OCI / PIO (2%)';
+      if (c === 'FN') return 'Foreign National (3%)';
+      return 'Approved Intake (Merit)';
+    }
 
     // Left Card Tabs (Admit Student vs CSV Batch Import)
     const tabSingleEntryBtn = document.getElementById('tabSingleEntryBtn');
@@ -1078,9 +1178,9 @@ Content-Type: application/json
         viewEnrolledTabBtn.setAttribute('aria-selected', 'true');
         viewTriageTabBtn.setAttribute('aria-selected', 'false');
         viewEnrolledTabBtn.className =
-          'px-3.5 py-1.5 rounded-lg text-xs font-extrabold transition-all bg-[#0B1E48] text-white cursor-pointer flex items-center gap-2';
+          'px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition-all bg-[#0B1E48] text-white cursor-pointer flex items-center gap-1.5 whitespace-nowrap';
         viewTriageTabBtn.className =
-          'px-3.5 py-1.5 rounded-lg text-xs font-extrabold transition-all text-slate-600 hover:text-[#0B1E48] cursor-pointer flex items-center gap-2';
+          'px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition-all text-slate-600 hover:text-[#0B1E48] cursor-pointer flex items-center gap-1.5 whitespace-nowrap';
         enrolledRosterPanel.classList.remove('hidden');
         triagePanel.classList.add('hidden');
         triageSummaryStrip?.classList.add('hidden');
@@ -1091,9 +1191,9 @@ Content-Type: application/json
         viewEnrolledTabBtn.setAttribute('aria-selected', 'false');
         viewTriageTabBtn.setAttribute('aria-selected', 'true');
         viewTriageTabBtn.className =
-          'px-3.5 py-1.5 rounded-lg text-xs font-extrabold transition-all bg-[#0B1E48] text-white cursor-pointer flex items-center gap-2';
+          'px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition-all bg-[#0B1E48] text-white cursor-pointer flex items-center gap-1.5 whitespace-nowrap';
         viewEnrolledTabBtn.className =
-          'px-3.5 py-1.5 rounded-lg text-xs font-extrabold transition-all text-slate-600 hover:text-[#0B1E48] cursor-pointer flex items-center gap-2';
+          'px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition-all text-slate-600 hover:text-[#0B1E48] cursor-pointer flex items-center gap-1.5 whitespace-nowrap';
         triagePanel.classList.remove('hidden');
         enrolledRosterPanel.classList.add('hidden');
         triageSummaryStrip?.classList.remove('hidden');
@@ -1130,157 +1230,143 @@ Content-Type: application/json
       feedbackAlert.innerHTML = html;
     }
 
-    function updateCollegeMeter() {
-      const opt = collegeSelect?.selectedOptions?.[0];
-      if (!opt) return;
+    /**
+     * Recomputes 100% of top KPIs, branch matrix cells, quota strip cells, and filter pills
+     * directly from `enrolledList` so Table Row Count === Seats Used Counter === Branch Matrix === Quota Strip.
+     */
+    function recomputeAllTelemetryFromRoster() {
+      const sanctioned = parseInt(activeCollegeEl?.getAttribute('data-sanctioned') || '180', 10);
+      const totalAdmitted = enrolledList.length;
+      const vacant = Math.max(0, sanctioned - totalAdmitted);
+      const dupes = enrolledList.filter((item) => Boolean(item.is_duplicate)).length;
+      const pct = ((totalAdmitted / Math.max(1, sanctioned)) * 100).toFixed(1);
+      const barWidth = Math.min(100, (totalAdmitted / Math.max(1, sanctioned)) * 100).toFixed(1);
 
-      const name = opt.getAttribute('data-name') || opt.textContent?.split(' (')[0] || '';
-      const code = opt.getAttribute('data-code') || 'TCA-1049';
-      const sanctioned = parseInt(opt.getAttribute('data-sanctioned') || '180', 10);
-      const current = parseInt(opt.getAttribute('data-current') || '0', 10);
-      const diff = current - sanctioned;
-      const isOverrun = diff > 0;
-      const pct = ((current / Math.max(1, sanctioned)) * 100).toFixed(1);
-      const barWidth = Math.min(100, (current / Math.max(1, sanctioned)) * 100).toFixed(1);
-
-      const badgeEl = document.getElementById('meterBadge');
-      const nameEl = document.getElementById('meterCollegeName');
-      const codeEl = document.getElementById('meterCollegeCode');
-      const capEl = document.getElementById('meterCap');
-      const enrolledEl = document.getElementById('meterEnrolled');
-      const sanctionedEl = document.getElementById('meterSanctioned');
-      const excessTextEl = document.getElementById('meterExcessText');
-      const barEl = document.getElementById('meterProgressBar');
-      const limitLabelEl = document.getElementById('meterSanctionedLabel');
-      const pctEl = document.getElementById('meterPercent');
-
-      if (nameEl) nameEl.textContent = name;
-      if (codeEl) codeEl.textContent = code;
-      if (capEl) capEl.textContent = String(sanctioned);
-      if (enrolledEl) {
-        enrolledEl.textContent = String(current);
-        enrolledEl.className = `text-xl font-extrabold font-mono ${isOverrun ? 'text-red-600' : 'text-emerald-700'}`;
+      if (activeCollegeEl) {
+        activeCollegeEl.setAttribute('data-current', String(totalAdmitted));
       }
-      if (sanctionedEl) sanctionedEl.textContent = String(sanctioned);
-      if (excessTextEl) {
-        excessTextEl.textContent = isOverrun ? `(+${diff})` : `(${diff})`;
-        excessTextEl.className = `ml-2 font-bold font-mono ${isOverrun ? 'text-red-600' : 'text-emerald-700'}`;
+      if (enrolledCountPill) {
+        enrolledCountPill.textContent = String(totalAdmitted);
+      }
+
+      const enrolledEl = document.getElementById('meterEnrolled');
+      const vacantEl = document.getElementById('meterVacantCount');
+      const dupeEl = document.getElementById('meterDuplicateCount');
+      const badgeEl = document.getElementById('meterBadge');
+      const pctEl = document.getElementById('meterPercent');
+      const barEl = document.getElementById('meterProgressBar');
+      const filterDupeOpt = document.getElementById('filterDuplicateOption');
+
+      if (enrolledEl) enrolledEl.textContent = String(totalAdmitted);
+      if (vacantEl) vacantEl.textContent = String(vacant);
+      if (dupeEl) {
+        dupeEl.textContent = String(dupes);
+        dupeEl.className = `text-2xl font-extrabold font-mono ${dupes > 0 ? 'text-amber-700' : 'text-slate-800'}`;
+      }
+      if (filterDupeOpt) {
+        filterDupeOpt.textContent = `Cross-Campus Duplicates (${dupes})`;
       }
       if (badgeEl) {
-        badgeEl.textContent = isOverrun
-          ? `${i18nClient.statusOverrun || 'Above Limit'} (+${diff})`
-          : `${i18nClient.statusCompliant || 'Within Limit'} (${sanctioned - current} Left)`;
-        badgeEl.className = `text-xs font-extrabold px-3 py-1 rounded-full border ${
-          isOverrun
-            ? 'bg-red-100 text-red-900 border-red-200'
-            : 'bg-emerald-100 text-emerald-900 border-emerald-200'
-        }`;
+        if (dupes > 0) {
+          badgeEl.textContent = `Duplicate Conflict Flagged (${dupes})`;
+          badgeEl.className = 'text-xs font-extrabold px-3.5 py-1.5 rounded-full border bg-amber-100 text-amber-950 border-amber-300';
+        } else {
+          badgeEl.textContent = `EoA Compliant (${vacant} Vacant)`;
+          badgeEl.className = 'text-xs font-extrabold px-3.5 py-1.5 rounded-full border bg-emerald-100 text-emerald-950 border-emerald-300';
+        }
       }
+      if (pctEl) pctEl.textContent = `${pct}% Filled`;
       if (barEl) {
         barEl.style.width = `${barWidth}%`;
         barEl.setAttribute('aria-valuenow', String(pct));
-        barEl.className = `h-full transition-all duration-300 ${isOverrun ? 'bg-red-600' : 'bg-emerald-600'}`;
-      }
-      if (limitLabelEl) limitLabelEl.textContent = `${i18nClient.kpiSanctioned || 'Approved Seat Limit'}: ${sanctioned}`;
-      if (pctEl) {
-        pctEl.textContent = `${pct}% (${isOverrun ? (i18nClient.statusOverrun || 'Above Limit') : (i18nClient.statusCompliant || 'Within Limit')})`;
-        pctEl.className = `font-bold ${isOverrun ? 'text-red-700' : 'text-emerald-700'}`;
       }
 
-      const catApprovedEl = document.getElementById('catApprovedIntake');
+      // Quota counts derived from `enrolledList`
+      const countMerit = enrolledList.filter((a) => normalizeQuotaClient(a.admission_quota || a.quota_label) === 'APPROVED_INTAKE').length;
+      const countSuper = enrolledList.filter((a) => normalizeQuotaClient(a.admission_quota || a.quota_label) === 'SUPERNUMERARY').length;
+      const countNri = enrolledList.filter((a) => normalizeQuotaClient(a.admission_quota || a.quota_label) === 'NRI').length;
+      const countOci = enrolledList.filter((a) => normalizeQuotaClient(a.admission_quota || a.quota_label) === 'OCI').length;
+      const countFn = enrolledList.filter((a) => normalizeQuotaClient(a.admission_quota || a.quota_label) === 'FN').length;
+
+      const ceilSuper = Math.round(sanctioned * 0.15);
+      const ceilNri = Math.round(sanctioned * 0.05);
+      const ceilOci = Math.max(1, Math.round(sanctioned * 0.02));
+      const ceilFn = Math.max(1, Math.round(sanctioned * 0.03));
+
+      const catMeritEl = document.getElementById('catMeritCount');
       const catActualEl = document.getElementById('catActualEnrolment');
       const catSuperEl = document.getElementById('catSupernumerary');
       const catNriEl = document.getElementById('catNri');
       const catOciEl = document.getElementById('catOci');
       const catFnEl = document.getElementById('catFn');
 
-      if (catApprovedEl) catApprovedEl.textContent = String(sanctioned);
+      if (catMeritEl) catMeritEl.textContent = String(countMerit);
       if (catActualEl) {
-        catActualEl.textContent = String(current);
-        catActualEl.className = `text-lg font-extrabold font-mono mt-1 ${isOverrun ? 'text-red-600' : 'text-emerald-700'}`;
+        catActualEl.innerHTML = `${totalAdmitted} <span class="text-xs font-normal text-slate-500">/ ${sanctioned}</span>`;
       }
-      if (catSuperEl) catSuperEl.textContent = String(Math.round(sanctioned * 0.15));
-      if (catNriEl) catNriEl.textContent = String(Math.round(sanctioned * 0.05));
-      if (catOciEl) catOciEl.textContent = String(Math.max(1, Math.round(sanctioned * 0.02)));
-      if (catFnEl) catFnEl.textContent = String(Math.max(1, Math.round(sanctioned * 0.03)));
-    }
+      if (catSuperEl) {
+        catSuperEl.innerHTML = `${countSuper} <span class="text-xs font-normal text-slate-500">/ ${ceilSuper}</span>`;
+      }
+      if (catNriEl) {
+        catNriEl.innerHTML = `${countNri} <span class="text-xs font-normal text-slate-500">/ ${ceilNri}</span>`;
+      }
+      if (catOciEl) {
+        catOciEl.innerHTML = `${countOci} <span class="text-xs font-normal text-slate-500">/ ${ceilOci}</span>`;
+      }
+      if (catFnEl) {
+        catFnEl.innerHTML = `${countFn} <span class="text-xs font-normal text-slate-500">/ ${ceilFn}</span>`;
+      }
 
-    collegeSelect?.addEventListener('change', updateCollegeMeter);
+      // Update 3-Branch AICTE EoA Seat Matrix rows
+      BRANCH_CONFIG.forEach((b) => {
+        const rowEl = document.querySelector<HTMLTableRowElement>(`tr[data-branch-row="${b.branch}"]`);
+        if (!rowEl) return;
+        const branchItems = enrolledList.filter((item) => normalizeBranchClient(item.program) === b.branch);
+        const bAdmitted = branchItems.length;
+        const bApproved = branchItems.filter((item) => normalizeQuotaClient(item.admission_quota || item.quota_label) === 'APPROVED_INTAKE').length;
+        const bSuperNri = branchItems.filter((item) => normalizeQuotaClient(item.admission_quota || item.quota_label) !== 'APPROVED_INTAKE').length;
+        const bDupes = branchItems.filter((item) => Boolean(item.is_duplicate)).length;
+        const bVacant = Math.max(0, b.sanctioned - bAdmitted);
 
-    // Sync Sanctioned Seat Baseline (172/180)
-    const normalizeIntakeBtn = document.getElementById('normalizeIntakeBtn') as HTMLButtonElement | null;
-    const quickNormalizeIntakeLink = document.getElementById('quickNormalizeIntakeLink') as HTMLButtonElement | null;
+        const cellApproved = rowEl.querySelector('[data-cell="approved"]');
+        const cellSuperNri = rowEl.querySelector('[data-cell="super_nri"]');
+        const cellAdmitted = rowEl.querySelector('[data-cell="admitted"]');
+        const cellVacant = rowEl.querySelector('[data-cell="vacant"]');
+        const cellDupes = rowEl.querySelector('[data-cell="duplicates"]');
+        const cellStatus = rowEl.querySelector('[data-cell="status"]');
 
-    async function handleNormalizeIntake() {
-      const instId = collegeSelect?.value || collegeSelect?.getAttribute('data-institution-id') || 'INST-001';
-      if (normalizeIntakeBtn) normalizeIntakeBtn.disabled = true;
-      let targetVal = 172;
-      let cap = 180;
-      try {
-        const res = await fetch('/api/roster/sync', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            institutionId: instId,
-            action: 'normalize_intake',
-          }),
-        });
-        const data = await res.json().catch(() => null);
-        if (data && typeof data.new_enrollment === 'number') {
-          targetVal = data.new_enrollment;
+        if (cellApproved) cellApproved.textContent = String(bApproved);
+        if (cellSuperNri) cellSuperNri.textContent = String(bSuperNri);
+        if (cellAdmitted) cellAdmitted.textContent = String(bAdmitted);
+        if (cellVacant) cellVacant.textContent = String(bVacant);
+        if (cellDupes) {
+          cellDupes.innerHTML = `<span class="${bDupes > 0 ? 'text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded' : 'text-slate-500'}">${bDupes}</span>`;
         }
-        if (data && typeof data.sanctioned_intake === 'number') {
-          cap = data.sanctioned_intake;
+        if (cellStatus) {
+          cellStatus.innerHTML =
+            bDupes > 0
+              ? `<span class="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-300 font-bold text-[10px]">Duplicate Alert (${bDupes})</span>`
+              : `<span class="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-[10px]">Within Cap (${bVacant} Open)</span>`;
         }
-      } catch {
-        // Fallback to local UI normalization
-      } finally {
-        if (normalizeIntakeBtn) normalizeIntakeBtn.disabled = false;
-      }
-
-      const selectedOpt = collegeSelect?.selectedOptions?.[0];
-      if (selectedOpt) {
-        const instName = selectedOpt.getAttribute('data-name') || selectedOpt.textContent?.split(' (')[0] || '';
-        selectedOpt.setAttribute('data-current', String(targetVal));
-        selectedOpt.setAttribute('data-sanctioned', String(cap));
-        selectedOpt.textContent = `${instName} (${targetVal}/${cap})`;
-        updateCollegeMeter();
-      }
-      showFeedbackBanner(
-        `<div class="flex items-center justify-between gap-3"><div><strong>Sanctioned Seat Baseline Reconciled (${targetVal} / ${cap}):</strong> ${cap - targetVal} approved seats are now open for live single-student or batch admission.</div></div>`,
-        'success'
-      );
-      (window as any).showToast?.(`Synced seat baseline to ${targetVal}/${cap} (${cap - targetVal} seats open).`, 'success');
+      });
     }
-
-    normalizeIntakeBtn?.addEventListener('click', handleNormalizeIntake);
-    quickNormalizeIntakeLink?.addEventListener('click', handleNormalizeIntake);
 
     // Step 1: NDEAR / DigiLocker Live Verification (`GET /api/roster/lookup?apaar_id=...`)
     const btnVerifyApaar = document.getElementById('btnVerifyApaar') as HTMLButtonElement | null;
     const apaarVerifyCard = document.getElementById('apaarVerifyCard');
-    const btnGenSingleApaar = document.getElementById('btnGenSingleApaar');
     const singleApaarInput = document.getElementById('singleApaarInput') as HTMLInputElement | null;
     const singleNameInput = document.getElementById('singleNameInput') as HTMLInputElement | null;
     const singleProgramSelect = document.getElementById('singleProgramSelect') as HTMLSelectElement | null;
     const singleQuotaSelect = document.getElementById('singleQuotaSelect') as HTMLSelectElement | null;
+    const singleAllotmentInput = document.getElementById('singleAllotmentInput') as HTMLInputElement | null;
     const singleSessionSelect = document.getElementById('singleSessionSelect') as HTMLSelectElement | null;
     const singleStudentForm = document.getElementById('singleStudentForm') as HTMLFormElement | null;
     const singleSubmitBtn = document.getElementById('singleSubmitBtn') as HTMLButtonElement | null;
 
-    const SAMPLE_CANDIDATE_NAMES = [
-      'Siddharth Kulkarni',
-      'Ananya Deshmukh',
-      'Rohan Gokhale',
-      'Meera Joshi',
-      'Karanchit Patil',
-      'Tanvi Bhosale',
-    ];
-
     async function verifyApaarId(apaarRaw?: string) {
       const apaar = (apaarRaw ?? singleApaarInput?.value ?? '').trim();
       if (!/^\d{12}$/.test(apaar)) {
-        (window as any).showToast?.('Enter a valid 12-digit numeric APAAR ID to verify via NDEAR.', 'error');
+        (window as any).showToast?.('Enter a valid 12-digit numeric APAAR ID to query NDEAR.', 'error');
         singleApaarInput?.focus();
         return;
       }
@@ -1288,7 +1374,7 @@ Content-Type: application/json
       if (btnVerifyApaar) btnVerifyApaar.disabled = true;
 
       let verifiedName = singleNameInput?.value.trim() || '';
-      let verifiedDob = '2006-05-14';
+      let verifiedBoard = 'CBSE Class XII (10+2 PCM — Verified)';
       let dpdpConsent = 'GRANTED';
       let hasConcurrent = false;
       let concurrentColleges: string[] = [];
@@ -1299,7 +1385,7 @@ Content-Type: application/json
           const data = await res.json();
           const st = data.student || data;
           if (st?.full_name || st?.name) verifiedName = st.full_name || st.name;
-          if (st?.dob) verifiedDob = st.dob;
+          if (st?.qualification) verifiedBoard = st.qualification;
           if (st?.dpdp_consent_status) dpdpConsent = st.dpdp_consent_status;
           if (typeof data.has_concurrent_admission === 'boolean') {
             hasConcurrent = data.has_concurrent_admission;
@@ -1308,16 +1394,13 @@ Content-Type: application/json
           }
           if (Array.isArray(data.active_admissions)) {
             concurrentColleges = data.active_admissions.map(
-              (a: any) => a.institution_name || a.institution_id || 'Another AICTE Institution'
+              (a: any) => a.institution_name || a.institution_id || 'Technical College B (INST-002)'
             );
-          } else if (Array.isArray(data.concurrent_institutions)) {
-            concurrentColleges = data.concurrent_institutions;
           }
         } else {
           throw new Error('Fallback to local roster lookup');
         }
       } catch {
-        // Fallback check against local enrolledList & deterministic NDEAR profile
         const existingMatch = enrolledList.find((item) => item.apaar_id === apaar);
         if (existingMatch) {
           verifiedName = existingMatch.full_name;
@@ -1325,13 +1408,6 @@ Content-Type: application/json
           concurrentColleges = existingMatch.other_colleges?.length
             ? existingMatch.other_colleges
             : ['Technical College B (INST-002)'];
-        } else if (apaar === '739284019283') {
-          verifiedName = 'Aarav Sharma';
-          hasConcurrent = true;
-          concurrentColleges = ['Technical College B (INST-002)'];
-        } else if (!verifiedName) {
-          const idx = parseInt(apaar.slice(-2), 10) % SAMPLE_CANDIDATE_NAMES.length;
-          verifiedName = SAMPLE_CANDIDATE_NAMES[idx] || 'Siddharth Kulkarni';
         }
       } finally {
         if (btnVerifyApaar) btnVerifyApaar.disabled = false;
@@ -1355,19 +1431,19 @@ Content-Type: application/json
         if (hasConcurrent) {
           apaarVerifyCard.classList.add('bg-amber-50', 'border-amber-300', 'text-amber-950');
           const conflictText =
-            concurrentColleges.length > 0 ? concurrentColleges.join(', ') : 'another AICTE Institution';
+            concurrentColleges.length > 0 ? concurrentColleges.join(', ') : 'Technical College B (INST-002)';
           apaarVerifyCard.innerHTML = `
             <div class="flex items-center justify-between gap-2 font-extrabold text-amber-900">
               <span class="inline-flex items-center gap-1.5">
                 <svg class="w-4 h-4 text-amber-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                <span>Concurrent Enrollment Detected at another AICTE Institution!</span>
+                <span>Cross-Campus Seat Conflict Detected</span>
               </span>
-              <span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-amber-100 border border-amber-300">DUPLICATE RISK</span>
+              <span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-amber-100 border border-amber-300">DUPLICATE FLAG</span>
             </div>
             <div class="text-[11px] text-amber-900/90 font-medium">
-              Candidate <strong>${verifiedName}</strong> (DOB: <span class="font-mono">${verifiedDob}</span>) is already active at <strong>${conflictText}</strong>.
+              Candidate <strong>${verifiedName || apaar}</strong> (${verifiedBoard}) holds an active seat at <strong>${conflictText}</strong>.
             </div>
           `;
         } else {
@@ -1378,12 +1454,12 @@ Content-Type: application/json
                 <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7" />
                 </svg>
-                <span>NDEAR / DigiLocker Verified · DPDP Consent: ${dpdpConsent}</span>
+                <span>NDEAR / DigiLocker Verified · DPDP: ${dpdpConsent}</span>
               </span>
               <span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 border border-emerald-200">ELIGIBLE</span>
             </div>
             <div class="text-[11px] text-emerald-800 font-medium">
-              Verified Identity: <strong>${verifiedName}</strong> · DOB: <span class="font-mono">${verifiedDob}</span> · No conflicting AICTE seat found.
+              Candidate: <strong>${verifiedName || 'Verified Candidate'}</strong> · Board: <span>${verifiedBoard}</span>
             </div>
           `;
         }
@@ -1391,27 +1467,6 @@ Content-Type: application/json
     }
 
     btnVerifyApaar?.addEventListener('click', () => verifyApaarId());
-
-    // Sample APAAR quick-fill chips
-    document.querySelectorAll<HTMLButtonElement>('[data-sample-apaar]').forEach((chip) => {
-      chip.addEventListener('click', () => {
-        const sampleId = chip.getAttribute('data-sample-apaar') || '';
-        const sampleName = chip.getAttribute('data-sample-name') || '';
-        if (singleApaarInput) singleApaarInput.value = sampleId;
-        if (singleNameInput && sampleName) singleNameInput.value = sampleName;
-        verifyApaarId(sampleId);
-      });
-    });
-
-    btnGenSingleApaar?.addEventListener('click', () => {
-      const randomDigits = Array.from({ length: 12 }, (_, idx) =>
-        idx === 0 ? String(Math.floor(2 + Math.random() * 7)) : String(Math.floor(Math.random() * 10))
-      ).join('');
-      if (singleApaarInput) singleApaarInput.value = randomDigits;
-      const pick = SAMPLE_CANDIDATE_NAMES[Math.floor(Math.random() * SAMPLE_CANDIDATE_NAMES.length)];
-      if (singleNameInput) singleNameInput.value = pick;
-      verifyApaarId(randomDigits);
-    });
 
     function formatApaarDisplay(apaar: string): string {
       if (!apaar || apaar.length !== 12) return apaar;
@@ -1429,15 +1484,6 @@ Content-Type: application/json
       );
     }
 
-    function formatQuotaHuman(code: string): string {
-      const c = (code || '').toUpperCase();
-      if (c.includes('SUPERNUMERARY')) return 'Supernumerary (TFW/EWS)';
-      if (c.includes('NRI')) return 'NRI Quota (5%)';
-      if (c.includes('OCI')) return 'OCI Quota (2%)';
-      if (c === 'FN' || c.includes('FOREIGN')) return 'Foreign National (3%)';
-      return 'Approved Intake';
-    }
-
     function appendToEnrolledTable(student: {
       id?: string;
       apaar_id: string;
@@ -1445,102 +1491,126 @@ Content-Type: application/json
       full_name: string;
       program: string;
       batch_year: number;
-      quota_label: string;
+      admission_quota: string;
+      allotment_ref?: string;
       is_duplicate: boolean;
       other_colleges?: string[];
     }) {
       const admId = student.id || `ADM-${Date.now()}`;
-      const humanQuota = formatQuotaHuman(student.quota_label);
+      const canonicalBranch = normalizeBranchClient(student.program);
+      const quotaCode = normalizeQuotaClient(student.admission_quota);
+      const humanQuota = formatQuotaHuman(quotaCode);
       const formattedApaar = formatApaarDisplay(student.apaar_id);
       const initials = getInitials(student.full_name);
+      const allotmentRef = student.allotment_ref || `MHT-CET/CAP-I/${88410 + enrolledList.length + 1}`;
+
+      // Avoid duplicate DOM rows if same APAAR is re-synced
+      enrolledList = enrolledList.filter((item) => item.apaar_id !== student.apaar_id);
+      const existingRow = enrolledTableBody?.querySelector(`tr[data-row-apaar="${student.apaar_id}"]`);
+      existingRow?.remove();
 
       enrolledList.unshift({
         ...student,
         id: admId,
+        program: canonicalBranch,
+        admission_quota: quotaCode,
+        quota_label: humanQuota,
+        allotment_ref: allotmentRef,
         formatted_apaar: formattedApaar,
         initials,
-        quota_label: humanQuota,
         dpdp_consent_status: 'GRANTED',
-        enrollment_date: '02 Nov 2026',
       });
 
-      if (enrolledCountPill) enrolledCountPill.textContent = String(enrolledList.length);
-      if (!enrolledTableBody) return;
+      if (enrolledTableBody) {
+        const row = document.createElement('tr');
+        row.className = 'bg-emerald-50/40 hover:bg-slate-50/80 transition-colors';
+        row.setAttribute('data-row-apaar', student.apaar_id);
+        row.setAttribute('data-row-name', student.full_name.toLowerCase());
+        row.setAttribute('data-row-roll', student.roll_id.toLowerCase());
+        row.setAttribute('data-row-branch', canonicalBranch);
+        row.setAttribute('data-row-status', student.is_duplicate ? 'DUPLICATE' : 'VERIFIED');
 
-      const row = document.createElement('tr');
-      row.className = 'bg-emerald-50/40 hover:bg-slate-50/80 transition-colors';
-      row.setAttribute('data-row-apaar', student.apaar_id);
-      row.setAttribute('data-row-name', student.full_name.toLowerCase());
-      row.setAttribute('data-row-roll', student.roll_id.toLowerCase());
-      row.setAttribute('data-row-status', student.is_duplicate ? 'DUPLICATE' : 'VERIFIED');
+        const statusBadge = student.is_duplicate
+          ? `<div class="space-y-0.5 max-w-[12rem]">
+               <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-900 px-2 py-0.5 rounded-md border border-amber-300 font-bold text-[10px] whitespace-nowrap">
+                 <svg class="w-3 h-3 text-amber-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                 </svg>
+                 <span>Cross-Campus Duplicate</span>
+               </span>
+               <div class="text-[10px] text-amber-800 font-medium truncate">
+                 Also at ${student.other_colleges?.join(', ') || 'Technical College B (INST-002)'}
+               </div>
+             </div>`
+          : `<span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-md border border-emerald-200 font-bold text-[10px] whitespace-nowrap">
+               <svg class="w-3 h-3 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7" />
+               </svg>
+               <span>Verified Within Cap</span>
+             </span>`;
 
-      const statusBadge = student.is_duplicate
-        ? `<div class="space-y-1">
-             <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-900 px-2.5 py-0.5 rounded-md border border-amber-300 font-bold text-[11px]">Cross-Campus Duplicate</span>
-             <div class="text-[11px] text-amber-800 font-medium">Also enrolled at ${student.other_colleges?.join(', ') || 'Technical College B'}</div>
-           </div>`
-        : `<span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 px-2.5 py-0.5 rounded-md border border-emerald-200 font-bold text-[11px]">
-             <svg class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7" />
-             </svg>
-             <span>Verified Within Cap</span>
-           </span>`;
-
-      row.innerHTML = `
-        <td class="py-3.5 px-4">
-          <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-full bg-[#EEF4FF] text-[#0B4EA2] border border-blue-200 font-extrabold text-xs flex items-center justify-center shrink-0">
-              ${initials}
-            </div>
-            <div>
-              <div class="font-bold text-slate-900">${student.full_name}</div>
-              <div class="mt-0.5 flex items-center gap-1.5">
-                <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-semibold">
-                  DPDP Consent: GRANTED
-                </span>
+        row.innerHTML = `
+          <td class="py-3 px-2.5">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-full bg-[#EEF4FF] text-[#0B4EA2] border border-blue-200 font-extrabold text-[11px] flex items-center justify-center shrink-0">
+                ${initials}
+              </div>
+              <div class="min-w-0">
+                <div class="font-bold text-slate-900 whitespace-nowrap">${student.full_name}</div>
+                <div class="mt-0.5 flex items-center gap-1">
+                  <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-semibold whitespace-nowrap">
+                    DPDP: GRANTED
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        </td>
-        <td class="py-3.5 px-4">
-          <div class="font-mono font-bold text-[#0B1E48]">${formattedApaar}</div>
-          <div class="font-mono text-[11px] text-slate-500 mt-0.5">${student.roll_id}</div>
-        </td>
-        <td class="py-3.5 px-4">
-          <div class="font-semibold text-slate-800">${student.program}</div>
-          <div class="flex flex-wrap items-center gap-1.5 mt-1">
-            <span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-medium">
-              ${humanQuota}
-            </span>
-            <span class="text-[11px] text-slate-500 font-mono">· 02 Nov 2026</span>
-          </div>
-        </td>
-        <td class="py-3.5 px-4">${statusBadge}</td>
-        <td class="py-3.5 px-4 text-right">
-          <button
-            type="button"
-            data-withdraw-id="${admId}"
-            data-withdraw-apaar="${student.apaar_id}"
-            data-withdraw-name="${student.full_name}"
-            class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white hover:bg-red-50 text-slate-700 hover:text-red-700 border border-slate-200 hover:border-red-200 text-[11px] font-bold transition-colors cursor-pointer whitespace-nowrap"
-          >
-            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            <span>Withdraw / Release Seat</span>
-          </button>
-        </td>
-      `;
-      enrolledTableBody.prepend(row);
+          </td>
+          <td class="py-3 px-2.5 whitespace-nowrap">
+            <div class="font-mono font-bold text-[#0B1E48]">${formattedApaar}</div>
+            <div class="font-mono text-[10px] text-slate-500 mt-0.5">${student.roll_id}</div>
+          </td>
+          <td class="py-3 px-2.5">
+            <div class="font-semibold text-slate-800 whitespace-nowrap">${canonicalBranch}</div>
+            <div class="mt-0.5 flex flex-wrap items-center gap-1">
+              <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-medium whitespace-nowrap">
+                ${humanQuota}
+              </span>
+              <span class="font-mono text-[10px] text-slate-500 whitespace-nowrap">
+                · ${allotmentRef}
+              </span>
+            </div>
+          </td>
+          <td class="py-3 px-2.5">${statusBadge}</td>
+          <td class="py-3 px-2.5 text-right">
+            <button
+              type="button"
+              data-withdraw-id="${admId}"
+              data-withdraw-apaar="${student.apaar_id}"
+              data-withdraw-name="${student.full_name}"
+              class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white hover:bg-red-50 text-slate-700 hover:text-red-700 border border-slate-200 hover:border-red-200 text-[10px] font-bold transition-colors cursor-pointer whitespace-nowrap"
+            >
+              <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <span>Release</span>
+            </button>
+          </td>
+        `;
+        enrolledTableBody.prepend(row);
+      }
+
+      recomputeAllTelemetryFromRoster();
     }
 
-    // Live Search & Compliance Filter on Admitted Students Table
+    // Live Search, Branch Filter & Compliance Filter on Admitted Students Table
     const rosterSearchInput = document.getElementById('rosterSearchInput') as HTMLInputElement | null;
+    const rosterBranchFilter = document.getElementById('rosterBranchFilter') as HTMLSelectElement | null;
     const rosterStatusFilter = document.getElementById('rosterStatusFilter') as HTMLSelectElement | null;
 
     function filterEnrolledTable() {
       if (!enrolledTableBody) return;
       const query = (rosterSearchInput?.value || '').trim().toLowerCase();
+      const branchFilter = rosterBranchFilter?.value || 'ALL';
       const statusFilter = rosterStatusFilter?.value || 'ALL';
       const rows = enrolledTableBody.querySelectorAll<HTMLTableRowElement>('tr[data-row-apaar]');
 
@@ -1548,22 +1618,25 @@ Content-Type: application/json
         const apaar = (row.getAttribute('data-row-apaar') || '').toLowerCase();
         const name = (row.getAttribute('data-row-name') || '').toLowerCase();
         const roll = (row.getAttribute('data-row-roll') || '').toLowerCase();
+        const branch = row.getAttribute('data-row-branch') || '';
         const status = row.getAttribute('data-row-status') || 'VERIFIED';
 
         const matchesQuery = !query || apaar.includes(query) || name.includes(query) || roll.includes(query);
+        const matchesBranch = branchFilter === 'ALL' || branch === branchFilter;
         const matchesStatus = statusFilter === 'ALL' || status === statusFilter;
 
-        row.classList.toggle('hidden', !(matchesQuery && matchesStatus));
+        row.classList.toggle('hidden', !(matchesQuery && matchesBranch && matchesStatus));
       });
     }
 
     rosterSearchInput?.addEventListener('input', filterEnrolledTable);
+    rosterBranchFilter?.addEventListener('change', filterEnrolledTable);
     rosterStatusFilter?.addEventListener('change', filterEnrolledTable);
 
     // Export Enrolled Roster to CSV
     const exportRosterCsvBtn = document.getElementById('exportRosterCsvBtn');
     exportRosterCsvBtn?.addEventListener('click', () => {
-      const headers = ['apaar_id', 'student_roll_id', 'full_name', 'program', 'quota_category', 'compliance_status'];
+      const headers = ['apaar_id', 'roll_number', 'full_name', 'program', 'admission_quota', 'allotment_ref', 'compliance_status'];
       const lines = [headers.join(',')];
       enrolledList.forEach((item) => {
         const row = [
@@ -1571,7 +1644,8 @@ Content-Type: application/json
           item.roll_id,
           `"${(item.full_name || '').replace(/"/g, '""')}"`,
           `"${(item.program || '').replace(/"/g, '""')}"`,
-          `"${(item.quota_label || 'Approved Intake').replace(/"/g, '""')}"`,
+          item.admission_quota || 'APPROVED_INTAKE',
+          `"${(item.allotment_ref || '').replace(/"/g, '""')}"`,
           item.is_duplicate ? 'FLAGGED_DUPLICATE' : 'VERIFIED_WITHIN_CAP',
         ];
         lines.push(row.join(','));
@@ -1580,7 +1654,7 @@ Content-Type: application/json
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `aishe_admitted_roster_${collegeSelect?.value || 'INST-001'}.csv`;
+      a.download = `aicte_admitted_roster_${activeCollegeEl?.value || 'INST-001'}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -1588,7 +1662,7 @@ Content-Type: application/json
       (window as any).showToast?.(`Exported ${enrolledList.length} admitted student records to CSV.`, 'info');
     });
 
-    // Event Delegation for Row Action: Withdraw / Release Seat
+    // Event Delegation for Row Action: Release Seat
     enrolledTableBody?.addEventListener('click', async (e) => {
       const target = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-withdraw-apaar]');
       if (!target) return;
@@ -1596,17 +1670,13 @@ Content-Type: application/json
       const admissionId = target.getAttribute('data-withdraw-id') || '';
       const apaarId = target.getAttribute('data-withdraw-apaar') || '';
       const studentName = target.getAttribute('data-withdraw-name') || apaarId;
-      const instId = collegeSelect?.value || collegeSelect?.getAttribute('data-institution-id') || 'INST-001';
+      const instId = activeCollegeEl?.value || 'INST-001';
+      const capUiVal = parseInt(activeCollegeEl?.getAttribute('data-sanctioned') || '180', 10);
 
       target.disabled = true;
 
-      const selectedOpt = collegeSelect?.selectedOptions?.[0];
-      const currentUiVal = parseInt(selectedOpt?.getAttribute('data-current') || '180', 10);
-      const capUiVal = parseInt(selectedOpt?.getAttribute('data-sanctioned') || '180', 10);
-      let nextEnrollment = Math.max(0, currentUiVal - 1);
-
       try {
-        const res = await fetch('/api/roster/sync', {
+        await fetch('/api/roster/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1616,50 +1686,48 @@ Content-Type: application/json
             institutionId: instId,
           }),
         });
-        const data = await res.json().catch(() => null);
-        if (data && typeof data.new_enrollment === 'number') {
-          nextEnrollment = data.new_enrollment;
-        }
       } catch {
-        // Fallback to local seat decrement
+        // Proceed with client state update
       }
 
       const row = target.closest('tr');
       row?.remove();
 
       enrolledList = enrolledList.filter((item) => item.apaar_id !== apaarId && item.id !== admissionId);
-      if (enrolledCountPill) enrolledCountPill.textContent = String(enrolledList.length);
-
-      if (selectedOpt) {
-        const instName = selectedOpt.getAttribute('data-name') || selectedOpt.textContent?.split(' (')[0] || '';
-        selectedOpt.setAttribute('data-current', String(nextEnrollment));
-        selectedOpt.textContent = `${instName} (${nextEnrollment}/${capUiVal})`;
-        updateCollegeMeter();
-      }
+      recomputeAllTelemetryFromRoster();
 
       showFeedbackBanner(
-        `<div><strong>Seat Released &amp; Admission Withdrawn:</strong> <span class="font-mono font-bold">${studentName}</span> (APAAR: <span class="font-mono">${apaarId}</span>) removed from active roster. Updated seats used: <strong>${nextEnrollment} / ${capUiVal}</strong>.</div>`,
+        `<div><strong>Seat Released &amp; Admission Withdrawn:</strong> <span class="font-mono font-bold">${studentName}</span> (APAAR: <span class="font-mono">${apaarId}</span>) removed from active roster. Active Roster Admitted: <strong>${enrolledList.length} / ${capUiVal}</strong>.</div>`,
         'success'
       );
-      (window as any).showToast?.(`Withdrew ${studentName} and released 1 seat (${nextEnrollment}/${capUiVal}).`, 'info');
+      (window as any).showToast?.(`Released seat for ${studentName} (${enrolledList.length}/${capUiVal}).`, 'info');
     });
 
+    // Single Student Admission Submit
     singleStudentForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const apaar = (singleApaarInput?.value || '').trim();
-      const fullName = (singleNameInput?.value || '').trim() || 'Siddharth Kulkarni';
-      const program = singleProgramSelect?.value || 'B.Tech Computer Science & Engineering';
-      const quota = singleQuotaSelect?.value || 'APPROVED_INTAKE';
+      const fullName = (singleNameInput?.value || '').trim();
+      const program = normalizeBranchClient(singleProgramSelect?.value || 'B.Tech Computer Science');
+      const quota = normalizeQuotaClient(singleQuotaSelect?.value || 'APPROVED_INTAKE');
+      const allotmentRef = (singleAllotmentInput?.value || '').trim() || `MHT-CET/CAP-I/${88410 + enrolledList.length + 1}`;
       const batchYear = parseInt(singleSessionSelect?.value || '2026', 10) || 2026;
-      const instId = collegeSelect?.value || collegeSelect?.getAttribute('data-institution-id') || 'INST-001';
+      const instId = activeCollegeEl?.value || 'INST-001';
+      const capUiVal = parseInt(activeCollegeEl?.getAttribute('data-sanctioned') || '180', 10);
 
       if (!/^\d{12}$/.test(apaar)) {
         (window as any).showToast?.('Please enter a valid 12-digit numeric APAAR ID.', 'error');
         singleApaarInput?.focus();
         return;
       }
+      if (!fullName) {
+        (window as any).showToast?.('Please enter the verified candidate full name.', 'error');
+        singleNameInput?.focus();
+        return;
+      }
 
-      const rollId = `TCA-1049-${batchYear}-CSE-${String(enrolledList.length + 1).padStart(3, '0')}`;
+      const branchMeta = BRANCH_CONFIG.find((b) => b.branch === program) || BRANCH_CONFIG[0];
+      const rollId = `TCA-1049-${batchYear}-${branchMeta.short}-${String(enrolledList.length + 1).padStart(3, '0')}`;
       if (singleSubmitBtn) {
         singleSubmitBtn.disabled = true;
       }
@@ -1673,86 +1741,52 @@ Content-Type: application/json
             students: [
               {
                 apaar_id: apaar,
+                roll_number: rollId,
                 student_roll_id: rollId,
                 full_name: fullName,
                 program,
                 batch_year: batchYear,
+                admission_quota: quota,
                 admission_category: quota,
+                allotment_ref: allotmentRef,
               },
             ],
           }),
         });
         const data = await res.json();
 
-        const selectedOpt = collegeSelect?.selectedOptions?.[0];
-        const currentUiVal = parseInt(selectedOpt?.getAttribute('data-current') || '187', 10);
-        const capUiVal = parseInt(selectedOpt?.getAttribute('data-sanctioned') || '180', 10);
-
         if (res.ok && data.success) {
-          const newEnrolled = data.new_enrollment ?? currentUiVal + 1;
-          const cap = data.sanctioned_intake ?? capUiVal;
-          if (selectedOpt) {
-            const instName = selectedOpt.getAttribute('data-name') || selectedOpt.textContent?.split(' (')[0] || '';
-            selectedOpt.setAttribute('data-current', String(newEnrolled));
-            selectedOpt.setAttribute('data-sanctioned', String(cap));
-            selectedOpt.textContent = `${instName} (${newEnrolled}/${cap})`;
-            updateCollegeMeter();
-          }
-
+          const isDupe = (data.duplicates_flagged ?? 0) > 0;
           appendToEnrolledTable({
             apaar_id: apaar,
             roll_id: rollId,
             full_name: fullName,
             program,
             batch_year: batchYear,
-            quota_label: quota,
-            is_duplicate: (data.duplicates_flagged ?? 0) > 0,
+            admission_quota: quota,
+            allotment_ref: allotmentRef,
+            is_duplicate: isDupe,
           });
           switchTableView('enrolled');
           showFeedbackBanner(
-            `<div><strong>Student Enrolled in Registry:</strong> <span class="font-mono font-bold">${fullName}</span> (APAAR: <span class="font-mono">${apaar}</span>) anchored under <strong>${formatQuotaHuman(quota)}</strong>. Seats used: <strong>${newEnrolled} / ${cap}</strong>.</div>`,
-            (data.duplicates_flagged ?? 0) > 0 ? 'warning' : 'success'
+            `<div><strong>Admission Committed to Ledger:</strong> <span class="font-mono font-bold">${fullName}</span> (APAAR: <span class="font-mono">${apaar}</span>) locked in <strong>${program}</strong> under <strong>${formatQuotaHuman(quota)}</strong> (${allotmentRef}). Active Roster Admitted: <strong>${enrolledList.length} / ${capUiVal}</strong>.</div>`,
+            isDupe ? 'warning' : 'success'
           );
-          (window as any).showToast?.(`Enrolled ${fullName} (${apaar}) in registry.`, 'success');
+          (window as any).showToast?.(`Admitted ${fullName} (${enrolledList.length}/${capUiVal}).`, 'success');
           if (singleApaarInput) singleApaarInput.value = '';
           if (singleNameInput) singleNameInput.value = '';
-          apaarVerifyCard?.classList.add('hidden');
-        } else if (res.status === 409 && currentUiVal < capUiVal) {
-          const nextEnrolled = currentUiVal + 1;
-          if (selectedOpt) {
-            const instName = selectedOpt.getAttribute('data-name') || selectedOpt.textContent?.split(' (')[0] || '';
-            selectedOpt.setAttribute('data-current', String(nextEnrolled));
-            selectedOpt.textContent = `${instName} (${nextEnrolled}/${capUiVal})`;
-            updateCollegeMeter();
-          }
-          appendToEnrolledTable({
-            apaar_id: apaar,
-            roll_id: rollId,
-            full_name: fullName,
-            program,
-            batch_year: batchYear,
-            quota_label: quota,
-            is_duplicate: false,
-          });
-          switchTableView('enrolled');
-          showFeedbackBanner(
-            `<div><strong>Student Enrolled in Registry:</strong> <span class="font-mono font-bold">${fullName}</span> (APAAR: <span class="font-mono">${apaar}</span>) verified within cap (<strong>${nextEnrolled} / ${capUiVal}</strong>).</div>`,
-            'success'
-          );
-          (window as any).showToast?.(`Enrolled ${fullName} (${nextEnrolled}/${capUiVal}).`, 'success');
-          if (singleApaarInput) singleApaarInput.value = '';
-          if (singleNameInput) singleNameInput.value = '';
+          if (singleAllotmentInput) singleAllotmentInput.value = '';
           apaarVerifyCard?.classList.add('hidden');
         } else {
-          const errMsg = data.error || 'Sanctioned intake ceiling reached';
+          const errMsg = data.error || 'Sanctioned EoA intake ceiling reached';
           showFeedbackBanner(
-            `<div><strong>Statutory Cap Exceeded (HTTP ${res.status}):</strong> ${errMsg} Use <strong>"Sync Baseline (172/180)"</strong> below the submit button or in CSV Batch Import to reconcile open seats.</div>`,
+            `<div><strong>Statutory Cap / Validation Exception (HTTP ${res.status}):</strong> ${errMsg}</div>`,
             'error'
           );
           (window as any).showToast?.(errMsg, 'error');
         }
-      } catch (err: any) {
-        (window as any).showToast?.('Network error while enrolling student.', 'error');
+      } catch {
+        (window as any).showToast?.('Network error while committing admission.', 'error');
       } finally {
         if (singleSubmitBtn) singleSubmitBtn.disabled = false;
       }
@@ -1767,55 +1801,49 @@ Content-Type: application/json
       }
     });
 
-    // Download 5-row valid sample CSV template
+    // Download Official AICTE CSV Template
     downloadSampleCsvBtn?.addEventListener('click', () => {
       const csvContent = [
-        'apaar_id,student_roll_id,full_name,program,batch_year,admission_category',
-        '901238471920,TCA-1049-2026-CSE-001,Aarav Sharma,B.Tech Computer Science & Engineering,2026,APPROVED_INTAKE',
-        '812349582031,TCA-1049-2026-IT-002,Priya Nair,B.Tech Information Technology,2026,SUPERNUMERARY',
-        '723450693142,TCA-1049-2026-ENTC-003,Rohan Deshmukh,B.Tech Electronics & Telecommunication,2026,NRI',
-        '634561704253,TCA-1049-2026-AIDS-004,Ananya Kulkarni,B.Tech Artificial Intelligence & Data Science,2026,OCI',
-        '545672815364,TCA-1049-2026-CSE-005,Vikramaditya Joshi,B.Tech Computer Science & Engineering,2026,FN',
+        'apaar_id,full_name,program,admission_quota,allotment_ref,batch_year',
+        '901238471920,Aaditya Patel,B.Tech Computer Science,APPROVED_INTAKE,MHT-CET/CAP-I/88412,2026',
+        '812349582031,Priya Nair,B.Tech Electronics & Comm.,SUPERNUMERARY,MHT-CET/TFW/88419,2026',
+        '723450693142,Rohan Deshmukh,B.Tech Mechanical Engg,NRI,INST-NRI/2026/004,2026',
+        '634561704253,Ananya Kulkarni,B.Tech Computer Science,OCI,JOSAA/OCI/2026/112,2026',
+        '545672815364,Vikramaditya Joshi,B.Tech Electronics & Comm.,FN,ICCR/FN/2026/019,2026',
       ].join('\n');
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'aicte_admission_roster_sample.csv';
+      a.download = 'aicte_eoa_admission_template_2026.csv';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      (window as any).showToast?.('aicte_admission_roster_sample.csv (5 rows) downloaded.', 'info');
+      (window as any).showToast?.('Downloaded Official AICTE CSV Template.', 'info');
     });
 
     function maskApaarClient(val: string): string {
       if (!val || val.length !== 12) return 'INVALID';
-      return `XXXX-XXXX-${val.slice(-4)}`;
-    }
-
-    function maskNameClient(val: string): string {
-      if (!val) return 'Candidate';
-      const parts = val.split(' ');
-      return parts.length > 1 ? `${parts[0]} ${parts[1][0]}.` : val;
+      return `${val.slice(0, 4)}-${val.slice(4, 8)}-${val.slice(8, 12)}`;
     }
 
     function renderCategoryBadge(cat: string): string {
-      const c = (cat || 'APPROVED_INTAKE').toUpperCase();
-      if (c.includes('SUPERNUMERARY') || c.includes('TFW') || c.includes('EWS')) {
-        return `<span class="bg-blue-50 text-blue-800 px-2 py-0.5 rounded-md border border-blue-200 font-semibold text-[11px]">${i18nClient.catSupernumerary || 'Supernumerary'}</span>`;
+      const c = normalizeQuotaClient(cat);
+      if (c === 'SUPERNUMERARY') {
+        return `<span class="bg-blue-50 text-blue-800 px-2 py-0.5 rounded-md border border-blue-200 font-semibold text-[11px]">SUPERNUMERARY</span>`;
       }
-      if (c.includes('NRI')) {
-        return `<span class="bg-amber-50 text-amber-800 px-2 py-0.5 rounded-md border border-amber-200 font-semibold text-[11px]">${i18nClient.catNri || 'NRI'}</span>`;
+      if (c === 'NRI') {
+        return `<span class="bg-amber-50 text-amber-800 px-2 py-0.5 rounded-md border border-amber-200 font-semibold text-[11px]">NRI</span>`;
       }
-      if (c.includes('OCI')) {
-        return `<span class="bg-indigo-50 text-indigo-800 px-2 py-0.5 rounded-md border border-indigo-200 font-semibold text-[11px]">${i18nClient.catOci || 'OCI'}</span>`;
+      if (c === 'OCI') {
+        return `<span class="bg-indigo-50 text-indigo-800 px-2 py-0.5 rounded-md border border-indigo-200 font-semibold text-[11px]">OCI</span>`;
       }
-      if (c.includes('FOREIGN') || c === 'FN') {
-        return `<span class="bg-purple-50 text-purple-800 px-2 py-0.5 rounded-md border border-purple-200 font-semibold text-[11px]">${i18nClient.catFn || 'FN'}</span>`;
+      if (c === 'FN') {
+        return `<span class="bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-md border border-emerald-200 font-semibold text-[11px]">FN</span>`;
       }
-      return `<span class="bg-slate-100 text-slate-800 px-2 py-0.5 rounded-md border border-slate-200 font-semibold text-[11px]">${i18nClient.kpiSanctioned || 'Approved Intake'}</span>`;
+      return `<span class="bg-slate-100 text-slate-800 px-2 py-0.5 rounded-md border border-slate-200 font-semibold text-[11px]">APPROVED_INTAKE</span>`;
     }
 
     function renderTriageRows(rows: any[]) {
@@ -1824,8 +1852,8 @@ Content-Type: application/json
       switchTableView('triage');
 
       if (!rows.length) {
-        tableBody.innerHTML = `<tr><td colspan="6" class="py-10 px-4 text-center text-slate-500">0</td></tr>`;
-        commitBtn.disabled = true;
+        tableBody.innerHTML = `<tr><td colspan="6" class="py-10 px-4 text-center text-slate-500">0 records queued</td></tr>`;
+        if (commitBtn) commitBtn.disabled = true;
         return;
       }
 
@@ -1837,31 +1865,33 @@ Content-Type: application/json
       rows.forEach((r, idx) => {
         const is12 = /^[0-9]{12}$/.test(r.apaar_id || '');
         const isMissing = !r.apaar_id || r.apaar_id.trim() === '';
-        const rollId = r.student_roll_id || `TCA-1049-2026-CSE-${String(idx + 1).padStart(3, '0')}`;
+        const allotmentRef = r.allotment_ref || `MHT-CET/CAP-I/${88500 + idx}`;
 
         let statusTag = '';
         if (is12) {
           valid++;
-          statusTag = `<span class="bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-md border border-emerald-200 font-semibold text-xs">${i18nClient.validApaar || 'Valid APAAR'}</span>`;
+          statusTag = `<span class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md border border-emerald-200 font-semibold text-[11px]">${i18nClient.validApaar || 'Valid APAAR'}</span>`;
         } else if (isMissing) {
           missing++;
-          statusTag = `<span class="bg-amber-50 text-amber-700 px-2.5 py-0.5 rounded-md border border-amber-200 font-semibold text-xs">${i18nClient.missingApaar || 'Missing APAAR'}</span>`;
+          statusTag = `<span class="bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md border border-amber-200 font-semibold text-[11px]">${i18nClient.missingApaar || 'Missing APAAR'}</span>`;
         } else {
           malformed++;
-          statusTag = `<span class="bg-red-50 text-red-700 px-2.5 py-0.5 rounded-md border border-red-200 font-semibold text-xs">${i18nClient.malformedApaar || 'Format Error'}</span>`;
+          statusTag = `<span class="bg-red-50 text-red-700 px-2 py-0.5 rounded-md border border-red-200 font-semibold text-[11px]">${i18nClient.malformedApaar || 'Format Error'}</span>`;
         }
 
         html += `
           <tr class="hover:bg-slate-50">
-            <td class="py-3 px-4 font-mono text-slate-500">${idx + 1}</td>
-            <td class="py-3 px-4">
-              <div class="font-mono font-semibold text-slate-900">${maskApaarClient(r.apaar_id)}</div>
-              <div class="font-mono text-[11px] text-slate-500">${rollId}</div>
+            <td class="py-2.5 px-3 font-mono text-slate-500">${idx + 1}</td>
+            <td class="py-2.5 px-3 font-mono font-semibold text-slate-900">${maskApaarClient(r.apaar_id)}</td>
+            <td class="py-2.5 px-3 text-slate-800 font-semibold">${r.full_name || r.name || 'Candidate'}</td>
+            <td class="py-2.5 px-3 text-slate-700">${normalizeBranchClient(r.program)}</td>
+            <td class="py-2.5 px-3">
+              <div class="flex flex-wrap items-center gap-1">
+                ${renderCategoryBadge(r.admission_quota || r.admission_category)}
+                <span class="font-mono text-[10px] text-slate-500">· ${allotmentRef}</span>
+              </div>
             </td>
-            <td class="py-3 px-4 text-slate-800 font-medium">${maskNameClient(r.name || r.full_name)}</td>
-            <td class="py-3 px-4 text-slate-600">${r.program || 'B.Tech Computer Science & Engineering'}</td>
-            <td class="py-3 px-4">${renderCategoryBadge(r.admission_category)}</td>
-            <td class="py-3 px-4">${statusTag}</td>
+            <td class="py-2.5 px-3">${statusTag}</td>
           </tr>
         `;
       });
@@ -1870,7 +1900,7 @@ Content-Type: application/json
       document.getElementById('countValid')!.textContent = String(valid);
       document.getElementById('countMalformed')!.textContent = String(malformed);
       document.getElementById('countMissing')!.textContent = String(missing);
-      commitBtn.disabled = valid === 0;
+      if (commitBtn) commitBtn.disabled = valid === 0;
     }
 
     csvFileInput?.addEventListener('change', (e) => {
@@ -1895,11 +1925,11 @@ Content-Type: application/json
 
           const headerCols = parseCols(lines[0]).map((h) => h.toLowerCase());
           const apaarIdx = headerCols.findIndex((h) => h.includes('apaar'));
-          const rollIdx = headerCols.findIndex((h) => h.includes('roll') || h.includes('student_id'));
           const nameIdx = headerCols.findIndex((h) => h.includes('name'));
-          const progIdx = headerCols.findIndex((h) => h.includes('prog'));
+          const progIdx = headerCols.findIndex((h) => h.includes('prog') || h.includes('branch'));
+          const quotaIdx = headerCols.findIndex((h) => h.includes('quota') || h.includes('cat'));
+          const allotIdx = headerCols.findIndex((h) => h.includes('allot') || h.includes('ref'));
           const batchIdx = headerCols.findIndex((h) => h.includes('batch') || h.includes('year'));
-          const catIdx = headerCols.findIndex((h) => h.includes('cat') || h.includes('quota'));
 
           const hasHeader = apaarIdx !== -1 || nameIdx !== -1;
           const startIdx = hasHeader ? 1 : 0;
@@ -1910,32 +1940,31 @@ Content-Type: application/json
             if (!cols || cols.length === 0 || (cols.length === 1 && !cols[0])) continue;
 
             const apaar = apaarIdx !== -1 ? cols[apaarIdx] : cols[0];
-            const rollId = rollIdx !== -1 ? cols[rollIdx] : `TCA-1049-2026-CSE-${String(i).padStart(3, '0')}`;
             const name = nameIdx !== -1 ? cols[nameIdx] : cols[1] || `Candidate ${i}`;
-            const prog = progIdx !== -1 ? cols[progIdx] : cols[2] || 'B.Tech Computer Science & Engineering';
-            const batchRaw = batchIdx !== -1 ? cols[batchIdx] : cols[3];
+            const prog = progIdx !== -1 ? cols[progIdx] : cols[2] || 'B.Tech Computer Science';
+            const quota = quotaIdx !== -1 ? cols[quotaIdx] : cols[3] || 'APPROVED_INTAKE';
+            const allotment = allotIdx !== -1 ? cols[allotIdx] : cols[4] || `MHT-CET/CAP-I/${88500 + i}`;
+            const batchRaw = batchIdx !== -1 ? cols[batchIdx] : cols[5];
             const batchYear = parseInt(batchRaw, 10) || 2026;
-            const admCat = catIdx !== -1 ? cols[catIdx] : 'APPROVED_INTAKE';
 
             parsedRows.push({
               apaar_id: (apaar || '').trim(),
-              student_roll_id: (rollId || `TCA-1049-2026-CSE-${String(i).padStart(3, '0')}`).trim(),
-              name: (name || 'Candidate').trim(),
               full_name: (name || 'Candidate').trim(),
-              program: (prog || 'B.Tech Computer Science & Engineering').trim(),
+              program: normalizeBranchClient(prog),
+              admission_quota: normalizeQuotaClient(quota),
+              allotment_ref: (allotment || `MHT-CET/CAP-I/${88500 + i}`).trim(),
               batch_year: batchYear,
-              admission_category: (admCat || 'APPROVED_INTAKE').trim(),
             });
           }
 
           if (parsedRows.length > 0) {
             renderTriageRows(parsedRows);
-            (window as any).showToast(`CSV: ${parsedRows.length} records staged in import queue.`, 'info');
+            (window as any).showToast?.(`CSV: ${parsedRows.length} records staged in import queue.`, 'info');
           } else {
-            (window as any).showToast('0 valid records in CSV.', 'warning');
+            (window as any).showToast?.('0 valid records found in CSV.', 'warning');
           }
         } catch (err: any) {
-          (window as any).showToast('CSV Error: ' + err.message, 'error');
+          (window as any).showToast?.('CSV Error: ' + err.message, 'error');
         } finally {
           (e.target as HTMLInputElement).value = '';
         }
@@ -1943,154 +1972,75 @@ Content-Type: application/json
       reader.readAsText(file);
     });
 
-    const SAMPLE_CATEGORIES = [
-      'APPROVED_INTAKE',
-      'APPROVED_INTAKE',
-      'APPROVED_INTAKE',
-      'SUPERNUMERARY',
-      'NRI',
-      'OCI',
-      'FN',
-    ];
-
-    loadOverrunBtn?.addEventListener('click', () => {
-      const sampleRows: any[] = [];
-      for (let i = 1; i <= 187; i++) {
-        const apaarNum = 739284000000 + i;
-        sampleRows.push({
-          apaar_id: String(apaarNum),
-          student_roll_id: `TCA-1049-2026-CSE-${String(i).padStart(3, '0')}`,
-          name: `Candidate ${i}`,
-          program: 'B.Tech Computer Science & Engineering',
-          batch_year: 2026,
-          admission_category: SAMPLE_CATEGORIES[i % SAMPLE_CATEGORIES.length],
-        });
-      }
-      sampleRows[5].apaar_id = '999888'; // malformed
-      sampleRows[12].apaar_id = ''; // missing
-      renderTriageRows(sampleRows);
-    });
-
-    loadCompliantBtn?.addEventListener('click', () => {
-      const sampleRows: any[] = [];
-      for (let i = 1; i <= 15; i++) {
-        const apaarNum = 849201000000 + i;
-        sampleRows.push({
-          apaar_id: String(apaarNum),
-          student_roll_id: `TCA-1049-2026-IT-${String(i).padStart(3, '0')}`,
-          name: `Candidate ${i}`,
-          program: 'B.Tech Information Technology',
-          batch_year: 2026,
-          admission_category: SAMPLE_CATEGORIES[i % SAMPLE_CATEGORIES.length],
-        });
-      }
-      renderTriageRows(sampleRows);
-    });
-
     commitBtn?.addEventListener('click', async () => {
+      if (!commitBtn) return;
       commitBtn.disabled = true;
+      const instId = activeCollegeEl?.value || 'INST-001';
+      const capUiVal = parseInt(activeCollegeEl?.getAttribute('data-sanctioned') || '180', 10);
 
       try {
+        const validPayload = currentTriageData
+          .filter((s) => /^[0-9]{12}$/.test(s.apaar_id))
+          .map((s, idx) => {
+            const branch = normalizeBranchClient(s.program);
+            const branchMeta = BRANCH_CONFIG.find((b) => b.branch === branch) || BRANCH_CONFIG[0];
+            return {
+              apaar_id: s.apaar_id,
+              roll_number: `TCA-1049-2026-${branchMeta.short}-${String(enrolledList.length + idx + 1).padStart(3, '0')}`,
+              full_name: s.full_name || s.name || 'Candidate',
+              program: branch,
+              batch_year: s.batch_year || 2026,
+              admission_quota: normalizeQuotaClient(s.admission_quota),
+              allotment_ref: s.allotment_ref || `MHT-CET/CAP-I/${88500 + idx}`,
+            };
+          });
+
         const res = await fetch('/api/roster/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            institutionId: collegeSelect.value || collegeSelect.getAttribute('data-institution-id'),
-            students: currentTriageData
-              .filter((s) => /^[0-9]{12}$/.test(s.apaar_id))
-              .map((s, idx) => ({
-                apaar_id: s.apaar_id,
-                student_roll_id: s.student_roll_id || `TCA-1049-2026-CSE-${String(idx + 1).padStart(3, '0')}`,
-                full_name: s.name || s.full_name || 'Candidate',
-                program: s.program,
-                batch_year: s.batch_year,
-                admission_category: s.admission_category || 'APPROVED_INTAKE',
-              })),
+            institutionId: instId,
+            students: validPayload,
           }),
         });
 
         const data = await res.json();
-        const aicteHref = `${i18nClient.langPrefix || ''}/aicte`;
-        const nextStepBtnHtml = `
-          <div class="mt-3 pt-2.5 border-t border-current/15 flex items-center justify-end">
-            <a
-              href="${aicteHref}"
-              class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#0B1E48] hover:bg-[#1E3A8A] text-white font-bold text-xs transition-colors"
-            >
-              <span>Next Step: Check Seat Audit in AICTE Portal</span>
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
-              </svg>
-            </a>
-          </div>
-        `;
 
         if (res.ok && data.success) {
-          const inserted = data.inserted ?? 0;
+          const inserted = data.inserted ?? validPayload.length;
           const dupes = data.duplicates_flagged ?? 0;
-          const skipped = data.skipped ?? 0;
-          const newEnrolled = data.new_enrollment ?? 0;
-          const cap = data.sanctioned_intake ?? 180;
 
-          const selectedOpt = collegeSelect?.selectedOptions?.[0];
-          if (selectedOpt) {
-            const instName = selectedOpt.getAttribute('data-name') || selectedOpt.textContent?.split(' (')[0] || '';
-            selectedOpt.setAttribute('data-current', String(newEnrolled));
-            selectedOpt.setAttribute('data-sanctioned', String(cap));
-            selectedOpt.textContent = `${instName} (${newEnrolled}/${cap})`;
-            updateCollegeMeter();
-          }
-
-          if (Array.isArray(data.created_admissions)) {
-            data.created_admissions.forEach((created: any, idx: number) => {
-              appendToEnrolledTable({
-                id: created.id,
-                apaar_id: created.apaar_id,
-                roll_id: created.id || `TCA-1049-2026-CSE-${String(idx + 1).padStart(3, '0')}`,
-                full_name: created.full_name || created.student_name || 'Candidate',
-                program: created.program || 'B.Tech Computer Science & Engineering',
-                batch_year: created.batch_year || 2026,
-                quota_label: created.admission_category || 'Approved Intake',
-                is_duplicate: Boolean(created.is_duplicate) || created.status === 'FLAGGED_DUPLICATE',
-              });
+          validPayload.forEach((st, idx) => {
+            const createdMatch = Array.isArray(data.created_admissions) ? data.created_admissions[idx] : null;
+            appendToEnrolledTable({
+              id: createdMatch?.id,
+              apaar_id: st.apaar_id,
+              roll_id: st.roll_number,
+              full_name: st.full_name,
+              program: st.program,
+              batch_year: st.batch_year,
+              admission_quota: st.admission_quota,
+              allotment_ref: st.allotment_ref,
+              is_duplicate: Boolean(createdMatch?.is_duplicate) || createdMatch?.status === 'FLAGGED_DUPLICATE',
             });
-          }
+          });
 
-          if (dupes > 0) {
-            showFeedbackBanner(
-              `<div><strong>Duplicate Student ID Alert:</strong> Saved <strong>${inserted}</strong> student records (${newEnrolled}/${cap} seats), and flagged <strong>${dupes}</strong> duplicate APAAR ID(s) across colleges.</div>${nextStepBtnHtml}`,
-              'warning'
-            );
-          } else {
-            showFeedbackBanner(
-              `<div><strong>Student List Saved:</strong> Added <strong>${inserted}</strong> verified student records (Skipped: ${skipped}). Updated seats used: <strong>${newEnrolled} / ${cap}</strong>.</div>${nextStepBtnHtml}`,
-              'success'
-            );
-          }
-          (window as any).showToast(`Saved ${inserted} student records (${dupes} duplicate alerts).`, 'success');
-        } else {
-          const errMsg = data.error || 'Server rejected student list';
-          const selectedOpt = collegeSelect?.selectedOptions?.[0];
-          if (selectedOpt && res.status === 409) {
-            const validCount = currentTriageData.filter((s) => /^[0-9]{12}$/.test(s.apaar_id)).length;
-            const currentVal = parseInt(selectedOpt.getAttribute('data-current') || '0', 10);
-            const capVal = parseInt(selectedOpt.getAttribute('data-sanctioned') || '180', 10);
-            const projected = Math.max(currentVal, validCount);
-            if (projected > capVal) {
-              const instName = selectedOpt.getAttribute('data-name') || selectedOpt.textContent?.split(' (')[0] || '';
-              selectedOpt.setAttribute('data-current', String(projected));
-              selectedOpt.textContent = `${instName} (${projected}/${capVal})`;
-              updateCollegeMeter();
-            }
-          }
+          switchTableView('enrolled');
           showFeedbackBanner(
-            `<div><strong>Seat Limit Exceeded (HTTP ${res.status}):</strong> ${errMsg}</div>${nextStepBtnHtml}`,
+            `<div><strong>CSV Batch Committed to Ledger:</strong> Added <strong>${inserted}</strong> verified student records (${dupes} cross-campus duplicate flags). Active Roster Admitted: <strong>${enrolledList.length} / ${capUiVal}</strong>.</div>`,
+            dupes > 0 ? 'warning' : 'success'
+          );
+          (window as any).showToast?.(`Committed ${inserted} student records (${enrolledList.length}/${capUiVal}).`, 'success');
+        } else {
+          const errMsg = data.error || 'Server rejected CSV batch';
+          showFeedbackBanner(
+            `<div><strong>Statutory Cap / Batch Exception (HTTP ${res.status}):</strong> ${errMsg}</div>`,
             'error'
           );
-          (window as any).showToast(errMsg, 'error');
+          (window as any).showToast?.(errMsg, 'error');
         }
-      } catch (err: any) {
-        (window as any).showToast('Network synchronization error.', 'error');
+      } catch {
+        (window as any).showToast?.('Network synchronization error.', 'error');
       } finally {
         commitBtn.disabled = false;
       }
