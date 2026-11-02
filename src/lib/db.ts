@@ -305,6 +305,79 @@ class MemoryDBAdapter implements DatabaseAdapter {
     },
   ];
 
+  private collegeAccounts: User[] = [
+    {
+      id: 'col_inst_001',
+      username: 'principal.pune',
+      password_hash: '5ce6651ef4d90f081964a610390d72bd6c21684076d552c40fcf52c134ec367b',
+      salt: 'e8c17281c34c78ce820a1124e9066700',
+      full_name: 'Dr. Ramesh Joshi (Principal, Technical College A)',
+      designation: 'Principal & AISHE Nodal Officer',
+      institution_id: 'INST-001',
+      role: 'INSTITUTE_ADMIN',
+      account_space: 'college_accounts',
+    },
+    {
+      id: 'col_inst_002',
+      username: 'principal.bengaluru',
+      password_hash: '5ce6651ef4d90f081964a610390d72bd6c21684076d552c40fcf52c134ec367b',
+      salt: 'e8c17281c34c78ce820a1124e9066700',
+      full_name: 'Dr. Kavitha Nair (Principal, Technical College B)',
+      designation: 'Principal & AISHE Nodal Officer',
+      institution_id: 'INST-002',
+      role: 'INSTITUTE_ADMIN',
+      account_space: 'college_accounts',
+    },
+  ];
+
+  private aicteAccounts: User[] = [
+    {
+      id: 'aicte_adm_001',
+      username: 'aicte.officer',
+      password_hash: '824e730d989e0352cfb0a1673d07a2791e30717a9b6d5fec437ae261088f5750',
+      salt: 'c5d4d9749769e7571454fd79b79d2ad7',
+      full_name: 'Dr. S. K. Mahajan (AICTE Chief Regulatory Officer)',
+      designation: 'Chief Regulatory Officer',
+      region: 'All-India HQ (New Delhi)',
+      role: 'AICTE_ADMIN',
+      account_space: 'aicte_accounts',
+      institution_id: null,
+      apaar_id: null,
+    },
+  ];
+
+  private universityAccounts: User[] = [
+    {
+      id: 'univ_adm_001',
+      username: 'registrar.univ',
+      password_hash: '301b2c4bb975359a21844de3943e2055ede072ecc7f886ea0d82c75de0cbfea8',
+      salt: '002d37270c2f723012aca513ff600724',
+      full_name: 'Prof. K. Venkatesh (Registrar, State Affiliating University)',
+      university_name: 'State Affiliating Technological University',
+      designation: 'Controller of Examinations & Registrar',
+      role: 'UNIVERSITY_ADMIN',
+      account_space: 'university_accounts',
+      institution_id: null,
+      apaar_id: null,
+    },
+  ];
+
+  private studentAccounts: User[] = [
+    {
+      id: 'stu_acc_001',
+      username: 'student.rahul',
+      apaar_id: '739284019283',
+      password_hash: '61a1c0df9dbfb018cc68b2dd46cb88d40225f39203fb2fa0b9e9c20db79f8fe8',
+      salt: '1a2784398d44ba4056557f678ed2b7e8',
+      full_name: 'Rahul Sharma',
+      email: 'rahul.sharma@example.edu.in',
+      phone: '+91 98765 43210',
+      institution_id: 'INST-001',
+      role: 'STUDENT',
+      account_space: 'student_accounts',
+    },
+  ];
+
   private users: User[] = [
     {
       id: 'usr_aicte_001',
@@ -626,12 +699,20 @@ class MemoryDBAdapter implements DatabaseAdapter {
       const nowIso = params[1] || new Date().toISOString();
       const session = this.sessions.find((s) => s.id === sessionId && s.expires_at > nowIso);
       if (!session) return [];
-      const user = this.users.find((u) => u.id === session.user_id);
+      const allAccounts = [
+        ...this.collegeAccounts,
+        ...this.aicteAccounts,
+        ...this.universityAccounts,
+        ...this.studentAccounts,
+        ...this.users,
+      ];
+      const user = allAccounts.find((u) => u.id === session.user_id);
       if (!user) return [];
       return [
         {
           session_id: session.id,
           user_id: session.user_id,
+          account_space: session.account_space,
           session_role: session.role,
           session_institution_id: session.institution_id,
           expires_at: session.expires_at,
@@ -650,6 +731,12 @@ class MemoryDBAdapter implements DatabaseAdapter {
     }
 
     if (upper.includes('FROM SESSIONS')) {
+      if (upper.includes('WHERE ID = ?') && upper.includes('EXPIRES_AT > ?')) {
+        const sessionId = params[0];
+        const nowIso = params[1] || new Date().toISOString();
+        const sess = this.sessions.find((s) => s.id === sessionId && s.expires_at > nowIso);
+        return sess ? [{ ...sess }] : [];
+      }
       if (upper.includes('WHERE ID = ?')) {
         const sess = this.sessions.find((s) => s.id === params[0]);
         return sess ? [{ ...sess }] : [];
@@ -657,8 +744,68 @@ class MemoryDBAdapter implements DatabaseAdapter {
       return this.sessions.map((s) => ({ ...s }));
     }
 
+    if (upper.includes('FROM COLLEGE_ACCOUNTS')) {
+      if (upper.includes('USERNAME = ?')) {
+        const user = this.collegeAccounts.find((u) => u.username.toLowerCase() === String(params[0]).toLowerCase());
+        return user ? [{ ...user }] : [];
+      }
+      if (upper.includes('WHERE ID = ?')) {
+        const user = this.collegeAccounts.find((u) => u.id === params[0]);
+        return user ? [{ ...user }] : [];
+      }
+      return this.collegeAccounts.map((u) => ({ ...u }));
+    }
+
+    if (upper.includes('FROM AICTE_ACCOUNTS')) {
+      if (upper.includes('USERNAME = ?')) {
+        const user = this.aicteAccounts.find((u) => u.username.toLowerCase() === String(params[0]).toLowerCase());
+        return user ? [{ ...user }] : [];
+      }
+      if (upper.includes('WHERE ID = ?')) {
+        const user = this.aicteAccounts.find((u) => u.id === params[0]);
+        return user ? [{ ...user }] : [];
+      }
+      return this.aicteAccounts.map((u) => ({ ...u }));
+    }
+
+    if (upper.includes('FROM UNIVERSITY_ACCOUNTS')) {
+      if (upper.includes('USERNAME = ?')) {
+        const user = this.universityAccounts.find((u) => u.username.toLowerCase() === String(params[0]).toLowerCase());
+        return user ? [{ ...user }] : [];
+      }
+      if (upper.includes('WHERE ID = ?')) {
+        const user = this.universityAccounts.find((u) => u.id === params[0]);
+        return user ? [{ ...user }] : [];
+      }
+      return this.universityAccounts.map((u) => ({ ...u }));
+    }
+
+    if (upper.includes('FROM STUDENT_ACCOUNTS')) {
+      if (upper.includes('USERNAME = ?') && upper.includes('APAAR_ID = ?')) {
+        const uParam = String(params[0] || '').toLowerCase();
+        const aParam = String(params[1] ?? params[0] ?? '').trim();
+        const user = this.studentAccounts.find(
+          (u) => u.username.toLowerCase() === uParam || u.apaar_id === aParam
+        );
+        return user ? [{ ...user }] : [];
+      }
+      if (upper.includes('USERNAME = ?')) {
+        const user = this.studentAccounts.find((u) => u.username.toLowerCase() === String(params[0]).toLowerCase());
+        return user ? [{ ...user }] : [];
+      }
+      if (upper.includes('APAAR_ID = ?')) {
+        const user = this.studentAccounts.find((u) => u.apaar_id === String(params[0]).trim());
+        return user ? [{ ...user }] : [];
+      }
+      if (upper.includes('WHERE ID = ?')) {
+        const user = this.studentAccounts.find((u) => u.id === params[0]);
+        return user ? [{ ...user }] : [];
+      }
+      return this.studentAccounts.map((u) => ({ ...u }));
+    }
+
     if (upper.includes('FROM USERS')) {
-      if (upper.includes('WHERE USERNAME = ?')) {
+      if (upper.includes('USERNAME = ?')) {
         const user = this.users.find((u) => u.username.toLowerCase() === String(params[0]).toLowerCase());
         return user ? [{ ...user }] : [];
       }
@@ -974,15 +1121,30 @@ class MemoryDBAdapter implements DatabaseAdapter {
 
     // INSERT INTO SESSIONS
     if (upper.includes('INSERT INTO SESSIONS')) {
-      const [id, user_id, role, institution_id, expires_at] = params;
-      this.sessions.push({
-        id,
-        user_id,
-        role,
-        institution_id: institution_id || null,
-        expires_at,
-        created_at: new Date().toISOString(),
-      });
+      if (upper.includes('ACCOUNT_SPACE')) {
+        const [id, account_space, user_id, role, institution_id, apaar_id, expires_at] = params;
+        this.sessions.push({
+          id,
+          account_space: account_space || 'student_accounts',
+          user_id,
+          role,
+          institution_id: institution_id || null,
+          apaar_id: apaar_id || null,
+          expires_at: expires_at || apaar_id, // fallback if 6 params passed without apaar_id
+          created_at: new Date().toISOString(),
+        });
+      } else {
+        const [id, user_id, role, institution_id, expires_at] = params;
+        this.sessions.push({
+          id,
+          account_space: 'student_accounts',
+          user_id,
+          role,
+          institution_id: institution_id || null,
+          expires_at,
+          created_at: new Date().toISOString(),
+        });
+      }
       return { success: true };
     }
 
@@ -997,6 +1159,104 @@ class MemoryDBAdapter implements DatabaseAdapter {
     if (upper.includes('DELETE FROM SESSIONS WHERE EXPIRES_AT < ?')) {
       const cutoff = params[0];
       this.sessions = this.sessions.filter((s) => s.expires_at >= cutoff);
+      return { success: true };
+    }
+
+    // INSERT INTO STUDENT_ACCOUNTS
+    if (upper.includes('INTO STUDENT_ACCOUNTS')) {
+      const [id, username, apaar_id, password_hash, salt, full_name, email, phone, institution_id, role] = params;
+      const idx = this.studentAccounts.findIndex(
+        (u) => u.id === id || u.username.toLowerCase() === String(username).toLowerCase() || u.apaar_id === apaar_id
+      );
+      const studentAcc: User = {
+        id,
+        username,
+        apaar_id,
+        password_hash,
+        salt,
+        full_name,
+        email: email || null,
+        phone: phone || null,
+        institution_id: institution_id || 'INST-001',
+        role: (role as any) || 'STUDENT',
+        account_space: 'student_accounts',
+        created_at: new Date().toISOString(),
+      };
+      if (idx >= 0) {
+        this.studentAccounts[idx] = studentAcc;
+      } else {
+        this.studentAccounts.push(studentAcc);
+      }
+      // Also mirror into legacy users array for backward compatibility
+      const uIdx = this.users.findIndex((u) => u.id === id || u.username.toLowerCase() === String(username).toLowerCase());
+      if (uIdx >= 0) {
+        this.users[uIdx] = studentAcc;
+      } else {
+        this.users.push(studentAcc);
+      }
+      return { success: true };
+    }
+
+    // INSERT INTO COLLEGE_ACCOUNTS
+    if (upper.includes('INTO COLLEGE_ACCOUNTS')) {
+      const [id, username, password_hash, salt, full_name, designation, institution_id, role] = params;
+      const idx = this.collegeAccounts.findIndex((u) => u.id === id || u.username.toLowerCase() === String(username).toLowerCase());
+      const acc: User = {
+        id,
+        username,
+        password_hash,
+        salt,
+        full_name,
+        designation: designation || 'Principal / Nodal Officer',
+        institution_id: institution_id || 'INST-001',
+        role: (role as any) || 'INSTITUTE_ADMIN',
+        account_space: 'college_accounts',
+        created_at: new Date().toISOString(),
+      };
+      if (idx >= 0) this.collegeAccounts[idx] = acc;
+      else this.collegeAccounts.push(acc);
+      return { success: true };
+    }
+
+    // INSERT INTO AICTE_ACCOUNTS
+    if (upper.includes('INTO AICTE_ACCOUNTS')) {
+      const [id, username, password_hash, salt, full_name, designation, region, role] = params;
+      const idx = this.aicteAccounts.findIndex((u) => u.id === id || u.username.toLowerCase() === String(username).toLowerCase());
+      const acc: User = {
+        id,
+        username,
+        password_hash,
+        salt,
+        full_name,
+        designation: designation || 'AICTE Chief Regulatory Officer',
+        region: region || 'All-India HQ (New Delhi)',
+        role: (role as any) || 'AICTE_ADMIN',
+        account_space: 'aicte_accounts',
+        created_at: new Date().toISOString(),
+      };
+      if (idx >= 0) this.aicteAccounts[idx] = acc;
+      else this.aicteAccounts.push(acc);
+      return { success: true };
+    }
+
+    // INSERT INTO UNIVERSITY_ACCOUNTS
+    if (upper.includes('INTO UNIVERSITY_ACCOUNTS')) {
+      const [id, username, password_hash, salt, full_name, university_name, designation, role] = params;
+      const idx = this.universityAccounts.findIndex((u) => u.id === id || u.username.toLowerCase() === String(username).toLowerCase());
+      const acc: User = {
+        id,
+        username,
+        password_hash,
+        salt,
+        full_name,
+        university_name: university_name || 'State Affiliating Technological University',
+        designation: designation || 'University Registrar',
+        role: (role as any) || 'UNIVERSITY_ADMIN',
+        account_space: 'university_accounts',
+        created_at: new Date().toISOString(),
+      };
+      if (idx >= 0) this.universityAccounts[idx] = acc;
+      else this.universityAccounts.push(acc);
       return { success: true };
     }
 

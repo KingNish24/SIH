@@ -12,68 +12,94 @@ const redirectParam = url.searchParams.get('redirect') || '';
 const reason = url.searchParams.get('reason') || '';
 const errorParam = url.searchParams.get('error') || '';
 
-const isLoginRedirect =
-  redirectParam.startsWith('/login') || /^\/[a-z]{2,3}\/login(\/|$|\?)/.test(redirectParam);
-const rawRedirect = redirectParam && redirectParam.startsWith('/') && !isLoginRedirect ? redirectParam : '';
-const firstRedirectSeg = rawRedirect.split('/').filter(Boolean)[0];
-const defaultRedirect = rawRedirect
-  ? langPrefix && !isSupportedLang(firstRedirectSeg)
-    ? rawRedirect === '/'
-      ? langPrefix
-      : `${langPrefix}${rawRedirect}`
-    : rawRedirect
-  : '';
+// Smart redirector: if ?redirect= points to a specific portal, route straight to /login/<portal>
+if (redirectParam && redirectParam.startsWith('/')) {
+  const segs = redirectParam.split('/').filter(Boolean);
+  const firstSeg = segs[0] || '';
+  const targetSeg = isSupportedLang(firstSeg) ? segs[1] || '' : firstSeg;
 
-const quickSwitchRoles = [
+  const portalMap: Record<string, string> = {
+    institution: 'college',
+    college: 'college',
+    aicte: 'aicte',
+    university: 'university',
+    student: 'student',
+  };
+
+  const mappedPortal = portalMap[targetSeg];
+  if (mappedPortal) {
+    const query = new URLSearchParams();
+    query.set('redirect', redirectParam);
+    if (reason) query.set('reason', reason);
+    if (errorParam) query.set('error', errorParam);
+    return Astro.redirect(`${langPrefix}/login/${mappedPortal}?${query.toString()}`, 302);
+  }
+}
+
+const roleTargetMap: Record<string, string> = {
+  INSTITUTE_ADMIN: `${langPrefix}/institution`,
+  AICTE_ADMIN: `${langPrefix}/aicte`,
+  UNIVERSITY_ADMIN: `${langPrefix}/university`,
+  STUDENT: `${langPrefix}/student`,
+  VERIFIER: `${langPrefix}/verifier`,
+};
+
+const portalGateways = [
   {
-    role: 'AICTE_ADMIN',
-    roleLabel: t.nav_aicte || 'AICTE Portal',
-    username: 'aicte.officer',
-    target: `${langPrefix}/aicte`,
-    name: 'Dr. S. K. Mahajan',
-    badge: 'All-India',
-    badgeColor: 'bg-amber-50 text-amber-900 border-amber-300',
-    description: t.portal2Desc || 'Check colleges that exceed approved seat limits and flag duplicate student IDs.',
+    id: 'college',
+    title: t.portal1Title || 'College Nodal Portal',
+    subtitle: 'Admission Roster & AICTE Approved Seat Check',
+    dbSpace: 'college_accounts',
+    demoUser: 'principal.pune',
+    demoName: 'Dr. Ramesh Joshi (INST-001)',
+    href: `${langPrefix}/login/college`,
+    gradient: 'bg-gradient-to-br from-[#1E40AF] to-[#072F6B] hover:from-[#1D4ED8] hover:to-[#093A82]',
+    shadow: 'shadow-[0_12px_28px_-6px_rgba(30,64,175,0.32)]',
+    iconColor: 'text-[#1E40AF]',
+    ctaText: 'Sign In to College Portal',
+    authMode: 'Official Nodal Sign-In',
   },
   {
-    role: 'INSTITUTE_ADMIN',
-    roleLabel: t.nav_institution || 'College Portal',
-    username: 'principal.pune',
-    target: `${langPrefix}/institution`,
-    name: 'Dr. Ramesh Joshi',
-    badge: 'College: INST-001',
-    badgeColor: 'bg-blue-50 text-blue-900 border-blue-300',
-    description: t.portal1Desc || 'Register new students and check your remaining AICTE approved seats.',
+    id: 'aicte',
+    title: t.portal2Title || 'AICTE Regulatory Portal',
+    subtitle: 'All-India Intake Surveillance & Seat Cap Audit',
+    dbSpace: 'aicte_accounts',
+    demoUser: 'aicte.officer',
+    demoName: 'Dr. S. K. Mahajan (AICTE)',
+    href: `${langPrefix}/login/aicte`,
+    gradient: 'bg-gradient-to-br from-[#B45309] to-[#78350F] hover:from-[#D97706] hover:to-[#8A3E12]',
+    shadow: 'shadow-[0_12px_28px_-6px_rgba(180,83,9,0.32)]',
+    iconColor: 'text-[#B45309]',
+    ctaText: 'Sign In to AICTE Portal',
+    authMode: 'Regulatory Officer Sign-In',
   },
   {
-    role: 'UNIVERSITY_ADMIN',
-    roleLabel: t.nav_university || 'University Portal',
-    username: 'registrar.univ',
-    target: `${langPrefix}/university`,
-    name: 'Prof. K. Venkatesh',
-    badge: 'University',
-    badgeColor: 'bg-purple-50 text-purple-900 border-purple-300',
-    description: t.portal3Desc || 'Issue digital degrees to verified students and check colleges that exceed seat limits.',
+    id: 'university',
+    title: t.nav_university || 'Affiliating University Portal',
+    subtitle: 'Controller of Examinations & Ed25519 Degree Ledger',
+    dbSpace: 'university_accounts',
+    demoUser: 'registrar.univ',
+    demoName: 'Prof. K. Venkatesh (Registrar)',
+    href: `${langPrefix}/login/university`,
+    gradient: 'bg-gradient-to-br from-[#4338CA] to-[#27206B] hover:from-[#4F46E5] hover:to-[#312885]',
+    shadow: 'shadow-[0_12px_28px_-6px_rgba(67,56,202,0.32)]',
+    iconColor: 'text-[#4338CA]',
+    ctaText: 'Sign In to University Portal',
+    authMode: 'Registrar / COE Sign-In',
   },
   {
-    role: 'STUDENT',
-    roleLabel: t.nav_student || 'Student Portal',
-    username: 'student.rahul',
-    target: `${langPrefix}/student`,
-    name: 'Rahul Sharma',
-    badge: 'APAAR ID',
-    badgeColor: 'bg-emerald-50 text-emerald-900 border-emerald-300',
-    description: t.portal4Desc || 'View your 12-digit APAAR record, check your college seat status, and download your degree.',
-  },
-  {
-    role: 'VERIFIER',
-    roleLabel: t.nav_verifier || 'Public Verifier',
-    username: 'verifier.gov',
-    target: `${langPrefix}/verifier`,
-    name: 'Vikramaditya Rao',
-    badge: 'Public Verifier',
-    badgeColor: 'bg-sky-50 text-sky-900 border-sky-300',
-    description: t.portal5Desc || 'Check any degree or admission record online. No login is needed.',
+    id: 'student',
+    title: t.portal4Title || 'Student APAAR Portal',
+    subtitle: '12-Digit APAAR Identity, Seat Status & DPDP Vault',
+    dbSpace: 'student_accounts',
+    demoUser: 'student.rahul',
+    demoName: 'Rahul Sharma (APAAR)',
+    href: `${langPrefix}/login/student`,
+    gradient: 'bg-gradient-to-br from-[#047857] to-[#064E3B] hover:from-[#059669] hover:to-[#075C46]',
+    shadow: 'shadow-[0_12px_28px_-6px_rgba(4,120,87,0.32)]',
+    iconColor: 'text-[#047857]',
+    ctaText: 'Student Sign In / Sign Up',
+    authMode: 'Sign In + New APAAR Sign Up',
   },
 ];
 ---
@@ -84,69 +110,74 @@ const quickSwitchRoles = [
   breadcrumb={t.crumb_login}
   lang={lang}
 >
-  <div class="max-w-6xl mx-auto">
-    <!-- Notice Banners based on query params -->
+  <div class="max-w-6xl mx-auto py-2">
+    <!-- Status & Notice Banners (1px full border) -->
     {reason === 'unauthorized' && (
-      <div class="mb-5 p-4 rounded-lg bg-amber-50 border-l-4 border-amber-500 text-amber-900 text-xs shadow-sm flex items-start gap-3">
-        <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="mb-5 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 text-xs shadow-2xs flex items-start gap-3">
+        <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
         <div>
-          <div class="font-bold text-sm">Sign-In Required for This Portal</div>
+          <div class="font-bold text-sm text-amber-950">Sign-In Required</div>
           <p class="mt-0.5 text-amber-800">
-            Please sign in with an authorized account for the requested portal, or choose a demo role on the right.
+            Select your dedicated portal below to sign in with your role credentials or 1-click demo account.
           </p>
         </div>
       </div>
     )}
 
     {reason === 'logged_out' && (
-      <div class="mb-5 p-4 rounded-lg bg-emerald-50 border-l-4 border-emerald-600 text-emerald-900 text-xs shadow-sm flex items-start gap-3">
-        <svg class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="mb-5 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs shadow-2xs flex items-start gap-3">
+        <svg class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
         </svg>
         <div>
-          <div class="font-bold text-sm">You Have Signed Out</div>
+          <div class="font-bold text-sm text-emerald-950">You Have Signed Out</div>
           <p class="mt-0.5 text-emerald-800">
-            Your session has ended safely. You can sign in again below.
+            Your session has ended safely. Choose any portal below to sign in again.
           </p>
         </div>
       </div>
     )}
 
     {errorParam && (
-      <div class="mb-5 p-4 rounded-lg bg-red-50 border-l-4 border-red-600 text-red-900 text-xs shadow-sm flex items-start gap-3">
-        <svg class="w-5 h-5 text-red-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="mb-5 p-4 rounded-xl bg-red-50 border border-red-200 text-red-950 text-xs shadow-2xs flex items-start gap-3">
+        <svg class="w-5 h-5 text-red-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
         <div>
-          <div class="font-bold text-sm">Sign-In Error</div>
+          <div class="font-bold text-sm text-red-950">Sign-In Error</div>
           <p class="mt-0.5 text-red-800">{decodeURIComponent(errorParam)}</p>
         </div>
       </div>
     )}
 
     {user && (
-      <div class="mb-5 p-4 rounded-lg bg-blue-50 border border-blue-200 text-blue-900 text-xs shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="mb-6 p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-950 text-xs shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div class="flex items-center gap-3">
-          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
           <div>
             <div class="font-bold text-sm text-[#0F2942]">{t.nav_demo_mode}</div>
-            <div class="text-slate-700 mt-0.5">
-              <strong class="font-mono text-[#0F2942]">{user.username}</strong> ({user.full_name}) &bull; <strong class="uppercase">{user.role}</strong>
+            <div class="text-slate-700 mt-0.5 flex flex-wrap items-center gap-1.5">
+              <strong class="font-mono text-[#0F2942]">{user.username}</strong>
+              <span>({user.full_name})</span>
+              <span class="px-2 py-0.5 rounded bg-white border border-blue-200 font-mono text-[11px] font-bold text-[#0F2942]">{user.role}</span>
             </div>
           </div>
         </div>
         <div class="flex items-center gap-2 shrink-0">
           <a
-            href={quickSwitchRoles.find(r => r.role === user.role)?.target || (langPrefix || '/')}
-            class="px-3.5 py-2 rounded bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-semibold transition-colors text-xs"
+            href={roleTargetMap[user.role] || (langPrefix || '/')}
+            class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold transition-colors text-xs"
           >
-            Open Portal &rarr;
+            <span>Open Active Portal</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
+            </svg>
           </a>
           <a
             href="/api/auth/logout"
-            class="px-3 py-2 rounded bg-white hover:bg-red-50 text-red-700 border border-red-200 font-semibold transition-colors text-xs"
+            class="px-3 py-2 rounded-lg bg-white hover:bg-red-50 text-red-700 border border-red-200 font-bold transition-colors text-xs"
           >
             {t.signOut}
           </a>
@@ -154,336 +185,109 @@ const quickSwitchRoles = [
       </div>
     )}
 
-    <!-- Clean Two-Column Sign-In Layout -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-      <!-- Left Column (7 cols): Official Sign-In Card -->
-      <div class="lg:col-span-7 bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
-        <div>
-          <div class="bg-[#0F2942] text-white px-6 py-4 border-b-2 border-[#FF9933] flex items-center justify-between gap-4">
-            <div class="flex items-center gap-3.5">
-              <div class="bg-white rounded p-1.5 shrink-0 shadow-sm">
-                <img
-                  src="/emblem.svg"
-                  alt="State Emblem of India"
-                  class="h-8 w-auto object-contain"
-                  width="24"
-                  height="32"
-                />
-              </div>
-              <div>
-                <div class="text-[11px] font-bold uppercase tracking-widest text-[#FF9933]">
-                  Government of India &bull; AICTE
-                </div>
-                <h1 class="text-base sm:text-lg font-bold tracking-tight text-white mt-0.5">
-                  {t.login_page_title}
-                </h1>
-              </div>
-            </div>
+    <!-- Header Section -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-2xs mb-6">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-start gap-4">
+          <div class="bg-[#0F2942] rounded-xl p-3 shrink-0 shadow-xs">
+            <img
+              src="/emblem.svg"
+              alt="State Emblem of India"
+              class="h-9 w-auto object-contain invert brightness-200"
+              width="26"
+              height="36"
+            />
           </div>
+          <div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-[#0B1E48] tracking-tight">
+              Choose Your Sign-In Portal
+            </h1>
+            <p class="text-xs sm:text-sm text-slate-600 mt-1 max-w-2xl">
+              Each portal authenticates against its own isolated account registry (<code class="font-mono text-slate-800">college_accounts</code>, <code class="font-mono text-slate-800">aicte_accounts</code>, <code class="font-mono text-slate-800">university_accounts</code>, and <code class="font-mono text-slate-800">student_accounts</code>).
+            </p>
+          </div>
+        </div>
 
-          <div class="p-6 sm:p-7">
-            <div class="mb-5 pb-4 border-b border-slate-100">
-              <h2 class="text-sm font-bold text-[#0F2942]">
-                {t.login_page_title}
-              </h2>
-              <p class="text-xs text-slate-600 mt-0.5">
-                {t.login_subtitle}
-              </p>
-            </div>
+        <a
+          href={`${langPrefix}/verifier`}
+          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-[#047857] text-xs font-extrabold transition-all self-start md:self-center shrink-0"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Public Verifier (No Login Required)</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
+          </svg>
+        </a>
+      </div>
+    </div>
 
-            <form id="formalLoginForm" action="/api/auth/login" method="POST" class="space-y-5" data-lang-prefix={langPrefix}>
-              <input type="hidden" name="redirect" id="formRedirect" value={defaultRedirect} />
-              <input type="hidden" id="roleSelector" name="role" value="" />
+    <!-- 4 Dedicated Portal Login Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      {portalGateways.map((item) => (
+        <a
+          href={item.href}
+          class={`group relative rounded-2xl ${item.gradient} text-white p-6 ${item.shadow} hover:-translate-y-0.5 transition-all flex flex-col justify-between overflow-hidden`}
+        >
+          <svg class="absolute -right-6 -bottom-6 w-28 h-28 text-white/[0.06] pointer-events-none" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true">
+            <circle cx="50" cy="50" r="50" />
+          </svg>
 
-              <!-- Username Input -->
-              <div>
-                <label for="usernameInput" class="block text-sm font-bold text-slate-800 mb-1.5">
-                  {t.login_officer_id}
-                </label>
-                <div class="relative">
-                  <input
-                    type="text"
-                    id="usernameInput"
-                    name="username"
-                    required
-                    autocomplete="username"
-                    placeholder="e.g. aicte.officer, principal.pune, or student.rahul"
-                    class="w-full h-11 bg-slate-50 border border-slate-300 rounded py-2.5 px-3.5 font-mono text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F2942] focus:border-transparent transition-all"
-                  />
-                </div>
-              </div>
-
-              <!-- Password Input -->
-              <div>
-                <div class="flex items-center justify-between mb-1.5">
-                  <label for="passwordInput" class="block text-sm font-bold text-slate-800">
-                    {t.login_password}
-                  </label>
-                  <button
-                    type="button"
-                    id="togglePasswordBtn"
-                    aria-pressed="false"
-                    class="text-xs font-semibold text-[#1E40AF] hover:text-[#0F2942] hover:underline cursor-pointer"
-                  >
-                    Show Password
-                  </button>
-                </div>
-                <div class="relative">
-                  <input
-                    type="password"
-                    id="passwordInput"
-                    name="password"
-                    required
-                    autocomplete="current-password"
-                    placeholder="••••••••••••"
-                    class="w-full h-11 bg-slate-50 border border-slate-300 rounded py-2.5 px-3.5 font-mono text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F2942] focus:border-transparent transition-all"
-                  />
-                </div>
-              </div>
-
-              <!-- Simple Security Notice Box -->
-              <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-700">
-                <div class="flex items-center gap-2 font-bold text-[#0F2942]">
-                  <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-5">
+              <div class={`w-11 h-11 rounded-full bg-white ${item.iconColor} flex items-center justify-center shadow-xs shrink-0`}>
+                {item.id === 'college' && (
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                )}
+                {item.id === 'aicte' && (
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                )}
+                {item.id === 'university' && (
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
-                  <span>{t.login_security_notice}</span>
-                </div>
+                )}
+                {item.id === 'student' && (
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                  </svg>
+                )}
               </div>
 
-              <div id="loginFeedback" role="alert" aria-live="polite" class="hidden p-3 rounded text-xs"></div>
+              <span class="px-2.5 py-1 rounded-full bg-black/25 border border-white/20 font-mono text-[10px] font-semibold text-white">
+                {item.dbSpace}
+              </span>
+            </div>
 
-              <!-- Submit Button -->
-              <button
-                type="submit"
-                id="loginSubmitBtn"
-                data-default-label={t.login_btn}
-                class="w-full h-11 bg-[#0F2942] hover:bg-[#1E3A8A] text-white rounded font-bold text-sm tracking-wide shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#FF9933] flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <svg class="w-4 h-4 text-[#FF9933]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                </svg>
-                <span id="btnText">{t.login_btn}</span>
-              </button>
-            </form>
-          </div>
-        </div>
+            <h2 class="text-lg font-extrabold text-white mb-1.5">
+              {item.title}
+            </h2>
+            <p class="text-xs text-white/85 leading-relaxed mb-4">
+              {item.subtitle}
+            </p>
 
-        <!-- Bottom Card Footer Strip -->
-        <div class="bg-slate-50 border-t border-slate-200 px-6 py-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600">
-          <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span>{t.portalTitle}</span>
-          </div>
-          <a href={`${langPrefix}/verifier`} class="font-semibold text-[#0F2942] hover:underline">
-            {t.navVerifier} &rarr;
-          </a>
-        </div>
-      </div>
-
-      <!-- Right Column (5 cols): 1-Click Demo Role Switcher -->
-      <div class="lg:col-span-5">
-        <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-          <div class="bg-slate-900 text-white px-5 py-3.5 border-b border-slate-800 flex items-center justify-between gap-2">
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="bg-[#FF9933] text-black text-[10px] font-extrabold uppercase px-2 py-0.5 rounded tracking-wider">
-                  Demo Roles
-                </span>
-                <h2 class="text-sm font-bold tracking-tight text-white">
-                  {t.login_quick_roles}
-                </h2>
-              </div>
-              <p class="text-[11px] text-slate-300 mt-0.5">
-                Select any role below to sign in with one click.
-              </p>
+            <div class="p-3 rounded-xl bg-black/20 border border-white/15 mb-5 text-[11px] text-white/90 space-y-1">
+              <div class="font-bold text-[#FFAE19]">{item.authMode}</div>
+              <div class="truncate">Demo: <code class="font-mono text-white">{item.demoUser}</code></div>
+              <div class="text-white/75 truncate">{item.demoName}</div>
             </div>
           </div>
 
-          <div class="divide-y divide-slate-200">
-            {quickSwitchRoles.map((item) => {
-              const isTargetMatch = defaultRedirect && defaultRedirect.includes(item.target);
-              return (
-              <div class={`p-3.5 transition-colors flex items-center justify-between gap-3 ${
-                isTargetMatch
-                  ? 'bg-amber-50/90 border-l-4 border-l-[#FF9933]'
-                  : 'hover:bg-slate-50/90'
-              }`}>
-                <div class="min-w-0 flex-1">
-                  <div class="flex items-center flex-wrap gap-1.5">
-                    <span class="font-bold text-slate-900 text-xs sm:text-sm truncate">
-                      {item.roleLabel}
-                    </span>
-                    <span class={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${item.badgeColor}`}>
-                      {item.badge}
-                    </span>
-                    {isTargetMatch && (
-                      <span class="text-[10px] font-extrabold px-2 py-0.5 rounded bg-[#0F2942] text-[#FF9933] uppercase tracking-wider">
-                        Requested Portal
-                      </span>
-                    )}
-                  </div>
-                  <div class="text-xs text-slate-600 mt-0.5 flex items-center gap-1.5 truncate">
-                    <span class="font-medium text-slate-800">{item.name}</span>
-                    <span class="text-slate-300">&bull;</span>
-                    <code class="font-mono text-[11px] text-slate-500">{item.username}</code>
-                  </div>
-                  <p class="text-[11px] text-slate-500 mt-0.5 truncate">
-                    {item.description}
-                  </p>
-                </div>
-
-                <div class="flex items-center gap-1.5 shrink-0">
-                  <button
-                    type="button"
-                    data-fill-username={item.username}
-                    data-fill-role={item.role}
-                    class="btn-fill-form px-2.5 py-1.5 rounded border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-[11px] font-semibold transition-colors cursor-pointer"
-                    title={`Select ${item.username}`}
-                  >
-                    Select ID
-                  </button>
-                  <button
-                    type="button"
-                    data-username={item.username}
-                    data-role={item.role}
-                    data-target={defaultRedirect || item.target}
-                    class="btn-quick-login px-3 py-1.5 bg-[#0F2942] hover:bg-[#1E3A8A] text-white rounded text-xs font-bold shadow-sm transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap"
-                  >
-                    <span>1-Click Sign In</span>
-                    <span>&rarr;</span>
-                  </button>
-                </div>
-              </div>
-              );
-            })}
+          <div>
+            <span class="inline-flex items-center justify-between w-full px-4 py-2.5 rounded-xl bg-white text-[#040E29] group-hover:bg-[#FFAE19] text-xs font-extrabold transition-colors">
+              <span>{item.ctaText}</span>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 12h14m-6-6l6 6-6 6" />
+              </svg>
+            </span>
           </div>
-        </div>
-      </div>
+        </a>
+      ))}
     </div>
   </div>
 </Layout>
-
-<script>
-  // Toggle password visibility
-  const toggleBtn = document.getElementById('togglePasswordBtn');
-  const passInput = document.getElementById('passwordInput') as HTMLInputElement | null;
-  const userInput = document.getElementById('usernameInput') as HTMLInputElement | null;
-
-  if (toggleBtn && passInput) {
-    toggleBtn.addEventListener('click', () => {
-      const isPass = passInput.type === 'password';
-      passInput.type = isPass ? 'text' : 'password';
-      toggleBtn.textContent = isPass ? 'Hide Password' : 'Show Password';
-      toggleBtn.setAttribute('aria-pressed', isPass ? 'true' : 'false');
-    });
-  }
-
-  const loginForm = document.getElementById('formalLoginForm') as HTMLFormElement | null;
-  const langPrefix = loginForm?.getAttribute('data-lang-prefix') || '';
-  const defaultHome = langPrefix || '/';
-
-  // Fill Form helper buttons
-  const fillButtons = document.querySelectorAll('.btn-fill-form');
-  fillButtons.forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      const target = e.currentTarget as HTMLButtonElement;
-      const u = target.getAttribute('data-fill-username') || '';
-      if (userInput && passInput) {
-        userInput.value = u;
-        passInput.focus();
-        (window as any).showToast?.(`Selected Officer ID: ${u}`, 'info');
-      }
-    });
-  });
-
-  // 1-Click Quick-Switch Buttons (Server-side evaluator session switch, zero plaintext passwords in DOM)
-  const quickButtons = document.querySelectorAll('.btn-quick-login');
-  quickButtons.forEach((btn) => {
-    btn.addEventListener('click', async (e) => {
-      const target = e.currentTarget as HTMLButtonElement;
-      const username = target.getAttribute('data-username') || '';
-      const role = target.getAttribute('data-role') || '';
-      const destination = target.getAttribute('data-target') || defaultHome;
-
-      const originalHtml = target.innerHTML;
-      target.disabled = true;
-      target.innerHTML = `<span class="animate-spin inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full"></span> <span>Signing In...</span>`;
-
-      try {
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify({ username, role, demo_quick_switch: true, redirect: destination }),
-        });
-
-        const data = await res.json();
-        if (res.ok && data.success) {
-          window.location.href = data.redirect || destination;
-        } else {
-          (window as any).showToast?.('Sign-in failed: ' + (data.error || 'Unknown error'), 'error');
-          target.disabled = false;
-          target.innerHTML = originalHtml;
-        }
-      } catch (err: any) {
-        (window as any).showToast?.('Network error: ' + err.message, 'error');
-        target.disabled = false;
-        target.innerHTML = originalHtml;
-      }
-    });
-  });
-
-  // Client-side form handler for smooth feedback
-  const loginFeedback = document.getElementById('loginFeedback');
-  const loginSubmitBtn = document.getElementById('loginSubmitBtn') as HTMLButtonElement | null;
-  const btnText = document.getElementById('btnText');
-  const defaultLoginLabel = loginSubmitBtn?.getAttribute('data-default-label') || 'Sign In';
-
-  if (loginForm && loginFeedback && loginSubmitBtn && btnText) {
-    loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      loginFeedback.className = 'hidden';
-      loginSubmitBtn.disabled = true;
-      btnText.textContent = 'Signing in...';
-
-      const formData = new FormData(loginForm);
-      const payload: Record<string, any> = {};
-      formData.forEach((val, key) => {
-        payload[key] = val;
-      });
-
-      try {
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
-
-        const data = await res.json();
-
-        if (res.ok && data.success) {
-          loginFeedback.className = 'p-3 rounded text-xs bg-emerald-50 border border-emerald-300 text-emerald-800 font-medium';
-          loginFeedback.textContent = 'Signed in! Redirecting to your portal...';
-          btnText.textContent = 'Redirecting...';
-          window.location.href = data.redirect || defaultHome;
-        } else {
-          loginFeedback.className = 'p-3 rounded text-xs bg-red-50 border border-red-300 text-red-800 font-medium';
-          loginFeedback.textContent = data.error || 'Invalid username or password.';
-          loginSubmitBtn.disabled = false;
-          btnText.textContent = defaultLoginLabel;
-        }
-      } catch (err: any) {
-        loginFeedback.className = 'p-3 rounded text-xs bg-red-50 border border-red-300 text-red-800 font-medium';
-        loginFeedback.textContent = 'Network error: ' + err.message;
-        loginSubmitBtn.disabled = false;
-        btnText.textContent = defaultLoginLabel;
-      }
-    });
-  }
-</script>

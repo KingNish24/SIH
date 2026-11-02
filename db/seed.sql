@@ -81,7 +81,25 @@ VALUES
   ('601928374819', 'B.Tech Civil Engineering', 120, 160, 'REVOKED — Unverified Lateral Entry Credit Transfer Blocked', '[0,0,20,20,20,20,20,20]', 1, '2nd-Year Lateral Entry (Disputed)', 'Unverified Private Polytechnic Certificate (No ABC / APAAR Anchor)', 80, 'DISCREPANCY_FLAGGED', 'ALERT: Claimed 80 lateral-entry diploma credits lacked cryptographic APAAR/ABC provenance. Degree revoked during AICTE audit.'),
   ('819203847561', 'B.Tech Data Science & AI', 160, 160, '160 Credits — 4-Year B.Tech Honours / Research Degree Conferred', '[20,20,20,20,20,20,20,20]', 0, '1st-Year Regular (10+2 PCM)', 'Direct 1st-Year Regular Admission (10+2 Qualifying)', 0, 'STANDARD_ENTRY', 'Full 160-credit B.Tech curriculum verified and anchored on National Academic Bank of Credits.');
 
--- 9. Default Verified Credential Accounts (PBKDF2 SHA-256 with 100k iterations)
+-- 9. 4 Separate Portal Account Spaces (PBKDF2 SHA-256 with 100k iterations)
+INSERT OR REPLACE INTO college_accounts (id, username, password_hash, salt, full_name, designation, institution_id, role)
+VALUES
+  ('col_inst_001', 'principal.pune', '5ce6651ef4d90f081964a610390d72bd6c21684076d552c40fcf52c134ec367b', 'e8c17281c34c78ce820a1124e9066700', 'Dr. Ramesh Joshi (Principal, Technical College A)', 'Principal & AISHE Nodal Officer', 'INST-001', 'INSTITUTE_ADMIN'),
+  ('col_inst_002', 'principal.bengaluru', '5ce6651ef4d90f081964a610390d72bd6c21684076d552c40fcf52c134ec367b', 'e8c17281c34c78ce820a1124e9066700', 'Dr. Kavitha Nair (Principal, Technical College B)', 'Principal & AISHE Nodal Officer', 'INST-002', 'INSTITUTE_ADMIN');
+
+INSERT OR REPLACE INTO aicte_accounts (id, username, password_hash, salt, full_name, designation, region, role)
+VALUES
+  ('aicte_adm_001', 'aicte.officer', '824e730d989e0352cfb0a1673d07a2791e30717a9b6d5fec437ae261088f5750', 'c5d4d9749769e7571454fd79b79d2ad7', 'Dr. S. K. Mahajan (AICTE Chief Regulatory Officer)', 'Chief Regulatory Officer', 'All-India HQ (New Delhi)', 'AICTE_ADMIN');
+
+INSERT OR REPLACE INTO university_accounts (id, username, password_hash, salt, full_name, university_name, designation, role)
+VALUES
+  ('univ_adm_001', 'registrar.univ', '301b2c4bb975359a21844de3943e2055ede072ecc7f886ea0d82c75de0cbfea8', '002d37270c2f723012aca513ff600724', 'Prof. K. Venkatesh (Registrar, State Affiliating University)', 'State Affiliating Technological University', 'Controller of Examinations & Registrar', 'UNIVERSITY_ADMIN');
+
+INSERT OR REPLACE INTO student_accounts (id, username, apaar_id, password_hash, salt, full_name, email, phone, institution_id, role)
+VALUES
+  ('stu_acc_001', 'student.rahul', '739284019283', '61a1c0df9dbfb018cc68b2dd46cb88d40225f39203fb2fa0b9e9c20db79f8fe8', '1a2784398d44ba4056557f678ed2b7e8', 'Rahul Sharma', 'rahul.sharma@example.edu.in', '+91 98765 43210', 'INST-001', 'STUDENT');
+
+-- 10. Legacy Users Table (Backward Compatibility)
 INSERT OR REPLACE INTO users (id, username, password_hash, salt, full_name, role, institution_id, apaar_id)
 VALUES
   ('usr_aicte_001', 'aicte.officer', '824e730d989e0352cfb0a1673d07a2791e30717a9b6d5fec437ae261088f5750', 'c5d4d9749769e7571454fd79b79d2ad7', 'Dr. S. K. Mahajan (AICTE Chief Regulatory Officer)', 'AICTE_ADMIN', NULL, NULL),

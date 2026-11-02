@@ -1,5 +1,8 @@
 export type UserRole = 'AICTE_ADMIN' | 'INSTITUTE_ADMIN' | 'UNIVERSITY_ADMIN' | 'STUDENT' | 'VERIFIER';
 
+export type AccountSpace = 'college_accounts' | 'aicte_accounts' | 'university_accounts' | 'student_accounts';
+export type PortalSlug = 'college' | 'aicte' | 'university' | 'student';
+
 export interface User {
   id: string;
   username: string;
@@ -7,16 +10,24 @@ export interface User {
   salt: string;
   full_name: string;
   role: UserRole;
+  account_space?: AccountSpace;
   institution_id?: string | null;
   apaar_id?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  designation?: string | null;
+  region?: string | null;
+  university_name?: string | null;
   created_at?: string;
 }
 
 export interface Session {
   id: string;
+  account_space?: AccountSpace;
   user_id: string;
   role: UserRole;
   institution_id?: string | null;
+  apaar_id?: string | null;
   expires_at: string;
   created_at?: string;
 }

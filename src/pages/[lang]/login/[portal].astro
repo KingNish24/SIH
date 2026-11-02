@@ -1,0 +1,51 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import PortalAuth from '../../../components/PortalAuth.astro';
+import { getUIDictionary, isSupportedLang, type LangCode } from '../../../lib/i18n';
+
+const { lang, portal } = Astro.params;
+
+if (!isSupportedLang(lang)) {
+  return new Response('Not Found', { status: 404 });
+}
+
+const VALID_PORTALS = ['college', 'aicte', 'university', 'student'] as const;
+type PortalType = (typeof VALID_PORTALS)[number];
+
+if (!portal || !VALID_PORTALS.includes(portal as PortalType)) {
+  return Astro.redirect(lang === 'en' ? '/login' : `/${lang}/login`, 302);
+}
+
+const search = Astro.url.search;
+if (lang === 'en') {
+  return Astro.redirect(`/login/${portal}${search}`, 302);
+}
+
+const resolvedLang = lang as LangCode;
+Astro.locals.lang = resolvedLang;
+const t = getUIDictionary(resolvedLang);
+const typedPortal = portal as PortalType;
+
+const PORTAL_TITLES: Record<PortalType, string> = {
+  college: 'College Nodal Portal Sign-In',
+  aicte: 'AICTE Regulatory Portal Sign-In',
+  university: 'Affiliating University Portal Sign-In',
+  student: 'Student APAAR Sign-In & Registration',
+};
+
+const activeRoleMap: Record<PortalType, 'institution' | 'aicte' | 'university' | 'student'> = {
+  college: 'institution',
+  aicte: 'aicte',
+  university: 'university',
+  student: 'student',
+};
+---
+
+<Layout
+  title={`SIH 2026 | ${PORTAL_TITLES[typedPortal]}`}
+  activeRole={activeRoleMap[typedPortal]}
+  breadcrumb={`${PORTAL_TITLES[typedPortal]} (${t.crumb_login})`}
+  lang={resolvedLang}
+>
+  <PortalAuth portal={typedPortal} lang={resolvedLang} />
+</Layout>

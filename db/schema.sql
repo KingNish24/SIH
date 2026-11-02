@@ -4,6 +4,10 @@
 DROP TABLE IF EXISTS scoped_consent_tokens;
 DROP TABLE IF EXISTS semester_credits;
 DROP TABLE IF EXISTS sessions;
+DROP TABLE IF EXISTS college_accounts;
+DROP TABLE IF EXISTS aicte_accounts;
+DROP TABLE IF EXISTS university_accounts;
+DROP TABLE IF EXISTS student_accounts;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS passkey_credentials;
 DROP TABLE IF EXISTS verification_requests;
@@ -126,6 +130,60 @@ CREATE TABLE semester_credits (
   FOREIGN KEY (apaar_id) REFERENCES students(apaar_id)
 );
 
+-- 4 Isolated Portal Account Spaces
+CREATE TABLE college_accounts (
+  id TEXT PRIMARY KEY,
+  username TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  salt TEXT NOT NULL,
+  full_name TEXT NOT NULL,
+  designation TEXT DEFAULT 'Principal / Nodal Officer',
+  institution_id TEXT NOT NULL,
+  role TEXT DEFAULT 'INSTITUTE_ADMIN',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (institution_id) REFERENCES institutions(id)
+);
+
+CREATE TABLE aicte_accounts (
+  id TEXT PRIMARY KEY,
+  username TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  salt TEXT NOT NULL,
+  full_name TEXT NOT NULL,
+  designation TEXT DEFAULT 'AICTE Chief Regulatory Officer',
+  region TEXT DEFAULT 'All-India HQ (New Delhi)',
+  role TEXT DEFAULT 'AICTE_ADMIN',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE university_accounts (
+  id TEXT PRIMARY KEY,
+  username TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  salt TEXT NOT NULL,
+  full_name TEXT NOT NULL,
+  university_name TEXT DEFAULT 'State Affiliating Technological University',
+  designation TEXT DEFAULT 'University Registrar',
+  role TEXT DEFAULT 'UNIVERSITY_ADMIN',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE student_accounts (
+  id TEXT PRIMARY KEY,
+  username TEXT UNIQUE NOT NULL,
+  apaar_id TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  salt TEXT NOT NULL,
+  full_name TEXT NOT NULL,
+  email TEXT,
+  phone TEXT,
+  institution_id TEXT,
+  role TEXT DEFAULT 'STUDENT',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (apaar_id) REFERENCES students(apaar_id)
+);
+
+-- Legacy compatibility users table
 CREATE TABLE users (
   id TEXT PRIMARY KEY,
   username TEXT UNIQUE NOT NULL,
@@ -142,10 +200,11 @@ CREATE TABLE users (
 
 CREATE TABLE sessions (
   id TEXT PRIMARY KEY,
+  account_space TEXT NOT NULL DEFAULT 'student_accounts',
   user_id TEXT NOT NULL,
   role TEXT NOT NULL,
   institution_id TEXT,
+  apaar_id TEXT,
   expires_at DATETIME NOT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

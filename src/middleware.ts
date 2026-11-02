@@ -26,7 +26,7 @@ async function enforceRateLimit(
   let bindingName: string | null = null;
   let scope = 'api';
 
-  if (pathname === '/api/auth/login' && request.method === 'POST') {
+  if ((pathname === '/api/auth/login' || pathname === '/api/auth/signup') && request.method === 'POST') {
     bindingName = 'LOGIN_LIMITER';
     scope = 'login';
   } else if (pathname === '/api/verify' || pathname.startsWith('/api/verify/')) {
@@ -177,6 +177,7 @@ const route = async (
   const isPublicPage =
     normalizedPath === '/' ||
     normalizedPath === '/login' ||
+    normalizedPath.startsWith('/login/') ||
     normalizedPath === '/verifier' ||
     normalizedPath.startsWith('/verifier/') ||
     normalizedPath.startsWith('/api/auth/') ||
@@ -192,7 +193,7 @@ const route = async (
     // AICTE Regulatory Council
     if (normalizedPath === '/aicte' || normalizedPath.startsWith('/aicte/')) {
       if (!user || user.role !== 'AICTE_ADMIN') {
-        const redirectUrl = `${loginBasePath}?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
+        const redirectUrl = `${loginBasePath}/aicte?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
         return context.redirect(redirectUrl, 302);
       }
     }
@@ -200,7 +201,7 @@ const route = async (
     // Institute Admin Portal
     if (normalizedPath === '/institution' || normalizedPath.startsWith('/institution/')) {
       if (!user || user.role !== 'INSTITUTE_ADMIN') {
-        const redirectUrl = `${loginBasePath}?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
+        const redirectUrl = `${loginBasePath}/college?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
         return context.redirect(redirectUrl, 302);
       }
     }
@@ -208,7 +209,7 @@ const route = async (
     // Affiliating University Degree Ledger
     if (normalizedPath === '/university' || normalizedPath.startsWith('/university/')) {
       if (!user || user.role !== 'UNIVERSITY_ADMIN') {
-        const redirectUrl = `${loginBasePath}?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
+        const redirectUrl = `${loginBasePath}/university?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
         return context.redirect(redirectUrl, 302);
       }
     }
@@ -216,7 +217,7 @@ const route = async (
     // Student DPDP Consent Portal
     if (normalizedPath === '/student' || normalizedPath.startsWith('/student/')) {
       if (!user || user.role !== 'STUDENT') {
-        const redirectUrl = `${loginBasePath}?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
+        const redirectUrl = `${loginBasePath}/student?redirect=${encodeURIComponent(pathname)}&reason=unauthorized`;
         return context.redirect(redirectUrl, 302);
       }
     }
