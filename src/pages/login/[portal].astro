@@ -1,7 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import PortalAuth from '../../components/PortalAuth.astro';
-import { getUIDictionary, isSupportedLang, type LangCode } from '../../lib/i18n';
+import { isSupportedLang, type LangCode } from '../../lib/i18n';
 
 const { portal } = Astro.params;
 const VALID_PORTALS = ['college', 'aicte', 'university', 'student'] as const;
@@ -9,7 +9,6 @@ type PortalType = (typeof VALID_PORTALS)[number];
 
 const lang: LangCode = isSupportedLang(Astro.locals.lang) ? Astro.locals.lang : 'en';
 const langPrefix = lang === 'en' ? '' : `/${lang}`;
-const t = getUIDictionary(lang);
 
 if (!portal || !VALID_PORTALS.includes(portal as PortalType)) {
   return Astro.redirect(`${langPrefix}/login`, 302);
@@ -35,7 +34,7 @@ const activeRoleMap: Record<PortalType, 'institution' | 'aicte' | 'university' |
 <Layout
   title={`SIH 2026 | ${PORTAL_TITLES[typedPortal]}`}
   activeRole={activeRoleMap[typedPortal]}
-  breadcrumb={`${PORTAL_TITLES[typedPortal]} (${t.crumb_login})`}
+  breadcrumb={PORTAL_TITLES[typedPortal]}
   lang={lang}
 >
   <PortalAuth portal={typedPortal} lang={lang} />

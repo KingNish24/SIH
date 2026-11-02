@@ -30,15 +30,14 @@ interface PortalMeta {
   id: 'college' | 'aicte' | 'university' | 'student';
   role: 'INSTITUTE_ADMIN' | 'AICTE_ADMIN' | 'UNIVERSITY_ADMIN' | 'STUDENT';
   title: string;
+  authority: string;
   subtitle: string;
-  dbSpace: string;
   defaultPath: string;
   gradientClass: string;
   accentBgClass: string;
   accentHoverClass: string;
   accentRingClass: string;
   accentTextClass: string;
-  badgeBgClass: string;
   usernameLabel: string;
   usernamePlaceholder: string;
   demoUsername: string;
@@ -53,109 +52,112 @@ const PORTAL_META: Record<'college' | 'aicte' | 'university' | 'student', Portal
     id: 'college',
     role: 'INSTITUTE_ADMIN',
     title: 'College Nodal Portal',
-    subtitle: 'AICTE Approved Institution Admission & Seat Cap Roster',
-    dbSpace: 'DB Space: college_accounts',
+    authority: 'AICTE Approved Technical Institutions',
+    subtitle: 'Sign in with your AISHE Nodal Officer ID to manage admitted student rosters and verify sanctioned seat intake limits.',
     defaultPath: `${langPrefix}/institution`,
-    gradientClass: 'bg-gradient-to-br from-[#1E40AF] to-[#072F6B]',
+    gradientClass: 'bg-gradient-to-br from-[#1E40AF] to-[#0A2760]',
     accentBgClass: 'bg-[#1E40AF]',
     accentHoverClass: 'hover:bg-[#1D4ED8]',
     accentRingClass: 'focus:ring-[#1E40AF]',
     accentTextClass: 'text-[#1E40AF]',
-    badgeBgClass: 'bg-blue-50 text-[#1E40AF] border-blue-200',
-    usernameLabel: 'College Nodal Officer ID / AISHE Username',
-    usernamePlaceholder: 'e.g. principal.pune',
+    usernameLabel: 'Nodal Officer ID / AISHE Username',
+    usernamePlaceholder: 'principal.pune',
     demoUsername: 'principal.pune',
     demoOfficerName: 'Dr. Ramesh Joshi',
-    demoSubtitle: 'Technical College A (INST-001)',
+    demoSubtitle: 'Principal · Technical College A (INST-001)',
     bullets: [
       'Register admitted students against AICTE sanctioned intake caps',
       'Verify 12-digit APAAR IDs and check real-time remaining seats',
-      'Flag and prevent duplicate or over-cap admissions automatically',
+      'Block duplicate cross-campus or over-capacity admissions',
     ],
     provisioningNote:
-      'College Nodal Officer accounts are provisioned directly via the AICTE Approval Bureau & AISHE Registry upon Extension of Approval (EoA).',
+      'College Nodal Officer accounts are issued via the AICTE Approval Bureau upon Extension of Approval (EoA).',
   },
   aicte: {
     id: 'aicte',
     role: 'AICTE_ADMIN',
     title: 'AICTE Regulatory Portal',
-    subtitle: 'National Intake Surveillance, Seat Cap Audit & Compliance Council',
-    dbSpace: 'DB Space: aicte_accounts',
+    authority: 'All India Council for Technical Education',
+    subtitle: 'National intake surveillance, sanctioned seat capacity enforcement, and cross-institution duplicate enrollment audits.',
     defaultPath: `${langPrefix}/aicte`,
     gradientClass: 'bg-gradient-to-br from-[#B45309] to-[#78350F]',
     accentBgClass: 'bg-[#B45309]',
     accentHoverClass: 'hover:bg-[#D97706]',
     accentRingClass: 'focus:ring-[#B45309]',
     accentTextClass: 'text-[#B45309]',
-    badgeBgClass: 'bg-amber-50 text-[#B45309] border-amber-200',
-    usernameLabel: 'AICTE Regulatory Officer ID',
-    usernamePlaceholder: 'e.g. aicte.officer',
+    usernameLabel: 'Regulatory Officer ID',
+    usernamePlaceholder: 'aicte.officer',
     demoUsername: 'aicte.officer',
     demoOfficerName: 'Dr. S. K. Mahajan',
-    demoSubtitle: 'AICTE Chief Regulatory Officer',
+    demoSubtitle: 'Chief Regulatory Officer · AICTE HQ',
     bullets: [
-      'Audit all-India engineering & technical colleges against sanctioned intake',
-      'Investigate over-capacity seat violations and duplicate APAAR enrollments',
-      'Update sanctioned program caps and review cryptographic Merkle audit logs',
+      'Monitor all-India engineering colleges against sanctioned intake',
+      'Flag over-capacity seat violations and duplicate APAAR IDs',
+      'Update sanctioned program caps and review Merkle audit trails',
     ],
     provisioningNote:
-      'AICTE Regulatory Officer accounts are provisioned by the National e-Governance Division (NeGD) & AICTE Vigilance Cell via Parichay Directory.',
+      'AICTE Regulatory Officer credentials are managed by the AICTE Vigilance Cell via Parichay Directory.',
   },
   university: {
     id: 'university',
     role: 'UNIVERSITY_ADMIN',
     title: 'Affiliating University Portal',
-    subtitle: 'Controller of Examinations & Ed25519 Digital Degree Ledger',
-    dbSpace: 'DB Space: university_accounts',
+    authority: 'Controller of Examinations & Degree Registry',
+    subtitle: 'Verify AICTE within-cap seat compliance and issue Ed25519 cryptographically signed digital degrees to NAD.',
     defaultPath: `${langPrefix}/university`,
     gradientClass: 'bg-gradient-to-br from-[#4338CA] to-[#27206B]',
     accentBgClass: 'bg-[#4338CA]',
     accentHoverClass: 'hover:bg-[#4F46E5]',
     accentRingClass: 'focus:ring-[#4338CA]',
     accentTextClass: 'text-[#4338CA]',
-    badgeBgClass: 'bg-indigo-50 text-[#4338CA] border-indigo-200',
     usernameLabel: 'University Registrar / COE ID',
-    usernamePlaceholder: 'e.g. registrar.univ',
+    usernamePlaceholder: 'registrar.univ',
     demoUsername: 'registrar.univ',
     demoOfficerName: 'Prof. K. Venkatesh',
-    demoSubtitle: 'State Affiliating University',
+    demoSubtitle: 'Registrar · State Affiliating University',
     bullets: [
-      'Verify that graduating students hold valid AICTE within-cap seat records',
-      'Sign and issue W3C / Ed25519 digital degrees to the National Academic Depository',
-      'Block unapproved or supernumerary over-cap degree issuance requests',
+      'Verify graduating students hold valid AICTE within-cap seats',
+      'Sign and issue Ed25519 digital degrees to National Academic Depository',
+      'Prevent degree issuance for unapproved or over-cap enrollments',
     ],
     provisioningNote:
-      'University Registrar & Controller of Examinations (COE) accounts are provisioned via the UGC / AICTE Affiliating University Registry.',
+      'University Registrar & COE accounts are provisioned via the UGC / AICTE Affiliating University Registry.',
   },
   student: {
     id: 'student',
     role: 'STUDENT',
     title: 'Student APAAR Portal',
-    subtitle: '12-Digit APAAR Academic Identity, Seat Status & DPDP Consent Vault',
-    dbSpace: 'DB Space: student_accounts',
+    authority: 'One Nation, One Student ID · Ministry of Education',
+    subtitle: 'Access your 12-digit APAAR academic identity, verify your college seat approval status, and manage DPDP consent passes.',
     defaultPath: `${langPrefix}/student`,
     gradientClass: 'bg-gradient-to-br from-[#047857] to-[#064E3B]',
     accentBgClass: 'bg-[#047857]',
     accentHoverClass: 'hover:bg-[#059669]',
     accentRingClass: 'focus:ring-[#047857]',
     accentTextClass: 'text-[#047857]',
-    badgeBgClass: 'bg-emerald-50 text-[#047857] border-emerald-200',
     usernameLabel: '12-Digit APAAR ID or Username',
-    usernamePlaceholder: 'e.g. 739284019283 or student.rahul',
+    usernamePlaceholder: '739284019283 or student.rahul',
     demoUsername: 'student.rahul',
     demoOfficerName: 'Rahul Sharma',
-    demoSubtitle: 'APAAR: 739284019283',
+    demoSubtitle: 'B.Tech CSE · APAAR: 739284019283',
     bullets: [
-      'Verify your college admission is within AICTE approved intake limits',
-      'Access your 12-digit APAAR ID card and Ed25519 signed digital degree',
-      'Generate time-bound DPDP Act 2023 consent tokens for employers & verifiers',
+      'Check that your college admission is within AICTE approved seats',
+      'View your 12-digit APAAR card, ABC credits, and digital degree',
+      'Create single-use DPDP Act 2023 consent passes for verifiers',
     ],
     provisioningNote:
-      'Students can sign in with an existing APAAR account or register a new 12-digit APAAR / ABC academic identity using the Sign Up tab.',
+      'Students can sign in with an existing 12-digit APAAR ID or register a new APAAR account using the New Registration tab.',
   },
 };
 
 const meta = PORTAL_META[portal];
+
+const portalSwitcherItems = [
+  { id: 'college', label: 'Colleges', href: `${langPrefix}/login/college` },
+  { id: 'aicte', label: 'AICTE', href: `${langPrefix}/login/aicte` },
+  { id: 'university', label: 'Universities', href: `${langPrefix}/login/university` },
+  { id: 'student', label: 'Students', href: `${langPrefix}/login/student` },
+] as const;
 
 const defaultRedirect = rawRedirect
   ? langPrefix && !isSupportedLang(firstRedirectSeg)
@@ -166,108 +168,92 @@ const defaultRedirect = rawRedirect
   : meta.defaultPath;
 ---
 
-<div class="max-w-5xl mx-auto py-4">
-  <!-- Top Bar: Back to Home + Switch Portal Link -->
-  <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
-    <a
-      href={langPrefix || '/'}
-      class="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-[#0B1E48] transition-colors"
-    >
-      <svg class="w-4 h-4 text-[#0B4EA2]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 12H5m6-6l-6 6 6 6" />
-      </svg>
-      <span>Back to Home</span>
-    </a>
-
-    <div class="flex items-center gap-2">
-      <a
-        href={`${langPrefix}/login`}
-        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-[#0B1E48] text-xs font-bold shadow-2xs transition-all"
-      >
-        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-        </svg>
-        <span>Switch Portal</span>
-      </a>
-      <a
-        href={`${langPrefix}/verifier`}
-        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-[#047857] hover:bg-emerald-100 text-xs font-bold transition-all"
-      >
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <span>{t.navVerifier}</span>
-      </a>
+<div class="max-w-4xl mx-auto py-3">
+  <!-- Compact Role Switcher Bar -->
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+    <div class="inline-flex items-center p-1 rounded-xl bg-slate-200/75 border border-slate-200">
+      {portalSwitcherItems.map((item) => {
+        const isActive = item.id === portal;
+        return (
+          <a
+            href={item.href}
+            aria-current={isActive ? 'page' : undefined}
+            class={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              isActive
+                ? 'bg-white text-[#040E29] shadow-2xs'
+                : 'text-slate-600 hover:text-[#040E29]'
+            }`}
+          >
+            {item.label}
+          </a>
+        );
+      })}
     </div>
+
+    <a
+      href={`${langPrefix}/verifier`}
+      class="inline-flex items-center gap-1.5 text-xs font-bold text-[#047857] hover:underline"
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span>{t.navVerifier} (No Login Needed)</span>
+    </a>
   </div>
 
-  <!-- Status & Error Banners (1px full border, no thick left/top accent border) -->
+  <!-- Status & Error Banners -->
   {reason === 'unauthorized' && (
-    <div class="mb-5 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 text-xs shadow-2xs flex items-start gap-3">
-      <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <div class="mb-4 p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 text-xs flex items-center gap-3">
+      <svg class="w-5 h-5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
       </svg>
-      <div>
-        <div class="font-bold text-sm text-amber-950">Authentication Required for {meta.title}</div>
-        <p class="mt-0.5 text-amber-800">
-          Please sign in with an authorized account in <code class="font-mono font-semibold">{meta.dbSpace.replace('DB Space: ', '')}</code> or use the 1-click demo account for this portal.
-        </p>
-      </div>
+      <span>
+        <strong>Sign-In Required:</strong> Please sign in with your {meta.title} credentials or use the 1-click demo button below.
+      </span>
     </div>
   )}
 
   {reason === 'logged_out' && (
-    <div class="mb-5 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs shadow-2xs flex items-start gap-3">
-      <svg class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <div class="mb-4 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs flex items-center gap-3">
+      <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
       </svg>
-      <div>
-        <div class="font-bold text-sm text-emerald-950">Session Ended Safely</div>
-        <p class="mt-0.5 text-emerald-800">
-          You have signed out. Sign in below to access the {meta.title}.
-        </p>
-      </div>
+      <span>
+        <strong>Signed Out:</strong> Your session has ended safely. Sign in below to continue.
+      </span>
     </div>
   )}
 
   {errorParam && (
-    <div class="mb-5 p-4 rounded-xl bg-red-50 border border-red-200 text-red-950 text-xs shadow-2xs flex items-start gap-3">
-      <svg class="w-5 h-5 text-red-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <div class="mb-4 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-950 text-xs flex items-center gap-3">
+      <svg class="w-5 h-5 text-red-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
       </svg>
-      <div>
-        <div class="font-bold text-sm text-red-950">Authentication Error</div>
-        <p class="mt-0.5 text-red-800">{decodeURIComponent(errorParam)}</p>
-      </div>
+      <span>{decodeURIComponent(errorParam)}</span>
     </div>
   )}
 
   {user && (
-    <div class="mb-5 p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-950 text-xs shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
-        <div>
-          <div class="font-bold text-sm text-[#0F2942]">Active Session Detected</div>
-          <div class="text-slate-700 mt-0.5 flex flex-wrap items-center gap-1.5">
-            <strong class="font-mono text-[#0F2942]">{user.username}</strong>
-            <span>({user.full_name})</span>
-            <span class="px-2 py-0.5 rounded bg-white border border-blue-200 font-mono text-[11px] font-bold text-[#0F2942]">{user.role}</span>
-          </div>
-        </div>
+    <div class="mb-4 p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-950 text-xs flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+        <span>
+          Signed in as <strong class="font-mono text-[#0F2942]">{user.username}</strong> ({user.full_name})
+        </span>
       </div>
-      <div class="flex items-center gap-2 shrink-0">
+      <div class="flex items-center gap-2">
         <a
           href={meta.defaultPath}
-          class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold transition-colors text-xs"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0F2942] hover:bg-[#1E3A8A] text-white font-bold transition-colors text-xs"
         >
-          <span>Continue to Portal</span>
+          <span>Open Portal</span>
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6l6 6-6 6" />
           </svg>
         </a>
         <a
           href="/api/auth/logout"
-          class="px-3 py-2 rounded-lg bg-white hover:bg-red-50 text-red-700 border border-red-200 font-bold transition-colors text-xs"
+          class="px-3 py-1.5 rounded-lg bg-white hover:bg-red-50 text-red-700 border border-red-200 font-bold transition-colors text-xs"
         >
           {t.signOut}
         </a>
@@ -275,50 +261,48 @@ const defaultRedirect = rawRedirect
     </div>
   )}
 
-  <!-- Main 12-Column Role Login & Registration Grid -->
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-    <!-- Left 5 Columns: Role Identity, Isolated DB Space & 1-Click Demo Account Card -->
-    <div class={`lg:col-span-5 rounded-2xl ${meta.gradientClass} text-white p-6 sm:p-7 shadow-lg flex flex-col justify-between relative overflow-hidden`}>
-      <svg class="absolute -right-8 -bottom-8 w-40 h-40 text-white/[0.06] pointer-events-none" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true">
+  <!-- Unified Split-Surface Civic Authentication Card -->
+  <div class="rounded-2xl bg-white shadow-[0_18px_45px_-15px_rgba(4,14,41,0.14)] overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+    <!-- Left 5 Columns: Portal Brand Panel -->
+    <div class={`lg:col-span-5 ${meta.gradientClass} text-white p-7 sm:p-8 flex flex-col justify-between relative overflow-hidden`}>
+      <svg class="absolute -right-10 -bottom-10 w-44 h-44 text-white/[0.05] pointer-events-none" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true">
         <circle cx="50" cy="50" r="50" />
       </svg>
 
       <div class="relative z-10">
-        <!-- Top Icon + Isolated DB Table Badge -->
-        <div class="flex items-center justify-between gap-3 mb-5">
-          <div class="w-12 h-12 rounded-xl bg-white/15 backdrop-blur-xs border border-white/25 flex items-center justify-center shadow-xs shrink-0">
+        <!-- Official Emblem & Authority Header -->
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-11 h-11 rounded-xl bg-white text-[#040E29] flex items-center justify-center shadow-xs shrink-0">
             {portal === 'college' && (
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <svg class="w-5 h-5 text-[#1E40AF]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             )}
             {portal === 'aicte' && (
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <svg class="w-5 h-5 text-[#B45309]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             )}
             {portal === 'university' && (
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <svg class="w-5 h-5 text-[#4338CA]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
             )}
             {portal === 'student' && (
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <svg class="w-5 h-5 text-[#047857]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
               </svg>
             )}
           </div>
-
-          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/25 border border-white/20 font-mono text-[11px] font-semibold text-white">
-            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-            <span>{meta.dbSpace}</span>
-          </span>
+          <div class="text-xs font-semibold text-white/85 leading-tight">
+            {meta.authority}
+          </div>
         </div>
 
-        <h1 class="text-2xl sm:text-[26px] font-extrabold tracking-tight text-white leading-snug">
+        <h1 class="text-2xl sm:text-[26px] font-extrabold tracking-tight text-white leading-tight">
           {meta.title}
         </h1>
-        <p class="mt-2 text-xs sm:text-sm text-white/85 leading-relaxed">
+        <p class="mt-2.5 text-xs sm:text-[13px] text-white/85 leading-relaxed">
           {meta.subtitle}
         </p>
 
@@ -326,116 +310,40 @@ const defaultRedirect = rawRedirect
         <ul class="mt-6 space-y-3 text-xs sm:text-[13px] text-white/95">
           {meta.bullets.map((bullet) => (
             <li class="flex items-start gap-2.5">
-              <svg class="w-4 h-4 text-[#FFAE19] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7" />
-              </svg>
-              <span>{bullet}</span>
+              <span class="w-5 h-5 rounded-full bg-[#FFAE19] text-[#040E29] flex items-center justify-center shrink-0 mt-0.5">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8" d="M5 13l4 4L19 7" />
+                </svg>
+              </span>
+              <span class="leading-snug">{bullet}</span>
             </li>
           ))}
         </ul>
-
-        <!-- Student APAAR & DigiLocker Identity Badge -->
-        {portal === 'student' && (
-          <div class="mt-5 p-3.5 rounded-xl bg-white/10 border border-white/20 flex items-center justify-between gap-3">
-            <div class="flex items-center gap-3">
-              <div class="bg-white rounded-lg px-2.5 py-1.5 shrink-0 flex items-center">
-                <img src="/apaar_logo.svg" alt="APAAR Logo" class="h-6 w-auto object-contain" width="64" height="24" />
-              </div>
-              <div>
-                <div class="text-xs font-bold text-white">12-Digit APAAR / ABC Verified</div>
-                <div class="text-[11px] text-emerald-100 mt-0.5">Linked with DigiLocker & NAD Registry</div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
-      <!-- Bottom: 1-Click Demo Account Card for THIS Portal Only -->
-      <div class="relative z-10 mt-7 pt-5 border-t border-white/20">
-        <div class="rounded-xl bg-black/25 border border-white/20 p-4 backdrop-blur-xs">
-          <div class="flex items-center justify-between gap-2 mb-2">
-            <span class="text-xs font-bold text-[#FFAE19] flex items-center gap-1.5">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              <span>Use Demo Account</span>
-            </span>
-            <span class="px-2 py-0.5 rounded bg-white/15 font-mono text-[10px] font-bold text-white">
-              {meta.role}
-            </span>
+      <!-- Bottom: Official APAAR / AICTE Attribution Strip -->
+      <div class="relative z-10 mt-8 pt-5 border-t border-white/15 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+          <div class="bg-white rounded-md px-2 py-1 shrink-0 flex items-center">
+            <img src="/apaar_logo.svg" alt="APAAR" class="h-5 w-auto object-contain" width="52" height="20" />
           </div>
-
-          <div class="text-xs text-white font-bold">
-            {meta.demoOfficerName}
-          </div>
-          <div class="text-[11px] text-white/80 mt-0.5 flex flex-wrap items-center gap-1.5">
-            <span>{meta.demoSubtitle}</span>
-            <span class="opacity-60">|</span>
-            <code class="font-mono text-amber-200">{meta.demoUsername}</code>
-          </div>
-
-          <div class="mt-3.5 flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              id="btnDemoFill"
-              data-username={meta.demoUsername}
-              class="px-3 py-2 rounded-lg bg-white/15 hover:bg-white/25 border border-white/25 text-white text-xs font-bold transition-colors cursor-pointer"
-            >
-              Fill Form
-            </button>
-            <button
-              type="button"
-              id="btnDemoQuickLogin"
-              data-portal={meta.id}
-              data-role={meta.role}
-              data-username={meta.demoUsername}
-              data-redirect={defaultRedirect}
-              class="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#FFAE19] hover:bg-[#f59e0b] text-[#040E29] text-xs font-extrabold shadow-xs transition-all cursor-pointer"
-            >
-              <span>1-Click Demo Sign In</span>
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 12h14m-6-6l6 6-6 6" />
-              </svg>
-            </button>
-          </div>
+          <span class="text-[11px] text-white/80 font-medium">
+            National Academic Depository
+          </span>
         </div>
+        <span class="text-[11px] font-mono text-white/70">
+          SIH26263
+        </span>
       </div>
     </div>
 
-    <!-- Right 7 Columns: Role Sign-In Card (+ Sign-Up Tab ONLY for Student) -->
-    <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden flex flex-col justify-between">
+    <!-- Right 7 Columns: Clean Sign-In / Student Registration Form -->
+    <div class="lg:col-span-7 p-7 sm:p-9 flex flex-col justify-between">
       <div>
-        <!-- Official Header Band -->
-        <div class="bg-[#0F2942] text-white px-6 py-4 flex items-center justify-between gap-4">
-          <div class="flex items-center gap-3.5">
-            <div class="bg-white rounded-lg p-1.5 shrink-0 shadow-2xs">
-              <img
-                src="/emblem.svg"
-                alt="State Emblem of India"
-                class="h-7 w-auto object-contain"
-                width="22"
-                height="30"
-              />
-            </div>
-            <div>
-              <h2 class="text-base sm:text-lg font-extrabold tracking-tight text-white">
-                {meta.title} Authentication
-              </h2>
-              <p class="text-xs text-slate-300 mt-0.5">
-                Government of India &bull; AICTE National Academic Registry
-              </p>
-            </div>
-          </div>
-
-          <span class={`hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${meta.badgeBgClass}`}>
-            {meta.id.toUpperCase()}
-          </span>
-        </div>
-
-        <!-- Student Sign-In / Sign-Up Tabs (Rendered ONLY for Student Portal) -->
-        {portal === 'student' && (
-          <div class="px-6 pt-5 bg-slate-50/70 border-b border-slate-200">
-            <div class="grid grid-cols-2 gap-2 p-1 bg-slate-200/75 rounded-xl" role="tablist" aria-label="Student Authentication Mode">
+        <!-- Form Header OR Student Sign-In / Sign-Up Tabs -->
+        {portal === 'student' ? (
+          <div class="mb-6">
+            <div class="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl" role="tablist" aria-label="Student Authentication Mode">
               <button
                 type="button"
                 id="tabSignInBtn"
@@ -460,252 +368,303 @@ const defaultRedirect = rawRedirect
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                 </svg>
-                <span>Create APAAR Account (Sign Up)</span>
+                <span>New APAAR Sign Up</span>
               </button>
             </div>
+          </div>
+        ) : (
+          <div class="mb-6 pb-4 border-b border-slate-100 flex items-center justify-between gap-3">
+            <div>
+              <h2 class="text-lg sm:text-xl font-extrabold text-[#040E29] tracking-tight">
+                Sign In to {meta.title}
+              </h2>
+              <p class="text-xs text-slate-500 mt-0.5">
+                Enter your official credentials below to access the portal.
+              </p>
+            </div>
+            <img
+              src="/emblem.svg"
+              alt="State Emblem of India"
+              class="h-8 w-auto object-contain opacity-80 shrink-0"
+              width="24"
+              height="32"
+            />
           </div>
         )}
 
-        <div class="p-6 sm:p-7">
-          <!-- SIGN IN PANEL (All 4 Portals) -->
-          <div id="panelSignIn" role="tabpanel">
-            <form
-              id="portalLoginForm"
-              action="/api/auth/login"
-              method="POST"
-              class="space-y-5"
-              data-default-redirect={defaultRedirect}
-            >
-              <input type="hidden" name="portal" value={meta.id} />
-              <input type="hidden" name="role" value={meta.role} />
-              <input type="hidden" name="redirect" value={defaultRedirect} />
-
-              <div>
-                <label for="loginUsernameInput" class="block text-xs sm:text-sm font-bold text-slate-800 mb-1.5">
-                  {meta.usernameLabel}
-                </label>
-                <input
-                  type="text"
-                  id="loginUsernameInput"
-                  name="username"
-                  required
-                  autocomplete="username"
-                  placeholder={meta.usernamePlaceholder}
-                  class={`w-full h-11 bg-slate-50 border border-slate-300 rounded-lg py-2.5 px-3.5 font-mono text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 ${meta.accentRingClass} focus:border-transparent transition-all`}
-                />
-              </div>
-
-              <div>
-                <div class="flex items-center justify-between mb-1.5">
-                  <label for="loginPasswordInput" class="block text-xs sm:text-sm font-bold text-slate-800">
-                    {t.login_password || 'Password'}
-                  </label>
-                  <button
-                    type="button"
-                    id="toggleLoginPassBtn"
-                    aria-pressed="false"
-                    class={`text-xs font-bold ${meta.accentTextClass} hover:underline cursor-pointer`}
-                  >
-                    Show Password
-                  </button>
-                </div>
-                <input
-                  type="password"
-                  id="loginPasswordInput"
-                  name="password"
-                  required
-                  autocomplete="current-password"
-                  placeholder="••••••••••••"
-                  class={`w-full h-11 bg-slate-50 border border-slate-300 rounded-lg py-2.5 px-3.5 font-mono text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 ${meta.accentRingClass} focus:border-transparent transition-all`}
-                />
-              </div>
-
-              <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 flex items-center gap-2.5">
-                <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-                <span>
-                  Authenticated against isolated <code class="font-mono font-bold text-slate-900">{meta.dbSpace.replace('DB Space: ', '')}</code> table with HttpOnly session binding.
-                </span>
-              </div>
-
-              <div id="portalLoginFeedback" role="alert" aria-live="polite" class="hidden p-3.5 rounded-xl text-xs"></div>
-
-              <button
-                type="submit"
-                id="portalLoginSubmitBtn"
-                data-default-label={`Sign In to ${meta.title}`}
-                class={`w-full h-11 ${meta.accentBgClass} ${meta.accentHoverClass} text-white rounded-lg font-extrabold text-sm shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer`}
-              >
+        <!-- SIGN IN PANEL -->
+        <div id="panelSignIn" role="tabpanel">
+          <!-- Compact 1-Click Evaluator Demo Strip -->
+          <div class="mb-5 p-3 rounded-xl bg-[#F8FAFC] border border-slate-200/90 flex flex-wrap items-center justify-between gap-2.5">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="w-7 h-7 rounded-lg bg-[#FFAE19]/20 text-[#92400E] flex items-center justify-center shrink-0">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                <span id="portalLoginBtnText">Sign In to {meta.title}</span>
+              </span>
+              <div class="min-w-0">
+                <div class="text-xs font-bold text-[#040E29] truncate">
+                  Demo: {meta.demoOfficerName}
+                </div>
+                <div class="text-[11px] text-slate-500 truncate">
+                  <code class="font-mono font-semibold text-slate-700">{meta.demoUsername}</code> · {meta.demoSubtitle}
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                id="btnDemoFill"
+                data-username={meta.demoUsername}
+                class="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
+              >
+                Fill ID
               </button>
-            </form>
+              <button
+                type="button"
+                id="btnDemoQuickLogin"
+                data-portal={meta.id}
+                data-role={meta.role}
+                data-username={meta.demoUsername}
+                data-redirect={defaultRedirect}
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FFAE19] hover:bg-[#f59e0b] text-[#040E29] text-xs font-extrabold transition-all cursor-pointer"
+              >
+                <span>1-Click Demo Sign In</span>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 12h14m-6-6l6 6-6 6" />
+                </svg>
+              </button>
+            </div>
           </div>
 
-          <!-- SIGN UP PANEL (Rendered ONLY when portal === 'student') -->
-          {portal === 'student' && (
-            <div id="panelSignUp" role="tabpanel" class="hidden">
-              <form
-                id="studentSignupForm"
-                action="/api/auth/signup"
-                method="POST"
-                class="space-y-4"
-                data-default-redirect={defaultRedirect}
-              >
-                <input type="hidden" name="redirect" value={defaultRedirect} />
+          <form
+            id="portalLoginForm"
+            action="/api/auth/login"
+            method="POST"
+            class="space-y-4"
+            data-default-redirect={defaultRedirect}
+          >
+            <input type="hidden" name="portal" value={meta.id} />
+            <input type="hidden" name="role" value={meta.role} />
+            <input type="hidden" name="redirect" value={defaultRedirect} />
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label for="signupFullName" class="block text-xs font-bold text-slate-800 mb-1">
-                      Full Name (as per Aadhaar / DigiLocker)
-                    </label>
-                    <input
-                      type="text"
-                      id="signupFullName"
-                      name="full_name"
-                      required
-                      placeholder="e.g. Ananya Deshmukh"
-                      class="w-full h-10 bg-slate-50 border border-slate-300 rounded-lg px-3 text-slate-900 text-xs sm:text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#047857]"
-                    />
-                  </div>
+            <div>
+              <label for="loginUsernameInput" class="block text-xs sm:text-sm font-bold text-slate-800 mb-1.5">
+                {meta.usernameLabel}
+              </label>
+              <input
+                type="text"
+                id="loginUsernameInput"
+                name="username"
+                required
+                autocomplete="username"
+                placeholder={meta.usernamePlaceholder}
+                class={`w-full h-11 bg-slate-50 border border-slate-300 rounded-xl px-3.5 font-mono text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 ${meta.accentRingClass} focus:border-transparent transition-all`}
+              />
+            </div>
 
-                  <div>
-                    <label for="signupUsername" class="block text-xs font-bold text-slate-800 mb-1">
-                      Username
-                    </label>
-                    <input
-                      type="text"
-                      id="signupUsername"
-                      name="username"
-                      required
-                      placeholder="e.g. student.ananya"
-                      class="w-full h-10 bg-slate-50 border border-slate-300 rounded-lg px-3 font-mono text-slate-900 text-xs sm:text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#047857]"
-                    />
-                  </div>
-                </div>
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label for="loginPasswordInput" class="block text-xs sm:text-sm font-bold text-slate-800">
+                  {t.login_password || 'Password'}
+                </label>
+                <button
+                  type="button"
+                  id="toggleLoginPassBtn"
+                  aria-pressed="false"
+                  class={`text-xs font-bold ${meta.accentTextClass} hover:underline cursor-pointer`}
+                >
+                  Show Password
+                </button>
+              </div>
+              <input
+                type="password"
+                id="loginPasswordInput"
+                name="password"
+                required
+                autocomplete="current-password"
+                placeholder="Enter your password"
+                class={`w-full h-11 bg-slate-50 border border-slate-300 rounded-xl px-3.5 text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 ${meta.accentRingClass} focus:border-transparent transition-all`}
+              />
+            </div>
 
+            <div id="portalLoginFeedback" role="alert" aria-live="polite" class="hidden p-3.5 rounded-xl text-xs"></div>
+
+            <button
+              type="submit"
+              id="portalLoginSubmitBtn"
+              data-default-label={`Sign In to ${meta.title}`}
+              class={`w-full h-11 ${meta.accentBgClass} ${meta.accentHoverClass} text-white rounded-xl font-extrabold text-sm shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer mt-2`}
+            >
+              <span id="portalLoginBtnText">Sign In to {meta.title}</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 12h14m-6-6l6 6-6 6" />
+              </svg>
+            </button>
+          </form>
+        </div>
+
+        <!-- SIGN UP PANEL (Rendered ONLY when portal === 'student') -->
+        {portal === 'student' && (
+          <div id="panelSignUp" role="tabpanel" class="hidden">
+            <form
+              id="studentSignupForm"
+              action="/api/auth/signup"
+              method="POST"
+              class="space-y-3.5"
+              data-default-redirect={defaultRedirect}
+            >
+              <input type="hidden" name="redirect" value={defaultRedirect} />
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
-                    <label for="signupApaarId" class="block text-xs font-bold text-slate-800">
-                      12-Digit APAAR / ABC ID
-                    </label>
-                    <button
-                      type="button"
-                      id="btnGenerateApaar"
-                      class="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#047857] hover:underline cursor-pointer"
-                    >
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                      <span>Generate Sample 12-Digit ID</span>
-                    </button>
-                  </div>
+                  <label for="signupFullName" class="block text-xs font-bold text-slate-800 mb-1">
+                    Full Name (as per Aadhaar)
+                  </label>
                   <input
                     type="text"
-                    id="signupApaarId"
-                    name="apaar_id"
+                    id="signupFullName"
+                    name="full_name"
                     required
-                    pattern="\d{12}"
-                    maxlength="12"
-                    inputmode="numeric"
-                    placeholder="12-digit numeric APAAR ID (e.g. 482910384756)"
-                    class="w-full h-10 bg-slate-50 border border-slate-300 rounded-lg px-3 font-mono text-slate-900 text-xs sm:text-sm tracking-wider focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#047857]"
+                    placeholder="Ananya Deshmukh"
+                    class="w-full h-10 bg-slate-50 border border-slate-300 rounded-xl px-3 text-slate-900 text-xs sm:text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#047857]"
                   />
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label for="signupInstitution" class="block text-xs font-bold text-slate-800 mb-1">
-                      College / Institution
-                    </label>
-                    <select
-                      id="signupInstitution"
-                      name="institution_id"
-                      required
-                      class="w-full h-10 bg-slate-50 border border-slate-300 rounded-lg px-3 text-slate-900 text-xs sm:text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#047857]"
-                    >
-                      <option value="INST-001">INST-001: Technical College A (Pune)</option>
-                      <option value="INST-002">INST-002: Technical College B (Bengaluru)</option>
-                      <option value="INST-003">INST-003: State University College (New Delhi)</option>
-                    </select>
-                  </div>
+                <div>
+                  <label for="signupUsername" class="block text-xs font-bold text-slate-800 mb-1">
+                    Username
+                  </label>
+                  <input
+                    type="text"
+                    id="signupUsername"
+                    name="username"
+                    required
+                    placeholder="student.ananya"
+                    class="w-full h-10 bg-slate-50 border border-slate-300 rounded-xl px-3 font-mono text-slate-900 text-xs sm:text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#047857]"
+                  />
+                </div>
+              </div>
 
-                  <div>
-                    <label for="signupProgram" class="block text-xs font-bold text-slate-800 mb-1">
-                      Program / Branch
-                    </label>
-                    <select
-                      id="signupProgram"
-                      name="program"
-                      required
-                      class="w-full h-10 bg-slate-50 border border-slate-300 rounded-lg px-3 text-slate-900 text-xs sm:text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#047857]"
-                    >
-                      <option value="B.Tech Computer Science & Engineering">B.Tech Computer Science & Engineering</option>
-                      <option value="B.Tech Information Technology">B.Tech Information Technology</option>
-                      <option value="B.Tech Electronics & Comm.">B.Tech Electronics & Comm.</option>
-                      <option value="B.Tech Data Science & AI">B.Tech Data Science & AI</option>
-                      <option value="B.Tech Mechanical Engineering">B.Tech Mechanical Engineering</option>
-                    </select>
-                  </div>
+              <div>
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                  <label for="signupApaarId" class="block text-xs font-bold text-slate-800">
+                    12-Digit APAAR / ABC ID
+                  </label>
+                  <button
+                    type="button"
+                    id="btnGenerateApaar"
+                    class="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#047857] hover:underline cursor-pointer"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>Auto-Fill Sample 12-Digit ID</span>
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  id="signupApaarId"
+                  name="apaar_id"
+                  required
+                  pattern="\d{12}"
+                  maxlength="12"
+                  inputmode="numeric"
+                  placeholder="482910384756"
+                  class="w-full h-10 bg-slate-50 border border-slate-300 rounded-xl px-3 font-mono text-slate-900 text-xs sm:text-sm tracking-wider focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#047857]"
+                />
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label for="signupInstitution" class="block text-xs font-bold text-slate-800 mb-1">
+                    Admitted College
+                  </label>
+                  <select
+                    id="signupInstitution"
+                    name="institution_id"
+                    required
+                    class="w-full h-10 bg-slate-50 border border-slate-300 rounded-xl px-3 text-slate-900 text-xs sm:text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#047857]"
+                  >
+                    <option value="INST-001">Technical College A (Pune)</option>
+                    <option value="INST-002">Technical College B (Bengaluru)</option>
+                    <option value="INST-003">State University College (Delhi)</option>
+                  </select>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label for="signupEmail" class="block text-xs font-bold text-slate-800 mb-1">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      id="signupEmail"
-                      name="email"
-                      required
-                      placeholder="student@college.edu.in"
-                      class="w-full h-10 bg-slate-50 border border-slate-300 rounded-lg px-3 text-slate-900 text-xs sm:text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#047857]"
-                    />
-                  </div>
+                <div>
+                  <label for="signupProgram" class="block text-xs font-bold text-slate-800 mb-1">
+                    Degree Program
+                  </label>
+                  <select
+                    id="signupProgram"
+                    name="program"
+                    required
+                    class="w-full h-10 bg-slate-50 border border-slate-300 rounded-xl px-3 text-slate-900 text-xs sm:text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#047857]"
+                  >
+                    <option value="B.Tech Computer Science & Engineering">B.Tech Computer Science</option>
+                    <option value="B.Tech Information Technology">B.Tech Information Tech</option>
+                    <option value="B.Tech Electronics & Comm.">B.Tech Electronics & Comm.</option>
+                    <option value="B.Tech Data Science & AI">B.Tech Data Science & AI</option>
+                    <option value="B.Tech Mechanical Engineering">B.Tech Mechanical Engg</option>
+                  </select>
+                </div>
+              </div>
 
-                  <div>
-                    <label for="signupPassword" class="block text-xs font-bold text-slate-800 mb-1">
-                      Create Password (min. 6 chars)
-                    </label>
-                    <input
-                      type="password"
-                      id="signupPassword"
-                      name="password"
-                      required
-                      minlength="6"
-                      autocomplete="new-password"
-                      placeholder="••••••••••••"
-                      class="w-full h-10 bg-slate-50 border border-slate-300 rounded-lg px-3 font-mono text-slate-900 text-xs sm:text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#047857]"
-                    />
-                  </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label for="signupEmail" class="block text-xs font-bold text-slate-800 mb-1">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    id="signupEmail"
+                    name="email"
+                    required
+                    placeholder="student@college.edu.in"
+                    class="w-full h-10 bg-slate-50 border border-slate-300 rounded-xl px-3 text-slate-900 text-xs sm:text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#047857]"
+                  />
                 </div>
 
-                <div id="studentSignupFeedback" role="alert" aria-live="polite" class="hidden p-3.5 rounded-xl text-xs"></div>
+                <div>
+                  <label for="signupPassword" class="block text-xs font-bold text-slate-800 mb-1">
+                    Create Password
+                  </label>
+                  <input
+                    type="password"
+                    id="signupPassword"
+                    name="password"
+                    required
+                    minlength="6"
+                    autocomplete="new-password"
+                    placeholder="Min. 6 characters"
+                    class="w-full h-10 bg-slate-50 border border-slate-300 rounded-xl px-3 text-slate-900 text-xs sm:text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#047857]"
+                  />
+                </div>
+              </div>
 
-                <button
-                  type="submit"
-                  id="studentSignupSubmitBtn"
-                  class="w-full h-11 bg-[#047857] hover:bg-[#059669] text-white rounded-lg font-extrabold text-sm shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span id="studentSignupBtnText">Register APAAR Account & Sign In</span>
-                </button>
-              </form>
-            </div>
-          )}
-        </div>
+              <div id="studentSignupFeedback" role="alert" aria-live="polite" class="hidden p-3.5 rounded-xl text-xs"></div>
+
+              <button
+                type="submit"
+                id="studentSignupSubmitBtn"
+                class="w-full h-11 bg-[#047857] hover:bg-[#059669] text-white rounded-xl font-extrabold text-sm shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span id="studentSignupBtnText">Create APAAR Account & Sign In</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 12h14m-6-6l6 6-6 6" />
+                </svg>
+              </button>
+            </form>
+          </div>
+        )}
       </div>
 
-      <!-- Institutional Provisioning / Governance Footer Note -->
-      <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex items-start gap-3 text-xs text-slate-600">
-        <svg class="w-4 h-4 text-slate-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <!-- Clean Footer Note -->
+      <div class="mt-6 pt-4 border-t border-slate-100 flex items-start gap-2.5 text-[11px] text-slate-500">
+        <svg class="w-4 h-4 text-slate-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
         </svg>
         <p class="leading-relaxed">
           {meta.provisioningNote}
@@ -758,12 +717,11 @@ const defaultRedirect = rawRedirect
   tabSignInBtn?.addEventListener('click', () => activateTab('signin'));
   tabSignUpBtn?.addEventListener('click', () => activateTab('signup'));
 
-  // Check URL query ?tab=signup
   if (new URLSearchParams(window.location.search).get('tab') === 'signup') {
     activateTab('signup');
   }
 
-  // 3. Generate Sample 12-Digit APAAR ID helper for Student Sign-Up
+  // 3. Auto-Fill Sample 12-Digit APAAR ID helper for Student Sign-Up
   const btnGenerateApaar = document.getElementById('btnGenerateApaar');
   const signupApaarInput = document.getElementById('signupApaarId') as HTMLInputElement | null;
   const signupFullNameInput = document.getElementById('signupFullName') as HTMLInputElement | null;
@@ -790,7 +748,7 @@ const defaultRedirect = rawRedirect
     (window as any).showToast?.(`Generated sample 12-digit APAAR ID: ${randomDigits}`, 'info');
   });
 
-  // 4. Demo Fill Form Button
+  // 4. Demo Fill ID Button
   const btnDemoFill = document.getElementById('btnDemoFill');
   btnDemoFill?.addEventListener('click', () => {
     activateTab('signin');
@@ -909,7 +867,7 @@ const defaultRedirect = rawRedirect
       e.preventDefault();
       studentSignupFeedback.className = 'hidden';
       studentSignupSubmitBtn.disabled = true;
-      studentSignupBtnText.textContent = 'Registering APAAR Account...';
+      studentSignupBtnText.textContent = 'Creating APAAR Account...';
 
       const formData = new FormData(studentSignupForm);
       const payload: Record<string, any> = {};
@@ -936,13 +894,13 @@ const defaultRedirect = rawRedirect
           studentSignupFeedback.className = 'p-3.5 rounded-xl text-xs bg-red-50 border border-red-200 text-red-900 font-semibold';
           studentSignupFeedback.textContent = data.error || 'Could not register APAAR account.';
           studentSignupSubmitBtn.disabled = false;
-          studentSignupBtnText.textContent = 'Register APAAR Account & Sign In';
+          studentSignupBtnText.textContent = 'Create APAAR Account & Sign In';
         }
       } catch (err: any) {
         studentSignupFeedback.className = 'p-3.5 rounded-xl text-xs bg-red-50 border border-red-200 text-red-900 font-semibold';
         studentSignupFeedback.textContent = 'Network error: ' + err.message;
         studentSignupSubmitBtn.disabled = false;
-        studentSignupBtnText.textContent = 'Register APAAR Account & Sign In';
+        studentSignupBtnText.textContent = 'Create APAAR Account & Sign In';
       }
     });
   }
