@@ -11,11 +11,13 @@ export interface RosterStudentInput {
   phone?: string;
   program?: string;
   batch_year?: number;
+  dpdp_consent_status?: 'GRANTED' | 'REVOKED' | 'PENDING';
 }
 
 export interface IngestRosterOptions {
   institutionId: string;
   students: RosterStudentInput[];
+  mode?: 'single' | 'bulk';
   db: DatabaseAdapter;
   actor: {
     username: string;
@@ -24,13 +26,24 @@ export interface IngestRosterOptions {
   };
 }
 
+export interface CreatedAdmissionRecord extends Admission {
+  full_name: string;
+  student_name: string;
+  email: string;
+  phone: string;
+  dpdp_consent_status: 'GRANTED' | 'REVOKED' | 'PENDING';
+  institution_name: string;
+}
+
 export interface IngestRosterResult {
   success: boolean;
+  mode?: 'single' | 'bulk';
   inserted: number;
   skipped: number;
   duplicates_flagged: number;
   new_enrollment: number;
   sanctioned_intake: number;
+  created_admissions?: CreatedAdmissionRecord[];
   errors: string[];
 }
 
@@ -54,7 +67,7 @@ export function isValidApaar(id: unknown): boolean {
  * 5. Batch student/admission ledger writes & compensation rollback
  */
 export async function ingestRoster(options: IngestRosterOptions): Promise<IngestRosterResult> {
-  const { institutionId, students, db, actor } = options;
+  const { institutionId, students, mode, db, actor } = options;
 
   if (!institutionId || !Array.isArray(students)) {
     throw new Error('Invalid payload: institutionId and students array required');
@@ -77,6 +90,7 @@ export async function ingestRoster(options: IngestRosterOptions): Promise<Ingest
 
   const sanctionedCap = institution.sanctioned_intake;
   const currentEnrollment = institution.current_enrollment;
+  const resolvedMode: 'single' | 'bulk' = mode || (students.length === 1 ? 'single' : 'bulk');
 
   const MAX_BATCH = 1000;
   if (students.length > MAX_BATCH) {
@@ -98,11 +112,13 @@ export async function ingestRoster(options: IngestRosterOptions): Promise<Ingest
   if (incomingCount === 0) {
     return {
       success: true,
+      mode: resolvedMode,
       inserted: 0,
       skipped: skippedCount,
       duplicates_flagged: 0,
       new_enrollment: currentEnrollment,
       sanctioned_intake: sanctionedCap,
+      created_admissions: [],
       errors: ['No valid 12-digit APAAR records in roster payload'],
     };
   }
@@ -122,7 +138,7 @@ export async function ingestRoster(options: IngestRosterOptions): Promise<Ingest
     .bind(incomingCount, institutionId, incomingCount)
     .run();
 
-  if (!reserveRes.success) {
+  if (!reserveRes.success || (reserveRes.meta && typeof reserveRes.meta.changes === 'number' && reserveRes.meta.changes === 0)) {
     throw new Error('CONCURRENT_ALLOCATION_CONFLICT: Failed to acquire atomic intake quota lock');
   }
 
@@ -130,6 +146,8 @@ export async function ingestRoster(options: IngestRosterOptions): Promise<Ingest
   let insertedCount = 0;
   let duplicatesFlagged = 0;
   const errors: string[] = [];
+  const createdAdmissions: CreatedAdmissionRecord[] = [];
+  const todayIso = new Date().toISOString().slice(0, 10);
 
   try {
     for (const st of validStudents) {
@@ -139,17 +157,23 @@ export async function ingestRoster(options: IngestRosterOptions): Promise<Ingest
         .all<Admission>();
 
       const isConcurrent = existingAdmissions.results.some(
-        (a) => a.institution_id !== institutionId && a.status !== 'CANCELLED'
+        (a) => a.institution_id !== institutionId && (a.status as string) !== 'CANCELLED'
       );
 
       const admissionId = `ADM-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`.toUpperCase();
-      const status = isConcurrent ? 'FLAGGED_DUPLICATE' : 'CONFIRMED';
+      const status: Admission['status'] = isConcurrent ? 'FLAGGED_DUPLICATE' : 'ENROLLED';
       if (isConcurrent) duplicatesFlagged++;
+
+      const resolvedEmail = st.email || `${st.apaar}@student.ac.in`;
+      const resolvedPhone = st.phone || '+91 98000 00000';
+      const resolvedConsent: 'GRANTED' | 'REVOKED' | 'PENDING' = st.dpdp_consent_status || 'GRANTED';
+      const resolvedProgram = st.program || 'B.Tech Computer Science';
+      const resolvedBatchYear = Number(st.batch_year) || new Date().getFullYear();
 
       // Upsert student record
       await db
         .prepare(
-          `INSERT OR IGNORE INTO students (apaar_id, full_name, dob, gender, email, phone, dpdp_consent_status)
+          `INSERT OR REPLACE INTO students (apaar_id, full_name, dob, gender, email, phone, dpdp_consent_status)
            VALUES (?, ?, ?, ?, ?, ?, ?)`
         )
         .bind(
@@ -157,39 +181,59 @@ export async function ingestRoster(options: IngestRosterOptions): Promise<Ingest
           st.resolvedName,
           st.dob || '2004-01-01',
           st.gender || 'Other',
-          st.email || `${st.apaar}@student.ac.in`,
-          st.phone || '+91 00000 00000',
-          'GRANTED'
+          resolvedEmail,
+          resolvedPhone,
+          resolvedConsent
         )
         .run();
 
-      // Insert institutional admission record
+      // Insert institutional admission record matching MemoryDBAdapter 8-column signature
       await db
         .prepare(
-          `INSERT INTO admissions (id, apaar_id, institution_id, program, batch_year, status, is_duplicate)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`
+          `INSERT INTO admissions (id, apaar_id, institution_id, program, batch_year, enrollment_date, status, is_duplicate)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
         )
         .bind(
           admissionId,
           st.apaar,
           institutionId,
-          st.program || 'B.Tech Engineering',
-          st.batch_year || new Date().getFullYear(),
+          resolvedProgram,
+          resolvedBatchYear,
+          todayIso,
           status,
           isConcurrent ? 1 : 0
         )
         .run();
+
+      createdAdmissions.push({
+        id: admissionId,
+        apaar_id: st.apaar,
+        institution_id: institutionId,
+        institution_name: institution.name,
+        program: resolvedProgram,
+        batch_year: resolvedBatchYear,
+        enrollment_date: todayIso,
+        status,
+        is_duplicate: isConcurrent ? 1 : 0,
+        full_name: st.resolvedName,
+        student_name: st.resolvedName,
+        email: resolvedEmail,
+        phone: resolvedPhone,
+        dpdp_consent_status: resolvedConsent,
+      });
 
       insertedCount++;
     }
 
     return {
       success: true,
+      mode: resolvedMode,
       inserted: insertedCount,
       skipped: skippedCount,
       duplicates_flagged: duplicatesFlagged,
       new_enrollment: newProjected,
       sanctioned_intake: sanctionedCap,
+      created_admissions: createdAdmissions,
       errors,
     };
   } catch (err: any) {
