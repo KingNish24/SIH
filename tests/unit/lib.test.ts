@@ -19,7 +19,8 @@ import {
 } from '../../src/lib/i18n';
 import { getDB } from '../../src/lib/db';
 import { ingestRoster, isValidApaar } from '../../src/lib/roster';
-import { GET as getRosterSync, POST as postRosterSync } from '../../src/pages/api/roster/sync';
+import { GET as getRosterSync, POST as postRosterSync, DELETE as deleteRosterSync } from '../../src/pages/api/roster/sync';
+import { GET as getRosterLookup } from '../../src/pages/api/roster/lookup';
 
 describe('masking (DPDP)', () => {
   test('maskApaar keeps only last 4 digits', () => {
@@ -229,6 +230,58 @@ describe('College Roster & Admissions Backend (/api/roster/sync & ingestRoster)'
     expect(freshData.new_enrollment).toBe(174);
     expect(freshData.created_admissions[0].status).toBe('ENROLLED');
     expect(freshData.created_admissions[0].full_name).toBe('Rohan Deshmukh');
+
+    // 4. Lookup existing student & fresh 12-digit APAAR via GET /api/roster/lookup
+    const badLookup = await getRosterLookup({
+      url: new URL('http://localhost/api/roster/lookup?apaar_id=12345'),
+      locals,
+    } as any);
+    expect(badLookup.status).toBe(400);
+
+    const existingLookup = await getRosterLookup({
+      url: new URL('http://localhost/api/roster/lookup?apaar_id=739284019283&institution_id=INST-001'),
+      locals,
+    } as any);
+    expect(existingLookup.status).toBe(200);
+    const existingLookupData = await existingLookup.json();
+    expect(existingLookupData.success).toBe(true);
+    expect(existingLookupData.found_in_registry).toBe(true);
+    expect(existingLookupData.student.full_name).toBe('Rahul Sharma');
+    expect(existingLookupData.has_concurrent_admission).toBe(true);
+
+    const synthLookup = await getRosterLookup({
+      url: new URL('http://localhost/api/roster/lookup?apaar_id=998877665544&institution_id=INST-001'),
+      locals,
+    } as any);
+    expect(synthLookup.status).toBe(200);
+    const synthLookupData = await synthLookup.json();
+    expect(synthLookupData.success).toBe(true);
+    expect(synthLookupData.found_in_registry).toBe(true);
+    expect(synthLookupData.is_new_candidate).toBe(true);
+    expect(synthLookupData.student.apaar_id).toBe('998877665544');
+    expect(synthLookupData.student.dpdp_consent_status).toBe('GRANTED');
+    expect(synthLookupData.has_concurrent_admission).toBe(false);
+
+    // 5. Withdraw the newly created admission via DELETE /api/roster/sync
+    const createdId = freshData.created_admissions[0].id;
+    const delRes = await deleteRosterSync({
+      request: new Request('http://localhost/api/roster/sync', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          institutionId: 'INST-001',
+          admissionId: createdId,
+          apaar_id: '112233445566',
+        }),
+      }),
+      url: new URL('http://localhost/api/roster/sync'),
+      locals,
+    } as any);
+    expect(delRes.status).toBe(200);
+    const delData = await delRes.json();
+    expect(delData.success).toBe(true);
+    expect(delData.withdrawn_id).toBe(createdId);
+    expect(delData.new_enrollment).toBe(173);
 
     // Reset INST-001 back to initial seed state (187 / OVERRUN_RISK) so other tests see original seed
     const db = getDB();

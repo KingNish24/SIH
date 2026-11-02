@@ -624,6 +624,57 @@ class MemoryDBAdapter implements DatabaseAdapter {
     }
 
     if (upper.includes('FROM ADMISSIONS')) {
+      if (upper.includes('WHERE ID = ? AND INSTITUTION_ID = ?')) {
+        return this.admissions
+          .filter((a) => a.id === params[0] && a.institution_id === params[1])
+          .map((a) => {
+            const inst = this.institutions.find((i) => i.id === a.institution_id);
+            const s = this.students.find((st) => st.apaar_id === a.apaar_id);
+            return {
+              ...a,
+              institution_name: inst?.name || a.institution_id,
+              student_name: s?.full_name || a.apaar_id,
+              full_name: s?.full_name || a.apaar_id,
+              email: s?.email || `${a.apaar_id}@student.ac.in`,
+              phone: s?.phone || '+91 90000 00000',
+              dpdp_consent_status: s?.dpdp_consent_status || 'GRANTED',
+            };
+          });
+      }
+      if (upper.includes('WHERE ID = ?')) {
+        return this.admissions
+          .filter((a) => a.id === params[0])
+          .map((a) => {
+            const inst = this.institutions.find((i) => i.id === a.institution_id);
+            const s = this.students.find((st) => st.apaar_id === a.apaar_id);
+            return {
+              ...a,
+              institution_name: inst?.name || a.institution_id,
+              student_name: s?.full_name || a.apaar_id,
+              full_name: s?.full_name || a.apaar_id,
+              email: s?.email || `${a.apaar_id}@student.ac.in`,
+              phone: s?.phone || '+91 90000 00000',
+              dpdp_consent_status: s?.dpdp_consent_status || 'GRANTED',
+            };
+          });
+      }
+      if (upper.includes('WHERE APAAR_ID = ? AND INSTITUTION_ID = ?')) {
+        return this.admissions
+          .filter((a) => a.apaar_id === params[0] && a.institution_id === params[1])
+          .map((a) => {
+            const inst = this.institutions.find((i) => i.id === a.institution_id);
+            const s = this.students.find((st) => st.apaar_id === a.apaar_id);
+            return {
+              ...a,
+              institution_name: inst?.name || a.institution_id,
+              student_name: s?.full_name || a.apaar_id,
+              full_name: s?.full_name || a.apaar_id,
+              email: s?.email || `${a.apaar_id}@student.ac.in`,
+              phone: s?.phone || '+91 90000 00000',
+              dpdp_consent_status: s?.dpdp_consent_status || 'GRANTED',
+            };
+          });
+      }
       if (upper.includes('WHERE APAAR_ID = ?')) {
         return this.admissions
           .filter((a) => a.apaar_id === params[0])
@@ -879,14 +930,75 @@ class MemoryDBAdapter implements DatabaseAdapter {
     }
 
     // ROLLBACK QUOTA RESERVATION: UPDATE institutions SET current_enrollment = current_enrollment - ? WHERE id = ?
-    if (upper.includes('CURRENT_ENROLLMENT = CURRENT_ENROLLMENT - ?')) {
-      const n = Number(params[0]);
-      const instId = params[1];
+    if (upper.includes('CURRENT_ENROLLMENT = CURRENT_ENROLLMENT - ?') || upper.includes('CURRENT_ENROLLMENT - 1')) {
+      const hasExplicitStep = upper.includes('CURRENT_ENROLLMENT - ?');
+      const n = hasExplicitStep ? Number(params[0]) : 1;
+      const instId = hasExplicitStep ? params[1] : params[0];
       const inst = this.institutions.find((i) => i.id === instId);
       if (inst) {
+        const lastDec = (inst as any)._lastDecrementFromDelete || 0;
+        if (!hasExplicitStep && Date.now() - lastDec < 250) {
+          // Already decremented by DELETE FROM ADMISSIONS in MemoryDBAdapter
+          ;(inst as any)._lastDecrementFromDelete = 0;
+          return { success: true, meta: { changes: 1 } };
+        }
         inst.current_enrollment = Math.max(0, inst.current_enrollment - n);
+        if (inst.current_enrollment <= inst.sanctioned_intake) {
+          inst.status = 'NORMAL';
+        }
       }
       return { success: true, meta: { changes: 1 } };
+    }
+
+    // DELETE FROM ADMISSIONS
+    if (upper.includes('DELETE FROM ADMISSIONS')) {
+      let removed: Admission[] = [];
+      if (upper.includes('WHERE ID = ? AND INSTITUTION_ID = ?')) {
+        const [id, instId] = params;
+        removed = this.admissions.filter((a) => a.id === id && a.institution_id === instId);
+        this.admissions = this.admissions.filter((a) => !(a.id === id && a.institution_id === instId));
+      } else if (upper.includes('WHERE APAAR_ID = ? AND INSTITUTION_ID = ?')) {
+        const [apaar_id, instId] = params;
+        removed = this.admissions.filter((a) => a.apaar_id === apaar_id && a.institution_id === instId);
+        this.admissions = this.admissions.filter((a) => !(a.apaar_id === apaar_id && a.institution_id === instId));
+      } else if (upper.includes('WHERE ID = ?')) {
+        const [id] = params;
+        removed = this.admissions.filter((a) => a.id === id);
+        this.admissions = this.admissions.filter((a) => a.id !== id);
+      }
+
+      for (const adm of removed) {
+        const inst = this.institutions.find((i) => i.id === adm.institution_id);
+        if (inst) {
+          inst.current_enrollment = Math.max(0, inst.current_enrollment - 1);
+          if (inst.current_enrollment <= inst.sanctioned_intake) {
+            inst.status = 'NORMAL';
+          }
+          ;(inst as any)._lastDecrementFromDelete = Date.now();
+        }
+        // Clear duplicate flag on remaining single admission for same APAAR ID
+        const remaining = this.admissions.filter((a) => a.apaar_id === adm.apaar_id);
+        if (remaining.length === 1 && remaining[0].status === 'FLAGGED_DUPLICATE') {
+          remaining[0].status = 'ENROLLED';
+          remaining[0].is_duplicate = 0;
+        }
+      }
+
+      return { success: true, meta: { changes: removed.length } };
+    }
+
+    // UPDATE ADMISSIONS CLEAR DUPLICATE FLAG
+    if (upper.includes('UPDATE ADMISSIONS SET STATUS =') && upper.includes('IS_DUPLICATE =')) {
+      const apaar_id = params[params.length - 1];
+      let changes = 0;
+      for (const adm of this.admissions) {
+        if (adm.apaar_id === apaar_id && adm.status === 'FLAGGED_DUPLICATE') {
+          adm.status = 'ENROLLED';
+          adm.is_duplicate = 0;
+          changes++;
+        }
+      }
+      return { success: true, meta: { changes } };
     }
 
     // UPDATE INSTITUTIONS ENROLLMENT
