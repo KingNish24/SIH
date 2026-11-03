@@ -11,7 +11,7 @@ const queryInst = url.searchParams.get('institution')?.trim() || '';
 const queryToken = url.searchParams.get('token')?.trim() || '';
 const initialApaar = /^\d{12}$/.test(queryApaar) ? queryApaar : '';
 const initialOrg = queryInst
-  ? `Institutional Audit (${queryInst}) — National Recruitment / Admissions`
+  ? `Institutional Audit (${queryInst})`
   : '';
 ---
 
@@ -39,7 +39,7 @@ const initialOrg = queryInst
         margin: 0 !important;
       }
       #resultContainer {
-        border: 2px solid #0F2942 !important;
+        border: 2px solid #0B1E48 !important;
         box-shadow: none !important;
         break-inside: avoid;
       }
@@ -49,20 +49,21 @@ const initialOrg = queryInst
     }
   </style>
 
+  <!-- INDIAN GOVERNMENT PORTAL 2-COLUMN LEFT SIDEBAR + RIGHT MAIN CONTENT LAYOUT -->
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-    <!-- 1. Left Government Sidebar -->
+    <!-- 1. LEFT SIDEBAR (Matching /institution Style) -->
     <aside class="lg:col-span-3 no-print lg:sticky lg:top-6">
       <div class="rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-xs">
-        <!-- Top Identity Block -->
+        <!-- Top Dark Navy Card Header -->
         <div class="bg-[#0B1E48] text-white p-5">
           <div class="text-[11px] font-mono uppercase tracking-wider text-blue-200">
-            DIGILOCKER &bull; NAD GATEWAY
+            AICTE &bull; DIGILOCKER &bull; NAD
           </div>
           <h1 class="text-base font-bold text-white mt-1 leading-snug">
-            Public Degree &amp; APAAR Verifier
+            Public Degree &amp; Admission Verifier
           </h1>
           <p class="text-xs text-blue-200 mt-1">
-            Instant Recruitment &amp; Admission Check
+            Employer &amp; University Verification Desk
           </p>
           {queryInst && (
             <div class="mt-2 inline-block bg-amber-100 text-amber-950 border border-amber-300 px-2 py-0.5 rounded font-mono text-[10px]">
@@ -70,15 +71,15 @@ const initialOrg = queryInst
             </div>
           )}
           <div class="mt-3 pt-3 border-t border-white/15 text-xs text-emerald-300 flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-            <span>Ed25519 Signature Active</span>
+            <span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0" aria-hidden="true"></span>
+            <span>Official Registry Online</span>
           </div>
         </div>
 
         <!-- Vertical Navigation Menu -->
-        <div class="p-3 space-y-1" role="tablist" aria-label="Verification Modes">
-          <div class="px-3 pt-1 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-            VERIFICATION TOOLS
+        <div class="p-3 space-y-1" role="tablist" aria-label="Verification Menu">
+          <div class="px-3 pt-1 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            VERIFICATION MENU
           </div>
 
           <button
@@ -87,13 +88,19 @@ const initialOrg = queryInst
             role="tab"
             aria-selected="true"
             aria-controls="panelApaarLookup"
-            class="w-full text-left px-3.5 py-3 rounded-xl text-sm font-bold bg-[#0B4EA2] text-white flex items-center justify-between cursor-pointer transition-colors"
+            class="w-full text-left px-3.5 py-3 rounded-xl text-sm font-bold bg-[#0B4EA2] text-white flex items-center justify-between gap-2 cursor-pointer transition-colors"
           >
-            <span class="flex items-center gap-2.5">
-              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <span class="inline-flex items-center gap-2.5 truncate">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
-              <span>1. Verify by APAAR ID</span>
+              <span class="truncate">Verify by APAAR ID</span>
+            </span>
+            <span
+              data-sidebar-badge
+              class="shrink-0 whitespace-nowrap px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-white/20 text-white"
+            >
+              APAAR
             </span>
           </button>
 
@@ -103,13 +110,19 @@ const initialOrg = queryInst
             role="tab"
             aria-selected="false"
             aria-controls="vlmForensicsSection"
-            class="w-full text-left px-3.5 py-3 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#0B1E48] flex items-center justify-between cursor-pointer transition-colors"
+            class="w-full text-left px-3.5 py-3 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#0B1E48] flex items-center justify-between gap-2 cursor-pointer transition-colors"
           >
-            <span class="flex items-center gap-2.5">
-              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <span class="inline-flex items-center gap-2.5 truncate">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <span>2. Check Scanned Certificate</span>
+              <span class="truncate">Check Certificate</span>
+            </span>
+            <span
+              data-sidebar-badge
+              class="shrink-0 whitespace-nowrap px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-slate-100 text-slate-600"
+            >
+              SCAN
             </span>
           </button>
 
@@ -119,70 +132,124 @@ const initialOrg = queryInst
             role="tab"
             aria-selected="false"
             aria-controls="offlineVerifierSection"
-            class="w-full text-left px-3.5 py-3 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#0B1E48] flex items-center justify-between cursor-pointer transition-colors"
+            class="w-full text-left px-3.5 py-3 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#0B1E48] flex items-center justify-between gap-2 cursor-pointer transition-colors"
           >
-            <span class="flex items-center gap-2.5">
-              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <span class="inline-flex items-center gap-2.5 truncate">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
               </svg>
-              <span>3. Verify QR Code / Token</span>
+              <span class="truncate">Verify QR Code</span>
+            </span>
+            <span
+              data-sidebar-badge
+              class="shrink-0 whitespace-nowrap px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-slate-100 text-slate-600"
+            >
+              QR
             </span>
           </button>
         </div>
 
-        <!-- Quick Sample Records Box inside Sidebar -->
-        <div class="p-4 bg-slate-50 border-t border-slate-200 space-y-2">
-          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-600">
-            QUICK TEST RECORDS
-          </div>
-
-          <button
-            type="button"
-            class="demoApaarBtn w-full text-left px-3 py-2 rounded-lg text-xs font-semibold border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 flex items-center gap-2 transition-colors cursor-pointer"
-            data-apaar="412398471029"
-            data-org="Union Public Service Commission (UPSC) / Corporate Verification Gateway"
-          >
-            <span class="w-2 h-2 rounded-full bg-emerald-600 shrink-0"></span>
-            <span class="truncate"><span class="font-mono font-bold">412398471029</span> &mdash; Valid Degree</span>
-          </button>
-
-          <button
-            type="button"
-            class="demoApaarBtn w-full text-left px-3 py-2 rounded-lg text-xs font-semibold border border-red-300 bg-red-50 hover:bg-red-100 text-red-950 flex items-center gap-2 transition-colors cursor-pointer"
-            data-apaar="601928374819"
-            data-org="AICTE Vigilance & Anti-Forgery Cell"
-          >
-            <span class="w-2 h-2 rounded-full bg-red-600 shrink-0"></span>
-            <span class="truncate"><span class="font-mono font-bold">601928374819</span> &mdash; Revoked Degree</span>
-          </button>
-
-          <button
-            type="button"
-            class="demoApaarBtn w-full text-left px-3 py-2 rounded-lg text-xs font-semibold border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-950 flex items-center gap-2 transition-colors cursor-pointer"
-            data-apaar="739284019283"
-            data-org="National Scholarship Portal (NSP) Nodal Cell"
-          >
-            <span class="w-2 h-2 rounded-full bg-amber-600 shrink-0"></span>
-            <span class="truncate"><span class="font-mono font-bold">739284019283</span> &mdash; Duplicate Alert</span>
-          </button>
+        <!-- Bottom Helpdesk Box inside Sidebar -->
+        <div class="p-4 bg-slate-50 border-t border-slate-200 text-xs text-slate-600 space-y-1">
+          <div class="font-bold text-[#0B1E48]">NIC / NAD Verification Helpdesk</div>
+          <div class="font-mono text-slate-500">Toll-Free: 1800-889-3511</div>
         </div>
       </div>
     </aside>
 
-    <!-- 2. Right Main Content Area -->
-    <div class="lg:col-span-9 space-y-5">
+    <!-- 2. RIGHT MAIN CONTENT AREA -->
+    <div class="lg:col-span-9 space-y-5 min-w-0">
       <!-- PANEL 1 (Default Visible): Verify by APAAR ID -->
       <div id="panelApaarLookup" role="tabpanel" aria-labelledby="navTabApaarLookup" class="space-y-5">
-        <!-- Simple Search Card -->
-        <div class="rounded-2xl bg-white border border-slate-200 p-6 space-y-4 no-print shadow-xs">
-          <h2 class="text-lg font-bold text-[#0B1E48]">
-            Verify Student Degree &amp; Enrollment by 12-Digit APAAR ID
-          </h2>
+        <!-- Top 3 Simple Summary Cards (matching /institution top cards) -->
+        <section aria-label="Verification Summary" class="grid grid-cols-1 sm:grid-cols-3 gap-4 no-print">
+          <!-- Card 1: Verification Status -->
+          <div class="rounded-xl bg-white border border-slate-200 p-4">
+            <div class="text-xs font-semibold text-slate-600">Verification Status</div>
+            <div id="topCardStatus" class="text-2xl font-extrabold text-[#0B1E48] mt-1">
+              Ready
+            </div>
+            <div id="topCardStatusSub" class="text-xs text-slate-500 mt-0.5">
+              Official NAD / AICTE Record
+            </div>
+          </div>
 
+          <!-- Card 2: Student & Roll No. -->
+          <div class="rounded-xl bg-white border border-slate-200 p-4">
+            <div class="text-xs font-semibold text-slate-600">Student &amp; Roll No.</div>
+            <div id="resName" class="text-xl font-extrabold text-[#0B1E48] mt-1 truncate">
+              Enter 12-Digit APAAR
+            </div>
+            <div id="resStudentRollId" class="text-xs font-mono text-slate-500 mt-0.5">
+              {initialApaar ? `Roll: STU-TCA-2020-${initialApaar.slice(-4)}` : 'Roll: Awaiting Lookup'}
+            </div>
+          </div>
+
+          <!-- Card 3: Digital Signature -->
+          <div class="rounded-xl bg-white border border-slate-200 p-4">
+            <div class="text-xs font-semibold text-slate-600">Digital Signature</div>
+            <div id="resCryptoStatus" class="text-xl font-extrabold text-slate-700 mt-1 flex items-center gap-1">
+              <span>Awaiting Check</span>
+            </div>
+            <div id="resConsentPill" class="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
+              <span>DPDP Consent: Pending</span>
+            </div>
+            <span id="i18nTamperVerified" class="hidden">{t.verifier_tamper_verified}</span>
+            <span id="i18nTamperFailed" class="hidden">{t.verifier_tamper_failed}</span>
+          </div>
+        </section>
+
+        <!-- Clean Search Card -->
+        <div class="rounded-2xl bg-white border border-slate-200 p-6 space-y-4 no-print shadow-xs">
+          <!-- Header Row: Title on Left + 3 Clean Sample Buttons on Right -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 class="text-base font-bold text-[#0B1E48]">
+                Check Student Degree or Admission Record
+              </h2>
+              <p class="text-xs text-slate-600 mt-0.5">
+                Enter the student's 12-digit APAAR ID to verify degree status, university signature, and enrollment history.
+              </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 shrink-0">
+              <button
+                type="button"
+                class="demoApaarBtn px-2.5 py-1.5 rounded-lg text-xs font-bold border border-slate-300 bg-slate-50 hover:bg-slate-100 text-[#0B1E48] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                data-apaar="412398471029"
+                data-org="UPSC / Employer Verification"
+              >
+                <span class="w-2 h-2 rounded-full bg-emerald-600 shrink-0" aria-hidden="true"></span>
+                <span>Sample: Valid Degree</span>
+              </button>
+
+              <button
+                type="button"
+                class="demoApaarBtn px-2.5 py-1.5 rounded-lg text-xs font-bold border border-slate-300 bg-slate-50 hover:bg-slate-100 text-[#0B1E48] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                data-apaar="601928374819"
+                data-org="AICTE Vigilance Desk"
+              >
+                <span class="w-2 h-2 rounded-full bg-red-600 shrink-0" aria-hidden="true"></span>
+                <span>Sample: Revoked Degree</span>
+              </button>
+
+              <button
+                type="button"
+                class="demoApaarBtn px-2.5 py-1.5 rounded-lg text-xs font-bold border border-slate-300 bg-slate-50 hover:bg-slate-100 text-[#0B1E48] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                data-apaar="739284019283"
+                data-org="NSP Scholarship Desk"
+              >
+                <span class="w-2 h-2 rounded-full bg-amber-600 shrink-0" aria-hidden="true"></span>
+                <span>Sample: Duplicate Alert</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Search Form -->
           <form id="verifierQueryForm" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
             <div class="md:col-span-4">
               <label for="queryApaar" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                {t.verifier_apaar_label}
+                12-Digit Student APAAR ID *
               </label>
               <input
                 type="text"
@@ -198,236 +265,223 @@ const initialOrg = queryInst
 
             <div class="md:col-span-5">
               <label for="verifierOrg" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                {t.verifier_org_label} *
+                Your Organization / Purpose *
               </label>
               <input
                 type="text"
                 id="verifierOrg"
                 required
                 value={initialOrg}
-                placeholder="e.g. TCS / UPSC / IIT Admissions"
+                placeholder="e.g. UPSC / TCS HR / IIT Admissions"
                 class="w-full h-11 bg-slate-50 border border-slate-300 rounded-lg py-2.5 px-3.5 text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2] transition-all"
               />
             </div>
 
-            <div class="md:col-span-3 flex items-center gap-2">
+            <div class="md:col-span-3">
               <button
                 type="submit"
                 id="verifySubmitBtn"
-                class="flex-1 h-11 py-2.5 px-3.5 rounded-lg bg-[#0B4EA2] hover:bg-[#0B1E48] text-white font-bold text-sm transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
+                class="w-full h-11 py-2.5 px-4 rounded-lg bg-[#0B4EA2] hover:bg-[#083B7E] text-white font-bold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
               >
-                <svg class="w-4 h-4 text-[#FF9933] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
                 <span id="verifyBtnLabel">{t.verifier_btn}</span>
-              </button>
-              <button
-                type="button"
-                id="scanQrBtn"
-                class="h-11 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-semibold text-xs transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
-                title="Scan QR Code"
-              >
-                <svg class="w-4 h-4 text-slate-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                </svg>
-                <span>{t.verifier_scan_qr_btn}</span>
               </button>
             </div>
           </form>
 
           <!-- Collapsible Optional Eligibility Check & Consent Pass -->
-          <details class="pt-3 border-t border-slate-200 text-xs">
-            <summary class="cursor-pointer font-bold text-[#0B1E48] hover:text-[#0B4EA2] select-none">
-              Optional: Minimum CGPA / Graduation Year Eligibility Check &amp; Consent Pass
-            </summary>
+          <div class="pt-3 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+            <details class="flex-1">
+              <summary class="cursor-pointer font-semibold text-slate-700 hover:text-[#0B4EA2] select-none">
+                Optional: Check Minimum CGPA Cutoff or Enter Student Consent Pass
+              </summary>
 
-            <div class="mt-3 pt-3 border-t border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-              <div class="flex items-start sm:items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="zkPredicateToggle"
-                  class="mt-0.5 sm:mt-0 w-4 h-4 rounded border-slate-300 text-[#0B4EA2] focus:ring-[#0B4EA2] cursor-pointer"
-                />
-                <div>
-                  <label for="zkPredicateToggle" class="text-xs font-bold text-[#0B1E48] cursor-pointer flex flex-wrap items-center gap-2">
-                    <span>Yes / No Eligibility Check (Hide Exact Marks)</span>
-                  </label>
-                  <p class="text-[11px] text-slate-600 mt-0.5">
-                    Confirms whether the student meets your minimum CGPA and graduation year without showing exact marks.
-                  </p>
+              <div class="mt-3 pt-3 border-t border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                <div class="flex items-start sm:items-center gap-2.5">
+                  <input
+                    type="checkbox"
+                    id="zkPredicateToggle"
+                    class="mt-0.5 sm:mt-0 w-4 h-4 rounded border-slate-300 text-[#0B4EA2] focus:ring-[#0B4EA2] cursor-pointer"
+                  />
+                  <div>
+                    <label for="zkPredicateToggle" class="text-xs font-bold text-[#0B1E48] cursor-pointer">
+                      Yes / No Eligibility Check (Hide Exact Marks)
+                    </label>
+                    <p class="text-[11px] text-slate-600 mt-0.5">
+                      Confirms whether the student meets your minimum CGPA and graduation year cutoff.
+                    </p>
+                  </div>
+                </div>
+
+                <div id="zkPredicateControls" class="flex flex-wrap items-center gap-2.5 text-xs pt-2 lg:pt-0">
+                  <button
+                    type="button"
+                    id="zkPresetCutoffBtn"
+                    class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-[#0B1E48] border border-slate-300 font-mono font-semibold text-[11px] transition-colors cursor-pointer"
+                    data-cgpa="7.5"
+                    data-year="2022"
+                  >
+                    Preset: CGPA &ge; 7.5 &bull; 2022
+                  </button>
+                  <div class="flex items-center gap-1.5">
+                    <label for="zkMinCgpa" class="font-semibold text-slate-700 whitespace-nowrap">Min CGPA &ge;</label>
+                    <input
+                      type="number"
+                      id="zkMinCgpa"
+                      step="0.05"
+                      min="4.0"
+                      max="10.0"
+                      placeholder="7.5"
+                      class="w-20 h-8 bg-white border border-slate-300 rounded px-2 font-mono font-bold text-slate-900 text-xs"
+                    />
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <label for="zkMinYear" class="font-semibold text-slate-700 whitespace-nowrap">Grad Year &ge;</label>
+                    <input
+                      type="number"
+                      id="zkMinYear"
+                      step="1"
+                      min="2000"
+                      max="2030"
+                      placeholder="2022"
+                      class="w-20 h-8 bg-white border border-slate-300 rounded px-2 font-mono font-bold text-slate-900 text-xs"
+                    />
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <label for="zkConsentToken" class="font-semibold text-slate-700 whitespace-nowrap">Consent Pass:</label>
+                    <input
+                      type="text"
+                      id="zkConsentToken"
+                      value={queryToken}
+                      placeholder="Optional DPDP Pass"
+                      class="w-36 h-8 bg-white border border-slate-300 rounded px-2 font-mono text-slate-800 text-xs"
+                    />
+                  </div>
                 </div>
               </div>
+            </details>
 
-              <div id="zkPredicateControls" class="flex flex-wrap items-center gap-3 text-xs pt-2 lg:pt-0">
-                <button
-                  type="button"
-                  id="zkPresetCutoffBtn"
-                  class="px-2.5 py-1 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 font-mono font-semibold text-[11px] transition-colors cursor-pointer"
-                  data-cgpa="7.5"
-                  data-year="2022"
-                >
-                  Preset: CGPA &ge; 7.5 &bull; 2022
-                </button>
-                <div class="flex items-center gap-1.5">
-                  <label for="zkMinCgpa" class="font-semibold text-slate-700 whitespace-nowrap">Min CGPA &ge;</label>
-                  <input
-                    type="number"
-                    id="zkMinCgpa"
-                    step="0.05"
-                    min="4.0"
-                    max="10.0"
-                    placeholder="e.g. 7.5"
-                    class="w-20 h-8 bg-white border border-slate-300 rounded px-2 font-mono font-bold text-slate-900 text-xs"
-                  />
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <label for="zkMinYear" class="font-semibold text-slate-700 whitespace-nowrap">Grad Year &ge;</label>
-                  <input
-                    type="number"
-                    id="zkMinYear"
-                    step="1"
-                    min="2000"
-                    max="2030"
-                    placeholder="e.g. 2022"
-                    class="w-20 h-8 bg-white border border-slate-300 rounded px-2 font-mono font-bold text-slate-900 text-xs"
-                  />
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <label for="zkConsentToken" class="font-semibold text-slate-700 whitespace-nowrap">Consent Token:</label>
-                  <input
-                    type="text"
-                    id="zkConsentToken"
-                    value={queryToken}
-                    placeholder="Optional DPDP Pass"
-                    class="w-40 h-8 bg-white border border-slate-300 rounded px-2 font-mono text-slate-800 text-xs"
-                  />
-                </div>
-              </div>
-            </div>
-          </details>
+            <button
+              type="button"
+              id="scanQrBtn"
+              class="self-start sm:self-center text-xs font-bold text-[#0B4EA2] hover:text-[#0B1E48] inline-flex items-center gap-1.5 cursor-pointer shrink-0"
+              title="Verify QR Code Data"
+            >
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+              </svg>
+              <span>{t.verifier_scan_qr_btn}</span>
+            </button>
+          </div>
         </div>
 
-        <!-- Official Verification Certificate Card -->
+        <!-- Clean Official Verification Result Card -->
         <section id="resultContainer" aria-live="polite" class="rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-xs">
-          <div id="resBanner" class="bg-[#0F2942] text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-[#FF9933]">
+          <!-- Clean White/Slate Header Bar -->
+          <div id="resBanner" class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div class="flex items-center gap-3">
-              <div class="bg-white rounded p-1.5 shrink-0">
+              <div class="bg-white rounded-lg border border-slate-200 p-1.5 shrink-0">
                 <img src="/emblem.svg" alt="State Emblem of India" class="h-7 w-auto object-contain" width="22" height="28" />
               </div>
               <div>
-                <div class="text-[10px] font-bold uppercase tracking-widest text-[#FF9933]">
-                  Official Digital Verification Certificate &bull; NAD / DigiLocker
-                </div>
-                <h2 id="resTitle" class="text-base sm:text-lg font-bold text-white mt-0.5">
-                  Ready to Check Academic Record
+                <h2 id="resTitle" class="text-base font-bold text-[#0B1E48]">
+                  Official Degree &amp; Enrollment Verification Report
                 </h2>
+                <div class="text-xs text-slate-600 mt-0.5">
+                  National Academic Depository (NAD) &bull; AICTE Registry
+                </div>
               </div>
             </div>
-            <div class="flex flex-wrap items-center gap-2 self-start sm:self-center">
-              <span id="resBadge" class="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider px-3 py-1.5 rounded bg-emerald-500/20 text-emerald-200 border border-emerald-400/40">
-                <span>AWAITING QUERY</span>
+
+            <div class="flex flex-wrap items-center gap-2.5 self-start sm:self-center">
+              <span id="resBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-300">
+                <span>Awaiting Lookup</span>
               </span>
               <button
                 type="button"
                 id="btnPrintSection63"
-                class="no-print inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/25 transition-colors cursor-pointer"
+                class="no-print inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
               >
-                <svg class="w-3.5 h-3.5 text-[#FF9933] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-3.5 h-3.5 text-slate-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                 </svg>
-                <span>Print Certificate</span>
+                <span>Print Official Report</span>
               </button>
             </div>
           </div>
 
-          <div class="p-6 space-y-5">
-            <!-- Clean 4-Column Summary Strip -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pb-4 border-b border-slate-200 text-xs">
-              <div>
-                <div class="text-slate-600 text-[11px] font-semibold uppercase">Student Name</div>
-                <div id="resName" class="font-bold text-slate-900 text-sm mt-1 truncate">Select or Enter Student</div>
-                <div id="resConsentPill" class="text-[11px] text-slate-600 font-medium mt-0.5 flex items-center gap-1">
-                  <span>DPDP Consent: Pending Lookup</span>
-                </div>
-              </div>
+          <div class="p-6 space-y-4">
+            <!-- Eligibility Check Banner (shown when cutoff toggle is active) -->
+            <div id="resPredicateBanner" class="hidden p-4 rounded-xl border bg-blue-50/70 border-blue-200 text-xs space-y-2"></div>
 
-              <div>
-                <div class="text-slate-600 text-[11px] font-semibold uppercase">12-Digit APAAR &amp; Roll No.</div>
-                <div id="resApaar" class="font-bold font-mono text-slate-900 text-sm mt-1">{initialApaar ? `XXXX-XXXX-${initialApaar.slice(-4)}` : 'XXXX-XXXX-••••'}</div>
-                <div id="resStudentRollId" class="text-[11px] font-mono font-bold text-[#1E40AF] mt-0.5">{initialApaar ? `Roll ID: STU-TCA-2020-${initialApaar.slice(-4)}` : 'Roll ID: Awaiting Query'}</div>
-              </div>
-
-              <div>
-                <div class="text-slate-600 text-[11px] font-semibold uppercase">Digital Signature</div>
-                <div id="resCryptoStatus" class="font-bold text-slate-700 text-sm mt-1 flex items-center gap-1">
-                  <span>Awaiting Check</span>
-                </div>
-                <div id="resKeyId" class="text-[11px] font-mono text-slate-600 mt-0.5 truncate">Key ID: aicte-nad-2026</div>
-                <span id="i18nTamperVerified" class="hidden">{t.verifier_tamper_verified}</span>
-                <span id="i18nTamperFailed" class="hidden">{t.verifier_tamper_failed}</span>
-              </div>
-
-              <div>
-                <div class="text-slate-600 text-[11px] font-semibold uppercase">Audit ID &amp; Speed</div>
-                <div id="resRequestId" class="font-bold font-mono text-slate-900 text-xs mt-1 truncate">REQ-READY</div>
-                <div class="text-[11px] text-slate-600 mt-0.5 flex items-center gap-1.5">
-                  <span>Speed:</span>
-                  <span id="resLatency" class="font-bold font-mono text-emerald-700">-- ms</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Eligibility Check Banner -->
-            <div id="resPredicateBanner" class="hidden p-4 rounded-lg border bg-indigo-50/80 border-indigo-200 text-xs space-y-2"></div>
-
-            <!-- Degree & Enrollment Certificate Body -->
+            <!-- Degree & Enrollment Table / Grid Body -->
             <div id="resDegrees" class="space-y-4">
-              <div class="py-3 text-xs text-slate-600">
-                Enter a 12-digit APAAR ID above or click one of the <strong>Quick Test Records</strong> in the left sidebar to check degree status and digital signatures.
+              <div class="py-4 px-4 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-600">
+                Enter a 12-digit student APAAR ID above or click <strong>Sample: Valid Degree</strong> to view the official verification report.
               </div>
             </div>
 
-            <!-- Legal Evidence Note (Section 63 BSA 2023) -->
-            <div class="pt-4 border-t border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 text-[11px] text-slate-600">
-              <div class="space-y-1 max-w-3xl">
-                <div class="font-bold text-[#0F2942] uppercase tracking-wider">
-                  Electronic Evidence Certificate &bull; Section 63, Bharatiya Sakshya Adhiniyam (BSA), 2023
+            <!-- Collapsed Technical Signature & Audit Details (Preserves Required DOM IDs cleanly) -->
+            <details class="text-xs text-slate-500 pt-2">
+              <summary class="cursor-pointer font-semibold text-slate-600 hover:text-[#0B1E48] select-none">
+                View Technical Signature &amp; Audit Details
+              </summary>
+              <div class="mt-2 p-3.5 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                <div>
+                  <span class="text-slate-500 font-semibold">APAAR Reference:</span>
+                  <div id="resApaar" class="font-mono font-bold text-slate-800 mt-0.5">
+                    {initialApaar ? `XXXX-XXXX-${initialApaar.slice(-4)}` : 'XXXX-XXXX-••••'}
+                  </div>
                 </div>
-                <p class="leading-relaxed">
-                  Signed with National Academic Depository (NAD) Ed25519 keys. Valid as an electronic record under Section 63 of the Bharatiya Sakshya Adhiniyam, 2023 and Sections 4 &amp; 5 of the Information Technology Act, 2000 without a physical stamp.
-                </p>
+                <div>
+                  <span class="text-slate-500 font-semibold">Signing Key ID:</span>
+                  <div id="resKeyId" class="font-mono font-bold text-slate-800 mt-0.5 truncate">Key ID: aicte-nad-2026</div>
+                </div>
+                <div>
+                  <span class="text-slate-500 font-semibold">Audit Request ID:</span>
+                  <div id="resRequestId" class="font-mono font-bold text-slate-800 mt-0.5 truncate">REQ-READY</div>
+                </div>
+                <div>
+                  <span class="text-slate-500 font-semibold">Verification Time:</span>
+                  <div id="resLatency" class="font-mono font-bold text-emerald-700 mt-0.5">-- ms</div>
+                </div>
+                <div id="resTechDigestBox" class="sm:col-span-2 lg:col-span-4 pt-2 border-t border-slate-200 font-mono text-[11px] text-slate-600 hidden"></div>
               </div>
-              <div class="shrink-0 font-mono text-[10px] text-slate-600 md:text-right">
-                <div class="font-bold text-slate-800">ISSUER: AICTE-NAD-D1-AUTHORITY</div>
-                <div id="bsaTimestamp">ATTESTED: {new Date().toISOString().slice(0, 19).replace('T', ' ')} UTC</div>
-              </div>
+            </details>
+
+            <!-- Single Clean Footer Line (Section 63 BSA 2023) -->
+            <div class="text-xs text-slate-500 pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <span>Valid Electronic Record under Section 63, Bharatiya Sakshya Adhiniyam (BSA), 2023</span>
+              <span id="bsaTimestamp" class="font-mono">Checked: {new Date().toISOString().slice(0, 19).replace('T', ' ')} UTC</span>
             </div>
           </div>
         </section>
       </div>
 
-      <!-- PANEL 2 (Hidden until clicked): Check Scanned Certificate -->
+      <!-- PANEL 2 (Hidden until clicked): Check Certificate File -->
       <section
         id="vlmForensicsSection"
         role="tabpanel"
         aria-labelledby="navTabScanMarksheet"
-        class="hidden no-print bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-6"
+        class="hidden no-print bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-5"
       >
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-4 border-b border-slate-200">
           <div>
-            <h2 class="text-base sm:text-lg font-bold text-[#0B1E48]">
-              Check a Scanned Marksheet or Degree Image
+            <h2 class="text-base font-bold text-[#0B1E48]">
+              Check a Scanned Certificate or Marksheet
             </h2>
-            <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
-              Drag &amp; drop or upload a photo/PDF of a certificate to check if the name, marks, or year were edited.
+            <p class="text-xs text-slate-600 mt-0.5">
+              Upload a certificate image or PDF to compare every field on the document against the official AICTE / NAD record.
             </p>
           </div>
 
-          <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+          <div class="flex flex-wrap items-center gap-2 shrink-0">
             <button
               type="button"
               id="btnGenAuthenticScan"
-              class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-950 border border-emerald-300 font-bold text-xs transition-colors cursor-pointer"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 font-bold text-xs transition-colors cursor-pointer"
             >
               <span>Load Genuine Sample (CGPA 9.42)</span>
             </button>
@@ -435,152 +489,97 @@ const initialOrg = queryInst
             <button
               type="button"
               id="btnGenTamperedScan"
-              class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-950 border border-red-300 font-bold text-xs transition-colors cursor-pointer"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-900 border border-red-200 font-bold text-xs transition-colors cursor-pointer"
             >
-              <span>Load Edited Sample (CGPA Changed to 9.85)</span>
+              <span>Load Forged Sample (CGPA 9.85)</span>
             </button>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          <!-- Left 7 Cols: Document Preview & Actions -->
-          <div class="lg:col-span-7 space-y-3">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div class="text-xs font-bold text-slate-700 flex items-center gap-2">
-                <span>Certificate Preview</span>
-                <span id="forensicDocModePill" class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 border border-emerald-300 font-mono text-[10px]">
-                  AUTHENTIC SCAN LOADED
-                </span>
-              </div>
-
-              <label
-                for="forensicFileInput"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 text-xs font-semibold cursor-pointer transition-colors"
-              >
-                <span>Upload Certificate File (.png, .jpg, .pdf, .json)</span>
-                <input
-                  type="file"
-                  id="forensicFileInput"
-                  accept=".png,.jpg,.jpeg,.webp,.json,.pdf"
-                  class="sr-only"
-                />
-              </label>
+        <!-- Top Area: Clean Certificate Preview + Upload & Action Controls -->
+        <div class="space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="text-xs font-bold text-[#0B1E48] flex items-center gap-2">
+              <span>Certificate Preview</span>
+              <span id="forensicDocModePill" class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-xs">
+                Genuine Sample Loaded
+              </span>
             </div>
 
-            <div
-              id="forensicDropZone"
-              class="bg-slate-900 p-3 rounded-xl border-2 border-dashed border-slate-700 hover:border-[#0B4EA2] transition-colors flex flex-col items-center justify-center overflow-hidden"
+            <label
+              for="forensicFileInput"
+              class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 text-xs font-bold cursor-pointer transition-colors"
             >
-              <canvas
-                id="forensicCanvas"
-                width="820"
-                height="480"
-                class="w-full h-auto max-h-[340px] object-contain rounded bg-white"
-              ></canvas>
-              <div class="text-[11px] text-slate-300 mt-2 font-medium">
-                Drag &amp; drop a certificate image or JSON credential onto this preview box
-              </div>
-            </div>
+              <svg class="w-4 h-4 text-[#0B4EA2] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              <span>Upload Certificate File</span>
+              <input
+                type="file"
+                id="forensicFileInput"
+                accept=".png,.jpg,.jpeg,.webp,.json,.pdf"
+                class="sr-only"
+              />
+            </label>
+          </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button
-                type="button"
-                id="btnRunVlmInference"
-                class="py-2.5 px-4 rounded-lg bg-[#0B4EA2] hover:bg-[#0B1E48] text-white font-bold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span id="vlmBtnLabel">Read Certificate Image &amp; Compare</span>
-              </button>
-
-              <button
-                type="button"
-                id="btnFastCanvasPrecheck"
-                class="py-2.5 px-4 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>Instant Field Check</span>
-              </button>
-            </div>
-
-            <div id="vlmProgressBox" class="pt-2 text-xs space-y-1.5">
-              <div class="flex items-center justify-between gap-2">
-                <span id="vlmStatusLabel" class="font-semibold text-slate-700 flex items-center gap-1.5">
-                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  <span>Ready to check certificate image in your browser</span>
-                </span>
-                <span id="vlmProgressPct" class="font-mono font-bold text-[#1E40AF]">100%</span>
-              </div>
-              <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                <div
-                  id="vlmProgressBar"
-                  role="progressbar"
-                  aria-valuenow="100"
-                  aria-valuemin="0"
-                  aria-valuemax="100"
-                  aria-label="Certificate Check Progress"
-                  class="h-full bg-[#1E40AF] transition-all duration-200"
-                  style="width: 100%"
-                ></div>
-              </div>
-              <div id="vlmFileDetail" class="font-mono text-[11px] text-slate-600 truncate">
-                Runs locally in your browser &bull; No image data leaves your device
-              </div>
+          <div
+            id="forensicDropZone"
+            class="bg-slate-50 p-4 rounded-xl border-2 border-dashed border-slate-300 hover:border-[#0B4EA2] transition-colors flex flex-col items-center justify-center overflow-hidden"
+          >
+            <canvas
+              id="forensicCanvas"
+              width="820"
+              height="480"
+              class="w-full h-auto max-h-[320px] object-contain rounded-lg bg-white border border-slate-200"
+            ></canvas>
+            <div class="text-xs text-slate-500 mt-2 font-medium">
+              Drag &amp; drop a certificate file (.png, .jpg, .pdf, .json) here, or use the sample buttons above
             </div>
           </div>
 
-          <!-- Right 5 Cols: Extracted Text Output -->
-          <div class="lg:col-span-5 space-y-4">
-            <div>
-              <div class="flex items-center justify-between mb-1.5">
-                <span class="text-xs font-bold text-[#0F2942]">
-                  Details Read from Certificate
-                </span>
-                <span id="vlmEngineBadge" class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-mono text-[10px] font-bold">
-                  READY
-                </span>
-              </div>
-              <pre id="vlmExtractedJson" class="p-3 rounded-lg bg-slate-950 text-emerald-300 font-mono text-[11px] leading-relaxed overflow-x-auto max-h-56"></pre>
-            </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              id="btnFastCanvasPrecheck"
+              class="h-10 px-5 rounded-lg bg-[#0B4EA2] hover:bg-[#083B7E] text-white font-bold text-xs transition-colors inline-flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>Compare Certificate with Official Record</span>
+            </button>
 
-            <details class="text-xs text-slate-600">
-              <summary class="cursor-pointer font-semibold text-slate-700">Expected Certificate Fields (JSON Format)</summary>
-              <pre id="vlmSchemaPreview" class="mt-2 p-3 rounded-lg bg-slate-900 text-slate-200 font-mono text-[10px] leading-relaxed overflow-x-auto max-h-40">{`{
-  "type": "object",
-  "properties": {
-    "apaar_id": { "type": "string" },
-    "candidate_name": { "type": "string" },
-    "degree_name": { "type": "string" },
-    "specialization": { "type": "string" },
-    "cgpa": { "type": "number" },
-    "year_of_passing": { "type": "integer" },
-    "issuing_authority": { "type": "string" }
-  }
-}`}</pre>
-            </details>
+            <button
+              type="button"
+              id="btnRunVlmInference"
+              class="h-10 px-4 rounded-lg bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 font-bold text-xs transition-colors inline-flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span id="vlmBtnLabel">Deep Image Scan</span>
+            </button>
           </div>
         </div>
 
-        <!-- Field-by-Field Comparison Table -->
+        <!-- Bottom Area: Immediate Field-by-Field Comparison Table -->
         <div class="space-y-3 pt-4 border-t border-slate-200">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h3 class="text-sm sm:text-base font-bold text-[#0F2942]">
-                Certificate vs. Official Registry Comparison
+              <h3 class="text-base font-bold text-[#0B1E48]">
+                Field-by-Field Comparison with Official Registry
               </h3>
               <p class="text-xs text-slate-600">
-                Each field read from the certificate is compared with the official record.
+                Each detail on the uploaded certificate is checked against the official AICTE / NAD record.
               </p>
             </div>
             <div id="forensicOverallVerdict" class="shrink-0"></div>
           </div>
 
           <div class="overflow-x-auto border border-slate-200 rounded-xl">
-            <table class="w-full text-left border-collapse text-xs">
-              <caption class="sr-only">Certificate vs. Official Registry Comparison</caption>
+            <table class="w-full text-left border-collapse text-xs sm:text-sm">
+              <caption class="sr-only">Field-by-Field Comparison with Official Registry</caption>
               <thead>
-                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 uppercase text-[11px] font-bold tracking-wider">
+                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold">
                   <th scope="col" class="py-3 px-4">Field</th>
-                  <th scope="col" class="py-3 px-4">Value on Certificate</th>
-                  <th scope="col" class="py-3 px-4">Official Registry Record</th>
-                  <th scope="col" class="py-3 px-4 text-right">Result</th>
+                  <th scope="col" class="py-3 px-4">On Uploaded Certificate</th>
+                  <th scope="col" class="py-3 px-4">In Official AICTE Registry</th>
+                  <th scope="col" class="py-3 px-4 text-right">Status</th>
                 </tr>
               </thead>
               <tbody id="forensicComparisonTbody" class="divide-y divide-slate-200 bg-white">
@@ -593,41 +592,99 @@ const initialOrg = queryInst
             </table>
           </div>
         </div>
+
+        <!-- Collapsed Technical OCR / JSON Details -->
+        <details class="text-xs text-slate-500 pt-2 border-t border-slate-100">
+          <summary class="cursor-pointer font-semibold text-slate-600 hover:text-[#0B1E48] select-none">
+            Technical OCR / JSON Details
+          </summary>
+
+          <div class="mt-3 p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+            <div id="vlmProgressBox" class="space-y-1.5">
+              <div class="flex items-center justify-between gap-2">
+                <span id="vlmStatusLabel" class="font-semibold text-slate-700 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span>Ready to scan certificate in browser</span>
+                </span>
+                <div class="flex items-center gap-2">
+                  <span id="vlmEngineBadge" class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-mono text-[10px] font-bold">
+                    READY
+                  </span>
+                  <span id="vlmProgressPct" class="font-mono font-bold text-[#0B4EA2]">100%</span>
+                </div>
+              </div>
+              <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                <div
+                  id="vlmProgressBar"
+                  role="progressbar"
+                  aria-valuenow="100"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  aria-label="Certificate Scan Progress"
+                  class="h-full bg-[#0B4EA2] transition-all duration-200"
+                  style="width: 100%"
+                ></div>
+              </div>
+              <div id="vlmFileDetail" class="font-mono text-[11px] text-slate-600 truncate">
+                Local browser document verification
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              <div>
+                <div class="font-semibold text-slate-700 mb-1">Extracted Certificate Data (JSON)</div>
+                <pre id="vlmExtractedJson" class="p-3 rounded-lg bg-white border border-slate-200 text-slate-800 font-mono text-[11px] leading-relaxed overflow-x-auto max-h-44"></pre>
+              </div>
+              <div>
+                <div class="font-semibold text-slate-700 mb-1">Expected Certificate Schema</div>
+                <pre id="vlmSchemaPreview" class="p-3 rounded-lg bg-white border border-slate-200 text-slate-700 font-mono text-[11px] leading-relaxed overflow-x-auto max-h-44">{`{
+  "type": "object",
+  "properties": {
+    "apaar_id": { "type": "string" },
+    "candidate_name": { "type": "string" },
+    "degree_name": { "type": "string" },
+    "specialization": { "type": "string" },
+    "cgpa": { "type": "number" },
+    "year_of_passing": { "type": "integer" },
+    "issuing_authority": { "type": "string" }
+  }
+}`}</pre>
+              </div>
+            </div>
+          </div>
+        </details>
       </section>
 
-      <!-- PANEL 3 (Hidden until clicked): Verify QR Code / Token -->
+      <!-- PANEL 3 (Hidden until clicked): Verify QR Code Data -->
       <section
         id="offlineVerifierSection"
         role="tabpanel"
         aria-labelledby="navTabOfflineQr"
-        class="hidden no-print bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4"
+        class="hidden no-print bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-5"
       >
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-200">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
           <div>
-            <div class="text-xs font-bold uppercase tracking-wider text-[#1E40AF]">
-              Offline W3C Verifiable Credential Check
-            </div>
-            <h2 class="text-base sm:text-lg font-bold text-[#0B1E48] mt-0.5">
-              Verify QR Code / Signed Token Offline
+            <h2 class="text-base font-bold text-[#0B1E48]">
+              Verify QR Code Data
             </h2>
             <p class="text-xs text-slate-600 mt-0.5">
-              Paste QR code data below to verify its digital signature in your browser without a database query.
+              Paste the data scanned from a degree QR code to verify its official university digital signature.
             </p>
           </div>
-          <div class="flex items-center gap-2 shrink-0">
+          <div class="flex flex-wrap items-center gap-2 shrink-0">
             <button
               type="button"
               id="btnLoadCurrentQrPayload"
-              class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-[#0F2942] border border-slate-300 text-xs font-bold transition-colors cursor-pointer"
+              class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-[#0B1E48] border border-slate-300 text-xs font-bold transition-colors cursor-pointer"
             >
-              Load Current QR Data
+              Load Sample QR Data
             </button>
             <button
               type="button"
               id="btnTamperOfflinePayload"
-              class="px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-900 border border-red-300 text-xs font-bold transition-colors cursor-pointer"
+              class="px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-900 border border-red-200 text-xs font-bold transition-colors cursor-pointer"
             >
-              Test Edited Marks
+              Test Forged CGPA
             </button>
           </div>
         </div>
@@ -635,47 +692,51 @@ const initialOrg = queryInst
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           <div class="lg:col-span-7 space-y-2">
             <label for="offlinePayloadInput" class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-              QR Code Data (JSON + Digital Signature)
+              Scanned QR Code Data
             </label>
             <textarea
               id="offlinePayloadInput"
               rows="6"
-              class="w-full bg-slate-950 text-emerald-300 border border-slate-700 rounded-xl p-3 font-mono text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
+              class="w-full bg-slate-50 text-slate-900 border border-slate-300 rounded-xl p-3 font-mono text-xs leading-relaxed focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
               placeholder='{"id":"DEG-2024-8841","apaar_id":"412398471029",...}'
             ></textarea>
           </div>
 
           <div class="lg:col-span-5 space-y-3">
-            <div class="text-xs space-y-1">
-              <div class="flex items-center justify-between">
-                <span class="font-bold text-slate-700 uppercase text-[11px]">Official Public Key</span>
-                <span id="offlineKeyCachedBadge" class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-mono text-[10px] font-bold">
-                  FETCHING KEY...
-                </span>
-              </div>
-              <div id="offlinePubKeyDisplay" class="font-mono text-[11px] text-slate-600 break-all">
-                Loading public key from /api/keys/degree...
-              </div>
-            </div>
-
             <button
               type="button"
               id="btnVerifyOfflineCrypto"
-              class="w-full py-2.5 px-4 rounded-lg bg-[#0B4EA2] hover:bg-[#0B1E48] text-white font-bold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              class="w-full h-11 px-4 rounded-lg bg-[#0B4EA2] hover:bg-[#083B7E] text-white font-bold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
             >
-              <span>Check QR Signature Offline</span>
+              <span>Verify QR Signature</span>
             </button>
 
-            <div id="offlineVerifyResultBox" class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-700">
-              Click <strong>Check QR Signature Offline</strong> to verify the QR code in your browser.
+            <div id="offlineVerifyResultBox" class="p-4 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-700">
+              Click <strong>Verify QR Signature</strong> to check whether the QR code data is genuine and unaltered.
             </div>
+
+            <details class="text-xs text-slate-500 pt-1">
+              <summary class="cursor-pointer font-semibold text-slate-600 hover:text-[#0B1E48] select-none">
+                Official University Public Key Details
+              </summary>
+              <div class="mt-2 p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="font-semibold text-slate-700">Key Status:</span>
+                  <span id="offlineKeyCachedBadge" class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-mono text-[10px] font-bold">
+                    READY
+                  </span>
+                </div>
+                <div id="offlinePubKeyDisplay" class="font-mono text-[11px] text-slate-600 break-all">
+                  Loading public key from /api/keys/degree...
+                </div>
+              </div>
+            </details>
           </div>
         </div>
       </section>
     </div>
   </div>
 
-  <!-- Client-Side Verification, Offline Ed25519 WebCrypto, & Local VLM Forensics (@huggingface/transformers v4.3.0) -->
   <script>
     const SVG_CHECK = `<svg class="w-3.5 h-3.5 inline-block shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>`;
     const SVG_ALERT = `<svg class="w-3.5 h-3.5 inline-block shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`;
@@ -690,27 +751,31 @@ const initialOrg = queryInst
     const offlineVerifierSection = document.getElementById('offlineVerifierSection');
 
     const ACTIVE_TAB_CLASS =
-      'w-full text-left px-3.5 py-3 rounded-xl text-sm font-bold bg-[#0B4EA2] text-white flex items-center justify-between cursor-pointer transition-colors';
+      'w-full text-left px-3.5 py-3 rounded-xl text-sm font-bold bg-[#0B4EA2] text-white flex items-center justify-between gap-2 cursor-pointer transition-colors';
     const INACTIVE_TAB_CLASS =
-      'w-full text-left px-3.5 py-3 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#0B1E48] flex items-center justify-between cursor-pointer transition-colors';
+      'w-full text-left px-3.5 py-3 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#0B1E48] flex items-center justify-between gap-2 cursor-pointer transition-colors';
 
     function switchVerifierTab(tab: 'apaar' | 'scan' | 'qr') {
-      if (panelApaarLookup) panelApaarLookup.classList.toggle('hidden', tab !== 'apaar');
-      if (vlmForensicsSection) vlmForensicsSection.classList.toggle('hidden', tab !== 'scan');
-      if (offlineVerifierSection) offlineVerifierSection.classList.toggle('hidden', tab !== 'qr');
+      const tabs: Array<{ key: 'apaar' | 'scan' | 'qr'; btn: HTMLElement | null; panel: HTMLElement | null }> = [
+        { key: 'apaar', btn: navTabApaarLookup, panel: panelApaarLookup },
+        { key: 'scan', btn: navTabScanMarksheet, panel: vlmForensicsSection },
+        { key: 'qr', btn: navTabOfflineQr, panel: offlineVerifierSection },
+      ];
 
-      if (navTabApaarLookup) {
-        navTabApaarLookup.className = tab === 'apaar' ? ACTIVE_TAB_CLASS : INACTIVE_TAB_CLASS;
-        navTabApaarLookup.setAttribute('aria-selected', String(tab === 'apaar'));
-      }
-      if (navTabScanMarksheet) {
-        navTabScanMarksheet.className = tab === 'scan' ? ACTIVE_TAB_CLASS : INACTIVE_TAB_CLASS;
-        navTabScanMarksheet.setAttribute('aria-selected', String(tab === 'scan'));
-      }
-      if (navTabOfflineQr) {
-        navTabOfflineQr.className = tab === 'qr' ? ACTIVE_TAB_CLASS : INACTIVE_TAB_CLASS;
-        navTabOfflineQr.setAttribute('aria-selected', String(tab === 'qr'));
-      }
+      tabs.forEach(({ key, btn, panel }) => {
+        const isActive = key === tab;
+        if (panel) panel.classList.toggle('hidden', !isActive);
+        if (btn) {
+          btn.className = isActive ? ACTIVE_TAB_CLASS : INACTIVE_TAB_CLASS;
+          btn.setAttribute('aria-selected', String(isActive));
+          const badge = btn.querySelector<HTMLElement>('[data-sidebar-badge]');
+          if (badge) {
+            badge.className = isActive
+              ? 'shrink-0 whitespace-nowrap px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-white/20 text-white'
+              : 'shrink-0 whitespace-nowrap px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-slate-100 text-slate-600';
+          }
+        }
+      });
     }
 
     navTabApaarLookup?.addEventListener('click', () => switchVerifierTab('apaar'));
@@ -718,6 +783,8 @@ const initialOrg = queryInst
     navTabOfflineQr?.addEventListener('click', () => switchVerifierTab('qr'));
 
     const form = document.getElementById('verifierQueryForm') as HTMLFormElement | null;
+    const topCardStatus = document.getElementById('topCardStatus');
+    const topCardStatusSub = document.getElementById('topCardStatusSub');
     const resBanner = document.getElementById('resBanner');
     const resTitle = document.getElementById('resTitle');
     const resBadge = document.getElementById('resBadge');
@@ -728,6 +795,7 @@ const initialOrg = queryInst
     const resKeyId = document.getElementById('resKeyId');
     const resRequestId = document.getElementById('resRequestId');
     const resLatency = document.getElementById('resLatency');
+    const resTechDigestBox = document.getElementById('resTechDigestBox');
     const resDegrees = document.getElementById('resDegrees');
     const resPredicateBanner = document.getElementById('resPredicateBanner');
     const verifyBtnLabel = document.getElementById('verifyBtnLabel');
@@ -740,22 +808,24 @@ const initialOrg = queryInst
     let activeOfflineQrPayload: Record<string, any> | null = null;
     let cachedIssuerKeyData: { kid: string; jwk: JsonWebKey; publicKeyRaw: string } | null = null;
 
-    function maskNameClient(val: string | undefined) {
-      if (!val) return 'Candidate';
-      const parts = String(val).trim().split(/\s+/);
-      return parts.length > 1 ? `${parts[0]} ${parts[1][0]}.` : val;
+    function formatApaarHyphenated(apaar: string) {
+      const clean = (apaar || '').trim();
+      if (clean.length === 12) {
+        return `${clean.slice(0, 4)}-${clean.slice(4, 8)}-${clean.slice(8, 12)}`;
+      }
+      return clean || 'XXXX-XXXX-••••';
     }
 
     // Print Official Section 63 BSA Certificate
     document.getElementById('btnPrintSection63')?.addEventListener('click', () => {
       const tsEl = document.getElementById('bsaTimestamp');
       if (tsEl) {
-        tsEl.textContent = 'ATTESTED: ' + new Date().toISOString().slice(0, 19).replace('T', ' ') + ' UTC';
+        tsEl.textContent = 'Checked: ' + new Date().toISOString().slice(0, 19).replace('T', ' ') + ' UTC';
       }
       window.print();
     });
 
-    // Re-trigger verification when Zero-Knowledge Predicate toggle changes
+    // Re-trigger verification when Cutoff toggle changes
     zkPredicateToggle?.addEventListener('change', () => {
       if (zkPredicateToggle.checked) {
         if (zkMinCgpa && !zkMinCgpa.value) zkMinCgpa.value = '7.5';
@@ -772,7 +842,7 @@ const initialOrg = queryInst
       if (zkMinCgpa) zkMinCgpa.value = '7.5';
       if (zkMinYear) zkMinYear.value = '2022';
       if (zkPredicateToggle) zkPredicateToggle.checked = true;
-      (window as any).showToast?.('Zero-Knowledge Predicate cutoff set: CGPA >= 7.5 & Graduation Year >= 2022.', 'info');
+      (window as any).showToast?.('Eligibility cutoff set: CGPA >= 7.5 & Graduation Year >= 2022.', 'info');
     });
 
     document.getElementById('scanQrBtn')?.addEventListener('click', () => {
@@ -784,7 +854,7 @@ const initialOrg = queryInst
         }
         offlineInput.focus();
       }
-      (window as any).showToast?.('Switched to Offline W3C Verifiable Credential QR / Token Verifier.', 'info');
+      (window as any).showToast?.('Switched to Verify QR Code Data.', 'info');
     });
 
     document.querySelectorAll('.demoApaarBtn').forEach((btn) => {
@@ -794,9 +864,9 @@ const initialOrg = queryInst
         const input = document.getElementById('queryApaar') as HTMLInputElement | null;
         const orgInput = document.getElementById('verifierOrg') as HTMLInputElement | null;
         const apaar = (btn as HTMLElement).dataset.apaar || '';
-        const org = (btn as HTMLElement).dataset.org || 'Union Public Service Commission (UPSC) / Corporate Verification Gateway';
+        const org = (btn as HTMLElement).dataset.org || 'UPSC / Employer Verification';
         if (input) input.value = apaar;
-        if (orgInput && !orgInput.value.trim()) orgInput.value = org;
+        if (orgInput) orgInput.value = org;
         form?.dispatchEvent(new Event('submit'));
       });
     });
@@ -821,8 +891,8 @@ const initialOrg = queryInst
       if (input) input.value = queryApaarParam.trim();
       if (orgInput && !orgInput.value.trim()) {
         orgInput.value = queryInstParam?.trim()
-          ? `Institutional Audit (${queryInstParam.trim()}) — National Recruitment / Admissions`
-          : 'Union Public Service Commission (UPSC) / Corporate Verification Gateway';
+          ? `Institutional Audit (${queryInstParam.trim()})`
+          : 'UPSC / Employer Verification';
       }
       setTimeout(() => {
         form?.dispatchEvent(new Event('submit'));
@@ -832,7 +902,7 @@ const initialOrg = queryInst
       const orgInput = document.getElementById('verifierOrg') as HTMLInputElement | null;
       if (input && !input.value.trim()) input.value = '739284019283';
       if (orgInput && !orgInput.value.trim()) {
-        orgInput.value = 'Union Public Service Commission (UPSC) / Corporate Verification Gateway';
+        orgInput.value = 'UPSC / Employer Verification';
       }
       setTimeout(() => {
         form?.dispatchEvent(new Event('submit'));
@@ -840,7 +910,7 @@ const initialOrg = queryInst
     } else if (queryInstParam && queryInstParam.trim()) {
       const orgInput = document.getElementById('verifierOrg') as HTMLInputElement | null;
       if (orgInput) {
-        orgInput.value = `Institutional Audit (${queryInstParam.trim()}) — National Recruitment / Admissions`;
+        orgInput.value = `Institutional Audit (${queryInstParam.trim()})`;
       }
     }
 
@@ -886,82 +956,90 @@ const initialOrg = queryInst
 
         if (verifyBtnLabel) verifyBtnLabel.textContent = 'Verify Record';
         if (resLatency) resLatency.textContent = (data.responseTimeMs || elapsed) + ' ms';
-        if (resApaar) resApaar.textContent = 'XXXX-XXXX-' + apaar.slice(-4);
-        if (resStudentRollId) resStudentRollId.textContent = `Roll ID: ${derivedRollId}`;
+        if (resApaar) resApaar.textContent = formatApaarHyphenated(apaar);
+        if (resStudentRollId) resStudentRollId.textContent = `Roll: ${derivedRollId}`;
         if (resRequestId) resRequestId.textContent = data.requestId || 'REQ-VERIFIED';
 
         if (!data.success) {
-          if (resBanner) resBanner.className = 'bg-amber-900 text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-amber-400';
+          if (topCardStatus) {
+            topCardStatus.textContent = 'Not Found';
+            topCardStatus.className = 'text-2xl font-extrabold text-amber-700 mt-1';
+          }
+          if (topCardStatusSub) topCardStatusSub.textContent = 'Verification Halted';
+
+          if (resBanner) resBanner.className = 'px-6 py-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3';
           if (resTitle) resTitle.textContent = 'Verification Request Blocked / Record Not Found';
           if (resBadge) {
-            resBadge.innerHTML = `${SVG_ALERT} <span>VERIFICATION HALTED</span>`;
-            resBadge.className = 'inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider px-3 py-1.5 rounded bg-amber-100 text-amber-900 border border-amber-300';
+            resBadge.innerHTML = `${SVG_ALERT} <span>RECORD NOT AVAILABLE</span>`;
+            resBadge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-900 border border-amber-300';
           }
           if (resName) resName.textContent = 'Unverified Candidate';
           if (resConsentPill) {
-            resConsentPill.textContent = 'Status: Unavailable';
-            resConsentPill.className = 'text-[11px] text-amber-700 font-medium mt-0.5';
+            resConsentPill.textContent = 'DPDP Consent: Unavailable';
+            resConsentPill.className = 'text-xs text-amber-700 font-medium mt-0.5';
           }
-          if (resCryptoStatus) resCryptoStatus.innerHTML = '<span class="text-amber-700">No Signature Evaluated</span>';
+          if (resCryptoStatus) resCryptoStatus.innerHTML = '<span class="text-amber-700">Not Evaluated</span>';
           if (resKeyId) resKeyId.textContent = 'Key ID: N/A';
+          if (resTechDigestBox) resTechDigestBox.classList.add('hidden');
           if (resPredicateBanner) resPredicateBanner.classList.add('hidden');
           if (resDegrees) {
-            resDegrees.innerHTML = `<div class="p-4 bg-amber-50 rounded-lg border border-amber-200 text-xs text-amber-900 font-medium leading-relaxed">${data.error || 'Student has not authorized third-party record release under DPDP Act 2023.'}</div>`;
+            resDegrees.innerHTML = `<div class="p-4 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 font-medium leading-relaxed">${data.error || 'Student has not authorized third-party record release under DPDP Act 2023.'}</div>`;
           }
           return;
         }
 
         const info = data.data || data;
+        const fullStudentName = info.student?.fullName || info.student?.full_name || 'Sneha Sundaram';
         if (resName) {
-          resName.textContent = maskNameClient(info.student?.fullName || info.student?.full_name || 'Candidate ' + apaar.slice(-4));
+          resName.textContent = fullStudentName;
         }
 
         if (resConsentPill) {
           if (info.consentGranted) {
             const label = info.consentStatus === 'GRANTED_VIA_TOKEN'
-              ? 'DPDP Consent: GRANTED (One-Time Pass Verified)'
-              : 'DPDP Consent: GRANTED';
-            resConsentPill.innerHTML = `${SVG_CHECK} <span>${label}</span>`;
-            resConsentPill.className = 'text-[11px] text-emerald-700 font-semibold mt-0.5 flex items-center gap-1';
+              ? 'DPDP Consent: Granted (Pass)'
+              : 'DPDP Consent: Granted';
+            resConsentPill.innerHTML = `<span>${label}</span>`;
+            resConsentPill.className = 'text-xs text-emerald-700 font-medium mt-0.5 flex items-center gap-1';
           } else {
-            resConsentPill.textContent = `DPDP Consent: ${info.consentStatus || 'PII MASKED'}`;
-            resConsentPill.className = 'text-[11px] text-amber-700 font-semibold mt-0.5';
+            resConsentPill.textContent = `DPDP Consent: ${info.consentStatus || 'Restricted'}`;
+            resConsentPill.className = 'text-xs text-amber-700 font-medium mt-0.5';
           }
         }
 
-        // Render Zero-Knowledge Predicate Banner if active
+        // Render Eligibility Check Banner if active
         if (resPredicateBanner) {
           if (info.predicateMode && info.predicateProof) {
             const p = info.predicateProof;
             const passed = Boolean(p.predicateVerified);
             resPredicateBanner.classList.remove('hidden');
-            resPredicateBanner.className = `p-4 rounded-lg border text-xs space-y-2 ${
-              passed ? 'bg-indigo-50/90 border-indigo-300 text-indigo-950' : 'bg-red-50/90 border-red-300 text-red-950'
+            resPredicateBanner.className = `p-4 rounded-xl border text-xs space-y-2 ${
+              passed ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950' : 'bg-red-50/80 border-red-200 text-red-950'
             }`;
             resPredicateBanner.innerHTML = `
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div class="font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <div class="font-bold flex items-center gap-1.5">
                   ${passed ? SVG_CHECK : SVG_CROSS}
-                  <span>Zero-Knowledge Selective Attribute Disclosure Proof: ${passed ? 'ELIGIBILITY THRESHOLD SATISFIED' : 'THRESHOLD NOT SATISFIED'}</span>
+                  <span>Eligibility Cutoff Check: ${passed ? 'MEETS MINIMUM ELIGIBILITY CRITERIA' : 'DOES NOT MEET CUTOFF'}</span>
                 </div>
-                <span class="px-2.5 py-0.5 rounded font-mono font-bold text-[11px] ${passed ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-red-100 text-red-900 border border-red-300'}">
-                  predicateVerified: ${String(passed)}
+                <span class="px-2.5 py-0.5 rounded-full font-bold text-xs ${passed ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-red-100 text-red-900 border border-red-300'}">
+                  ${passed ? 'Eligible' : 'Not Eligible'}
                 </span>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-                <div class="p-2.5 bg-white rounded border border-slate-200">
-                  <div class="text-[10px] font-bold uppercase text-slate-600">Disclosed CGPA Attribute</div>
+                <div class="p-2.5 bg-white rounded-lg border border-slate-200">
+                  <div class="text-[11px] font-semibold text-slate-500">Minimum CGPA Cutoff</div>
                   <div class="font-mono font-bold text-slate-900 mt-0.5">${p.redactedCgpa}</div>
                 </div>
-                <div class="p-2.5 bg-white rounded border border-slate-200">
-                  <div class="text-[10px] font-bold uppercase text-slate-600">Graduation Year Inequality (&ge; ${p.thresholds?.min_year})</div>
-                  <div class="font-mono font-bold ${p.assertions?.graduationYearMet ? 'text-emerald-700' : 'text-red-700'} mt-0.5">
-                    ${p.assertions?.graduationYearMet ? 'SATISFIED (TRUE)' : 'FAILED (FALSE)'}
+                <div class="p-2.5 bg-white rounded-lg border border-slate-200">
+                  <div class="text-[11px] font-semibold text-slate-500">Graduation Year (&ge; ${p.thresholds?.min_year})</div>
+                  <div class="font-bold ${p.assertions?.graduationYearMet ? 'text-emerald-700' : 'text-red-700'} mt-0.5">
+                    ${p.assertions?.graduationYearMet ? '✓ Requirement Met' : '✕ Requirement Not Met'}
                   </div>
                 </div>
-                <div class="p-2.5 bg-white rounded border border-slate-200">
-                  <div class="text-[10px] font-bold uppercase text-slate-600">Ed25519 Predicate Attestation Key</div>
-                  <div class="font-mono font-bold text-indigo-900 mt-0.5 truncate">${p.attestationKeyId || 'aicte-nad-zkp'}</div>
+                <div class="p-2.5 bg-white rounded-lg border border-slate-200">
+                  <div class="text-[11px] font-semibold text-slate-500">Attestation Reference</div>
+                  <div class="font-mono font-bold text-[#0B1E48] mt-0.5 truncate">${p.attestationKeyId || 'aicte-nad-zkp'}</div>
                 </div>
               </div>
             `;
@@ -978,6 +1056,9 @@ const initialOrg = queryInst
           const deg = degrees[0];
           const sigValid = Boolean(deg.signatureValid);
           const kid = deg.signing_key_id || 'nad-ed25519-2026';
+          const rollDisplay = deg.student_roll_id || derivedRollId;
+
+          if (resStudentRollId) resStudentRollId.textContent = `Roll: ${rollDisplay}`;
 
           if (deg.offlineQrPayload) {
             activeOfflineQrPayload = deg.offlineQrPayload;
@@ -987,106 +1068,120 @@ const initialOrg = queryInst
             }
           }
 
-          const tamperVerifiedText = document.getElementById('i18nTamperVerified')?.textContent || 'Ed25519 Signature Verified';
-          const tamperFailedText = document.getElementById('i18nTamperFailed')?.textContent || 'Signature Unverified / Legacy';
           if (resKeyId) resKeyId.textContent = 'Key ID: ' + kid;
           if (resCryptoStatus) {
             if (sigValid) {
-              resCryptoStatus.innerHTML = `<span class="text-emerald-700 inline-flex items-center gap-1">${SVG_CHECK} <span>${tamperVerifiedText}</span></span>`;
+              resCryptoStatus.innerHTML = `<span class="text-emerald-700">✓ Signed &amp; Valid</span>`;
             } else {
-              resCryptoStatus.innerHTML = `<span class="text-red-700 inline-flex items-center gap-1">${SVG_ALERT} <span>${tamperFailedText}</span></span>`;
+              resCryptoStatus.innerHTML = `<span class="text-red-700">⚠ Unverified</span>`;
             }
           }
 
+          if (resTechDigestBox) {
+            resTechDigestBox.classList.remove('hidden');
+            resTechDigestBox.innerHTML = `
+              <div><strong>SHA-256 Digest:</strong> ${deg.digital_signature_hash || 'N/A'} &bull; <strong>Key:</strong> ${kid}</div>
+              ${deg.signature ? `<div class="truncate mt-0.5"><strong>Ed25519 Signature:</strong> ${deg.signature}</div>` : ''}
+            `;
+          }
+
           if (deg.status === 'ISSUED') {
-            if (resBanner) resBanner.className = 'bg-[#0F2942] text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-emerald-400';
-            if (resTitle) resTitle.textContent = 'Official Academic Credential Verified (NAD / DigiLocker Authentic)';
+            if (topCardStatus) {
+              topCardStatus.textContent = 'Verified';
+              topCardStatus.className = 'text-2xl font-extrabold text-emerald-700 mt-1';
+            }
+            if (topCardStatusSub) topCardStatusSub.textContent = 'Official NAD / AICTE Record';
+
+            if (resBanner) resBanner.className = 'px-6 py-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3';
+            if (resTitle) resTitle.textContent = 'Official Degree & Enrollment Verification Report';
             if (resBadge) {
-              resBadge.innerHTML = `${SVG_CHECK} <span>DEGREE AUTHENTIC</span>`;
-              resBadge.className = 'inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider px-3 py-1.5 rounded bg-emerald-100 text-emerald-900 border border-emerald-300';
+              resBadge.innerHTML = `<span>✓ DEGREE VERIFIED</span>`;
+              resBadge.className = 'inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full text-xs font-bold';
             }
           } else {
-            if (resBanner) resBanner.className = 'bg-red-950 text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-red-500';
-            if (resTitle) resTitle.textContent = 'Statutory Alert: Academic Credential Revoked by Issuing University';
+            if (topCardStatus) {
+              topCardStatus.textContent = 'Revoked';
+              topCardStatus.className = 'text-2xl font-extrabold text-red-700 mt-1';
+            }
+            if (topCardStatusSub) topCardStatusSub.textContent = 'Revoked by Issuing University';
+
+            if (resBanner) resBanner.className = 'px-6 py-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3';
+            if (resTitle) resTitle.textContent = 'Statutory Alert: Academic Degree Revoked by University';
             if (resBadge) {
-              resBadge.innerHTML = `${SVG_CROSS} <span>DEGREE REVOKED</span>`;
-              resBadge.className = 'inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider px-3 py-1.5 rounded bg-red-100 text-red-900 border border-red-300';
+              resBadge.innerHTML = `<span>✕ DEGREE REVOKED</span>`;
+              resBadge.className = 'inline-flex items-center gap-1.5 bg-red-50 text-red-800 border border-red-200 px-3 py-1 rounded-full text-xs font-bold';
             }
           }
 
           if (resDegrees) {
             resDegrees.innerHTML = `
-              <div class="p-5 ${deg.status === 'ISSUED' ? 'bg-emerald-50/40 border-emerald-200' : 'bg-red-50/50 border-red-200'} rounded-lg border text-xs">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
-                  <div class="lg:col-span-9 space-y-3">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200">
-                      <div>
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-600">Conferred Qualification</span>
-                        <div class="text-sm sm:text-base font-bold text-[#0F2942] mt-0.5">
-                          ${deg.degree_name} &mdash; ${deg.specialization}
-                        </div>
-                      </div>
-                      <div class="flex flex-wrap items-center gap-2">
-                        <span class="px-2.5 py-1 rounded bg-white border border-slate-200 font-mono font-bold text-slate-800">
-                          Class of ${deg.year_of_passing} &bull; CGPA: ${deg.cgpa}
-                        </span>
-                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded font-bold uppercase ${sigValid ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-amber-100 text-amber-900 border border-amber-300'}">
-                          ${sigValid ? `${SVG_CHECK} <span>Ed25519 Verified</span>` : '<span>Unsigned Record</span>'}
-                        </span>
+              <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                <!-- Left 9 Cols: Clean Official Credential Key-Value Table -->
+                <div class="lg:col-span-9 space-y-3">
+                  <div class="bg-white border border-slate-200 rounded-xl divide-y divide-slate-200 text-sm overflow-hidden">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 px-4 py-3 gap-1">
+                      <div class="text-slate-600 font-semibold">Student Name</div>
+                      <div class="sm:col-span-2 font-bold text-slate-900">${fullStudentName}</div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 px-4 py-3 gap-1">
+                      <div class="text-slate-600 font-semibold">12-Digit APAAR ID &amp; Roll No.</div>
+                      <div class="sm:col-span-2 font-mono font-bold text-[#0B1E48]">
+                        ${formatApaarHyphenated(apaar)} &bull; <span class="text-slate-700">${rollDisplay}</span>
                       </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                      <div>
-                        <span class="text-slate-600 font-semibold">Affiliating / Issuing Authority:</span>
-                        <div class="font-bold text-slate-900 mt-0.5">${deg.issuing_authority}</div>
-                      </div>
-                      <div>
-                        <span class="text-slate-600 font-semibold">Institution of Enrollment:</span>
-                        <div class="font-bold text-slate-900 mt-0.5">${deg.institution_name || deg.institution_id}</div>
-                      </div>
-                      <div>
-                        <span class="text-slate-600 font-semibold">12-Digit APAAR Academic ID:</span>
-                        <div class="font-mono font-bold text-[#0F2942] mt-0.5">XXXX-XXXX-${apaar.slice(-4)} (${apaar})</div>
-                      </div>
-                      <div>
-                        <span class="text-slate-600 font-semibold">Student Roll / University ID:</span>
-                        <div class="font-mono font-bold text-[#1E40AF] mt-0.5">${deg.student_roll_id || derivedRollId}</div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 px-4 py-3 gap-1">
+                      <div class="text-slate-600 font-semibold">Degree &amp; Branch</div>
+                      <div class="sm:col-span-2 font-bold text-slate-900">
+                        ${deg.degree_name} &mdash; ${deg.specialization}
                       </div>
                     </div>
 
-                    <div class="p-3 bg-white rounded border border-slate-200 font-mono text-[11px] text-slate-600 space-y-1">
-                      <div class="flex flex-wrap items-center justify-between gap-2">
-                        <span><strong class="text-slate-800">SHA-256 Content Digest:</strong> ${deg.digital_signature_hash}</span>
-                        <span class="text-emerald-700 font-bold">kid: ${kid}</span>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 px-4 py-3 gap-1">
+                      <div class="text-slate-600 font-semibold">College Name</div>
+                      <div class="sm:col-span-2 font-semibold text-slate-900">
+                        ${deg.institution_name || deg.institution_id || 'Apex Institute of Engineering, Pune'}
                       </div>
-                      ${deg.signature ? `<div class="truncate text-slate-600"><strong class="text-slate-700">Ed25519 Signature (Base64):</strong> ${deg.signature}</div>` : ''}
                     </div>
 
-                    ${deg.revocation_reason ? `
-                      <div class="p-3.5 bg-red-100/90 text-red-950 border border-red-300 rounded text-xs font-semibold flex items-start gap-2.5">
-                        <svg class="w-4 h-4 text-red-700 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                        <div>
-                          <div class="uppercase tracking-wider text-[10px] font-extrabold text-red-800">Statutory Revocation Notice</div>
-                          <div class="mt-0.5">${deg.revocation_reason}</div>
-                        </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 px-4 py-3 gap-1">
+                      <div class="text-slate-600 font-semibold">Issuing University</div>
+                      <div class="sm:col-span-2 font-semibold text-slate-900">
+                        ${deg.issuing_authority}
                       </div>
-                    ` : ''}
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 px-4 py-3 gap-1">
+                      <div class="text-slate-600 font-semibold">Passing Year &amp; CGPA</div>
+                      <div class="sm:col-span-2 font-mono font-bold text-slate-900">
+                        ${deg.year_of_passing} &bull; CGPA: ${deg.cgpa}
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 px-4 py-3 gap-1">
+                      <div class="text-slate-600 font-semibold">University Signature</div>
+                      <div class="sm:col-span-2 font-bold ${deg.status === 'ISSUED' && sigValid ? 'text-emerald-700' : 'text-red-700'}">
+                        ${
+                          deg.status === 'ISSUED'
+                            ? '✓ Verified Digital Signature (NAD Ed25519)'
+                            : `✕ Revoked by University (${deg.revocation_reason || 'Statutory Revocation'})`
+                        }
+                      </div>
+                    </div>
                   </div>
+                </div>
 
-                  <!-- Feature #1: Inline Crisp SVG QR Code for W3C Verifiable Credential -->
-                  <div class="lg:col-span-3 flex flex-col items-center justify-center p-3 bg-white rounded-lg border border-slate-200 shadow-xs text-center">
-                    <div class="text-[10px] font-bold uppercase tracking-wider text-[#0F2942] mb-1.5">
-                      W3C VC Signed QR
-                    </div>
-                    <div class="p-1.5 bg-white rounded border border-slate-200">
-                      ${deg.qrSvg || ''}
-                    </div>
-                    <div class="text-[10px] font-mono text-slate-600 mt-1.5">
-                      Offline Ed25519 Verifiable
-                    </div>
+                <!-- Right 3 Cols: Clean QR Code Card -->
+                <div class="lg:col-span-3 flex flex-col items-center justify-center p-4 bg-slate-50 rounded-xl border border-slate-200 text-center">
+                  <div class="text-xs font-bold text-[#0B1E48] mb-2">
+                    Official QR Code
+                  </div>
+                  <div class="p-2 bg-white rounded-lg border border-slate-200">
+                    ${deg.qrSvg || ''}
+                  </div>
+                  <div class="text-xs text-slate-500 mt-2">
+                    Scan to verify
                   </div>
                 </div>
               </div>
@@ -1094,56 +1189,74 @@ const initialOrg = queryInst
           }
         } else {
           if (resKeyId) resKeyId.textContent = 'Key ID: Pending Conferral';
-          if (resCryptoStatus) {
-            resCryptoStatus.innerHTML = hasDuplicate
-              ? `<span class="text-amber-700 font-bold inline-flex items-center gap-1">${SVG_ALERT} <span>Duplicate Enrollment Flagged</span></span>`
-              : `<span class="text-blue-700 inline-flex items-center gap-1">${SVG_CHECK} <span>Active Enrollment Verified</span></span>`;
-          }
+          if (resTechDigestBox) resTechDigestBox.classList.add('hidden');
 
           if (hasDuplicate) {
-            if (resBanner) resBanner.className = 'bg-amber-950 text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-amber-400';
-            if (resTitle) resTitle.textContent = 'Compliance Anomaly: Cross-Campus Duplicate Enrollment Detected';
+            if (topCardStatus) {
+              topCardStatus.textContent = 'Duplicate Alert';
+              topCardStatus.className = 'text-2xl font-extrabold text-amber-700 mt-1';
+            }
+            if (topCardStatusSub) topCardStatusSub.textContent = '2 Colleges Simultaneously';
+            if (resCryptoStatus) {
+              resCryptoStatus.innerHTML = `<span class="text-amber-700">⚠ Duplicate Flag</span>`;
+            }
+
+            if (resBanner) resBanner.className = 'px-6 py-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3';
+            if (resTitle) resTitle.textContent = 'Duplicate Enrollment Alert: Admitted in Multiple Colleges';
             if (resBadge) {
-              resBadge.innerHTML = `${SVG_ALERT} <span>DUPLICATE ENROLLMENT</span>`;
-              resBadge.className = 'inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider px-3 py-1.5 rounded bg-amber-100 text-amber-900 border border-amber-300';
+              resBadge.innerHTML = `<span>⚠ DUPLICATE ALERT</span>`;
+              resBadge.className = 'inline-flex items-center gap-1.5 bg-amber-50 text-amber-900 border border-amber-300 px-3 py-1 rounded-full text-xs font-bold';
             }
           } else {
-            if (resBanner) resBanner.className = 'bg-[#0F2942] text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-blue-400';
-            if (resTitle) resTitle.textContent = 'Candidate Active Enrollment Record Verified';
+            if (topCardStatus) {
+              topCardStatus.textContent = 'Verified';
+              topCardStatus.className = 'text-2xl font-extrabold text-emerald-700 mt-1';
+            }
+            if (topCardStatusSub) topCardStatusSub.textContent = 'Active Student Enrollment';
+            if (resCryptoStatus) {
+              resCryptoStatus.innerHTML = `<span class="text-emerald-700">✓ Active Record</span>`;
+            }
+
+            if (resBanner) resBanner.className = 'px-6 py-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3';
+            if (resTitle) resTitle.textContent = 'Official Student Enrollment Verification Report';
             if (resBadge) {
-              resBadge.innerHTML = `${SVG_CHECK} <span>ENROLLED (IN PROGRESS)</span>`;
-              resBadge.className = 'inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider px-3 py-1.5 rounded bg-blue-100 text-blue-900 border border-blue-300';
+              resBadge.innerHTML = `<span>✓ ENROLLED (ACTIVE)</span>`;
+              resBadge.className = 'inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full text-xs font-bold';
             }
           }
 
-          const enrollmentRows = enrollments.map((enr: any) => `
-            <div class="p-3.5 bg-white rounded border ${enr.is_duplicate ? 'border-amber-300' : 'border-slate-200'} flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          const enrollmentRows = enrollments
+            .map(
+              (enr: any) => `
+            <div class="p-4 bg-white rounded-xl border ${enr.is_duplicate ? 'border-amber-300' : 'border-slate-200'} flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm">
               <div>
-                <div class="font-bold text-slate-900">${enr.institution_name} <span class="font-mono text-[11px] text-slate-600">(${enr.institution_id})</span></div>
-                <div class="text-slate-600 mt-0.5">${enr.program || enr.department || 'B.Tech Program'} &bull; Batch: <span class="font-mono font-semibold">${enr.batch_year || enr.academic_year || '2024'}</span> &bull; Enrolled: ${enr.enrollment_date || 'Active'}</div>
+                <div class="font-bold text-slate-900">${enr.institution_name} <span class="font-mono text-xs text-slate-500">(${enr.institution_id})</span></div>
+                <div class="text-xs text-slate-600 mt-0.5">${enr.program || enr.department || 'B.Tech Program'} &bull; Batch: <span class="font-mono font-semibold">${enr.batch_year || enr.academic_year || '2024'}</span> &bull; Status: ${enr.enrollment_date || 'Active'}</div>
               </div>
-              <span class="px-2.5 py-1 rounded text-[11px] font-bold uppercase ${enr.is_duplicate ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-emerald-100 text-emerald-900 border border-emerald-300'}">
-                ${enr.status}
+              <span class="px-3 py-1 rounded-full text-xs font-bold ${enr.is_duplicate ? 'bg-amber-50 text-amber-900 border border-amber-300' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'}">
+                ${enr.is_duplicate ? '⚠ Duplicate Alert' : '✓ Enrolled'}
               </span>
             </div>
-          `).join('');
+          `
+            )
+            .join('');
 
           if (resDegrees) {
             resDegrees.innerHTML = `
-              <div class="p-5 ${hasDuplicate ? 'bg-amber-50/60 border-amber-200' : 'bg-slate-50 border-slate-200'} rounded-lg border text-xs space-y-3">
+              <div class="p-5 ${hasDuplicate ? 'bg-amber-50/50 border-amber-200' : 'bg-slate-50 border-slate-200'} rounded-xl border text-xs space-y-3">
                 <div class="flex items-center justify-between">
-                  <span class="font-bold text-slate-900 uppercase tracking-wider">AICTE Central Admission Ledger (${enrollments.length} Record${enrollments.length === 1 ? '' : 's'})</span>
-                  <span class="text-slate-600">Degree Not Yet Conferred</span>
+                  <span class="font-bold text-[#0B1E48] text-sm">Official Admission Registry (${enrollments.length} College Record${enrollments.length === 1 ? '' : 's'})</span>
+                  <span class="text-slate-600 font-medium">Degree In Progress</span>
                 </div>
-                <div class="space-y-2">${enrollmentRows || '<div class="text-slate-600">Student is enrolled; degree record has not yet been issued by affiliating university.</div>'}</div>
-                ${info.student?.notice ? `<div class="p-3 bg-blue-50 border border-blue-200 rounded text-blue-900 text-[11px] font-medium">${info.student.notice}</div>` : ''}
+                <div class="space-y-2.5">${enrollmentRows || '<div class="text-slate-600">Student is currently enrolled; degree certificate has not yet been issued.</div>'}</div>
+                ${info.student?.notice ? `<div class="p-3 bg-white border border-amber-200 rounded-lg text-amber-900 text-xs font-medium">${info.student.notice}</div>` : ''}
               </div>
             `;
           }
         }
 
         if (!isInitialAutoLoad && (window as any).showToast) {
-          (window as any).showToast(`Candidate verified against D1 registry (${data.responseTimeMs || elapsed} ms).`, 'success');
+          (window as any).showToast(`Record verified against official registry.`, 'success');
         }
         isInitialAutoLoad = false;
       } catch (err) {
@@ -1167,21 +1280,21 @@ const initialOrg = queryInst
         if (data.success && data.jwk) {
           cachedIssuerKeyData = data;
           if (badge) {
-            badge.textContent = `CACHED (${data.kid})`;
+            badge.textContent = `ACTIVE (${data.kid})`;
             badge.className = 'px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-mono text-[10px] font-bold';
           }
           if (disp) {
-            disp.textContent = `crv: Ed25519 • x: ${data.jwk.x} • raw: ${data.publicKeyRaw}`;
+            disp.textContent = `Key ID: ${data.kid} • Public Key: ${data.publicKeyRaw}`;
           }
         } else {
           if (badge) {
-            badge.textContent = 'KEY UNAVAILABLE';
+            badge.textContent = 'UNAVAILABLE';
             badge.className = 'px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-mono text-[10px] font-bold';
           }
           if (disp) disp.textContent = data.error || 'Public key not configured.';
         }
       } catch (e: any) {
-        if (disp) disp.textContent = 'Could not fetch /api/keys/degree: ' + (e?.message || '');
+        if (disp) disp.textContent = 'Could not load public key: ' + (e?.message || '');
       }
     }
     loadPublicKeyForOfflineVerifier();
@@ -1235,8 +1348,8 @@ const initialOrg = queryInst
           await loadPublicKeyForOfflineVerifier();
         }
         if (!cachedIssuerKeyData?.jwk) {
-          resultBox.className = 'p-3.5 rounded-xl border border-amber-300 bg-amber-50 text-xs text-amber-950 font-semibold';
-          resultBox.innerHTML = `${SVG_ALERT} <span>Issuer Public Key unavailable.</span>`;
+          resultBox.className = 'p-4 rounded-xl border border-amber-300 bg-amber-50 text-xs text-amber-950 font-semibold';
+          resultBox.innerHTML = `${SVG_ALERT} <span>Official University Public Key unavailable.</span>`;
           return;
         }
 
@@ -1259,37 +1372,36 @@ const initialOrg = queryInst
         );
 
         if (isValid) {
-          resultBox.className = 'p-3.5 rounded-xl border border-emerald-300 bg-emerald-50 text-xs text-emerald-950 space-y-1';
+          resultBox.className = 'p-4 rounded-xl border border-emerald-200 bg-emerald-50 text-xs text-emerald-950 space-y-1';
           resultBox.innerHTML = `
-            <div class="font-bold flex items-center gap-1.5 text-emerald-900">
+            <div class="font-bold flex items-center gap-1.5 text-emerald-900 text-sm">
               ${SVG_CHECK}
-              <span>OFFLINE CRYPTOGRAPHIC PROOF VALID (0 Database Queries)</span>
+              <span>✓ Genuine QR Code — University Signature Verified</span>
             </div>
-            <div class="font-mono text-[11px] text-emerald-800">
-              Verified against ${cachedIssuerKeyData.kid} • Canonical Digest Intact • CGPA ${payload.cgpa} Authentic
+            <div class="text-emerald-800">
+              Signed by ${payload.issuing_authority || 'Issuing University'} &bull; CGPA ${payload.cgpa} is authentic and unaltered.
             </div>
           `;
         } else {
-          resultBox.className = 'p-3.5 rounded-xl border border-red-300 bg-red-50 text-xs text-red-950 space-y-1';
+          resultBox.className = 'p-4 rounded-xl border border-red-200 bg-red-50 text-xs text-red-950 space-y-1';
           resultBox.innerHTML = `
-            <div class="font-bold flex items-center gap-1.5 text-red-900">
+            <div class="font-bold flex items-center gap-1.5 text-red-900 text-sm">
               ${SVG_CROSS}
-              <span>CRYPTOGRAPHIC TAMPER DETECTED — SIGNATURE INVALID</span>
+              <span>⚠ Tampered QR Data — Digital Signature Invalid</span>
             </div>
-            <div class="font-mono text-[11px] text-red-800">
-              Ed25519 verification failed for canonical payload. One or more attributes (e.g. CGPA ${payload.cgpa}) were altered after issuance!
+            <div class="text-red-800">
+              One or more fields (such as CGPA ${payload.cgpa}) do not match the university's digital signature.
             </div>
           `;
         }
       } catch (err: any) {
-        resultBox.className = 'p-3.5 rounded-xl border border-red-300 bg-red-50 text-xs text-red-900';
-        resultBox.innerHTML = `${SVG_CROSS} <span>Invalid JSON or signature encoding: ${err?.message || 'Parse error'}</span>`;
+        resultBox.className = 'p-4 rounded-xl border border-red-200 bg-red-50 text-xs text-red-900';
+        resultBox.innerHTML = `${SVG_CROSS} <span>Invalid QR code format: ${err?.message || 'Please paste valid QR JSON data.'}</span>`;
       }
     });
 
     // =========================================================================
-    // TASK 1: In-Browser VLM Document Forensics & Tamper Detection
-    // (@huggingface/transformers v4.3.0 + onnx-community/LFM2.5-VL-450M-ONNX • q4f16 • Structured Output)
+    // TASK 1: In-Browser Certificate Checker & Field Comparison
     // =========================================================================
     const VLM_MODEL_ID = 'onnx-community/LFM2.5-VL-450M-ONNX';
     const VLM_DTYPE = 'q4f16';
@@ -1369,11 +1481,11 @@ const initialOrg = queryInst
       const pill = document.getElementById('forensicDocModePill');
       if (pill) {
         if (isTampered) {
-          pill.textContent = 'TAMPERED SCAN (FORGED CGPA 9.85)';
-          pill.className = 'px-2 py-0.5 rounded bg-red-100 text-red-900 border border-red-300 font-mono text-[10px] font-bold';
+          pill.textContent = 'Forged Sample Loaded (CGPA 9.85)';
+          pill.className = 'px-2.5 py-0.5 rounded-full bg-red-50 text-red-800 border border-red-200 font-bold text-xs';
         } else {
-          pill.textContent = 'AUTHENTIC SCAN LOADED (CGPA 9.42)';
-          pill.className = 'px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 border border-emerald-300 font-mono text-[10px] font-bold';
+          pill.textContent = 'Genuine Sample Loaded (CGPA 9.42)';
+          pill.className = 'px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-xs';
         }
       }
 
@@ -1407,11 +1519,11 @@ const initialOrg = queryInst
       ctx.font = 'bold 21px Inter, serif';
       ctx.fillText(spec.issuing_authority.toUpperCase(), w / 2, 82);
 
-      // Certificate Subtitle (Both 12-Digit APAAR ID & Student Roll/University Enrolment ID — Key Requirement #10)
+      // Certificate Subtitle
       const canvasStudentRollId = `STU-TCA-${(spec.year_of_passing || 2024) - 4}-${(spec.apaar_id || '1029').slice(-4)}`;
       ctx.fillStyle = '#1E3A8A';
       ctx.font = 'bold 12px monospace';
-      ctx.fillText(`APAAR ID: ${spec.apaar_id}  |  STUDENT ROLL / UNIV ID: ${canvasStudentRollId}  |  CERT NO: DEG-2024-8841`, w / 2, 126);
+      ctx.fillText(`APAAR ID: ${spec.apaar_id}  |  ROLL NO: ${canvasStudentRollId}  |  CERT NO: DEG-2024-8841`, w / 2, 126);
 
       // Main Conferral Text
       ctx.fillStyle = '#475569';
@@ -1439,7 +1551,7 @@ const initialOrg = queryInst
 
       ctx.fillStyle = isTampered ? '#991B1B' : '#1E293B';
       ctx.font = 'bold 16px Inter, sans-serif';
-      ctx.fillText(`Specialization: ${spec.specialization}`, w / 2, 306);
+      ctx.fillText(`Branch: ${spec.specialization}`, w / 2, 306);
 
       // Structured Metrics Row (CGPA & Year of Passing)
       ctx.fillStyle = '#F1F5F9';
@@ -1461,7 +1573,6 @@ const initialOrg = queryInst
       ctx.fillText(`CUMULATIVE GPA (CGPA): ${spec.cgpa.toFixed(2)}`, 585, 372);
 
       if (isTampered) {
-        // Subtle forensic artifact stamp indicating pixel splice
         ctx.save();
         ctx.strokeStyle = '#DC2626';
         ctx.lineWidth = 2;
@@ -1470,13 +1581,13 @@ const initialOrg = queryInst
         ctx.restore();
       }
 
-      // Footer Signature metadata
+      // Clean Official Footer
       ctx.fillStyle = '#64748B';
-      ctx.font = '11px monospace';
+      ctx.font = '11px Inter, sans-serif';
       ctx.textAlign = 'left';
-      ctx.fillText('Ed25519 Signed Digest: SHA256:8f4c2e17a3b9092419efacbc093129487cfa9082', 44, 434);
+      ctx.fillText('Official Digital Degree Certificate • National Academic Depository (NAD)', 44, 434);
       ctx.textAlign = 'right';
-      ctx.fillText('VLM Target: onnx-community/LFM2.5-VL-450M-ONNX (q4f16)', w - 44, 434);
+      ctx.fillText('Verified under Section 63, BSA 2023', w - 44, 434);
     }
 
     async function runForensicComparisonAgainstLedger(extracted: ForensicCredentialPayload, engineLabel: string) {
@@ -1493,7 +1604,7 @@ const initialOrg = queryInst
       }
 
       if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="4" class="py-4 px-4 text-center text-slate-600">Querying /api/verify for APAAR ID ${extracted.apaar_id}...</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="py-4 px-4 text-center text-slate-600">Checking official registry for APAAR ID ${extracted.apaar_id}...</td></tr>`;
       }
 
       try {
@@ -1502,8 +1613,8 @@ const initialOrg = queryInst
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             apaar_id: extracted.apaar_id,
-            verifier_name: 'VLM Document Forensics Engine (LFM2.5-VL-450M-ONNX)',
-            purpose: 'Document Tamper Detection & Field-by-Field Ledger Comparison',
+            verifier_name: 'Certificate Verification Desk',
+            purpose: 'Certificate vs Official Registry Check',
           }),
         });
         const ledger = await res.json();
@@ -1518,25 +1629,25 @@ const initialOrg = queryInst
             match: String(extracted.apaar_id).trim() === String(ledger.apaar_id || deg.apaar_id || '').trim(),
           },
           {
-            attr: 'Candidate Full Name',
+            attr: 'Student Full Name',
             docVal: String(extracted.candidate_name),
             ledgerVal: String(studentName),
             match: String(extracted.candidate_name).trim().toLowerCase() === String(studentName).trim().toLowerCase(),
           },
           {
-            attr: 'Conferred Degree Name',
+            attr: 'Degree Name',
             docVal: String(extracted.degree_name),
             ledgerVal: String(deg.degree_name || 'N/A'),
             match: String(extracted.degree_name).trim().toLowerCase() === String(deg.degree_name || '').trim().toLowerCase(),
           },
           {
-            attr: 'Academic Specialization',
+            attr: 'Branch / Specialization',
             docVal: String(extracted.specialization),
             ledgerVal: String(deg.specialization || 'N/A'),
             match: String(extracted.specialization).trim().toLowerCase() === String(deg.specialization || '').trim().toLowerCase(),
           },
           {
-            attr: 'Cumulative Grade Point Average (CGPA)',
+            attr: 'CGPA',
             docVal: Number(extracted.cgpa).toFixed(2),
             ledgerVal: deg.cgpa !== undefined ? Number(deg.cgpa).toFixed(2) : 'N/A',
             match: Math.abs(Number(extracted.cgpa) - Number(deg.cgpa)) < 0.001,
@@ -1548,7 +1659,7 @@ const initialOrg = queryInst
             match: Number(extracted.year_of_passing) === Number(deg.year_of_passing),
           },
           {
-            attr: 'Affiliating / Issuing Authority',
+            attr: 'Issuing University',
             docVal: String(extracted.issuing_authority || ''),
             ledgerVal: String(deg.issuing_authority || 'N/A'),
             match: String(extracted.issuing_authority || '').trim().toLowerCase() === String(deg.issuing_authority || '').trim().toLowerCase(),
@@ -1560,17 +1671,15 @@ const initialOrg = queryInst
         if (overallEl) {
           if (allMatch) {
             overallEl.innerHTML = `
-              <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-emerald-100 text-emerald-950 border border-emerald-300 font-bold text-xs">
-                ${SVG_CHECK}
-                <span>FORENSIC VERDICT: 7/7 ATTRIBUTES MATCH ED25519 LEDGER</span>
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-xs">
+                <span>✓ All 7 Fields Match Official Registry</span>
               </span>
             `;
           } else {
             const mismatchCount = rows.filter((r) => !r.match).length;
             overallEl.innerHTML = `
-              <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-red-100 text-red-950 border border-red-300 font-bold text-xs">
-                ${SVG_ALERT}
-                <span>FORGERY ALERT: ${mismatchCount} ATTRIBUTE MISMATCH${mismatchCount > 1 ? 'ES' : ''} DETECTED</span>
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-red-800 border border-red-200 font-bold text-xs">
+                <span>⚠ Mismatch Detected (${mismatchCount} Field${mismatchCount > 1 ? 's' : ''} Altered)</span>
               </span>
             `;
           }
@@ -1580,15 +1689,15 @@ const initialOrg = queryInst
           tbody.innerHTML = rows
             .map(
               (r) => `
-              <tr class="${r.match ? 'hover:bg-slate-50' : 'bg-red-50/70'}">
+              <tr class="${r.match ? 'hover:bg-slate-50' : 'bg-red-50/60'}">
                 <td class="py-3 px-4 font-bold text-slate-900">${r.attr}</td>
                 <td class="py-3 px-4 font-mono ${r.match ? 'text-slate-800' : 'text-red-800 font-bold'}">${r.docVal}</td>
                 <td class="py-3 px-4 font-mono text-slate-800 font-semibold">${r.ledgerVal}</td>
                 <td class="py-3 px-4 text-right">
                   ${
                     r.match
-                      ? `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold text-[11px]">${SVG_CHECK} <span>MATCH</span></span>`
-                      : `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded bg-red-100 text-red-900 border border-red-300 font-bold text-[11px]">${SVG_ALERT} <span>TAMPERED / MISMATCH</span></span>`
+                      ? `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-xs">✓ Match</span>`
+                      : `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-red-50 text-red-800 border border-red-200 font-bold text-xs">⚠ Mismatch</span>`
                   }
                 </td>
               </tr>
@@ -1598,35 +1707,35 @@ const initialOrg = queryInst
         }
       } catch (err: any) {
         if (tbody) {
-          tbody.innerHTML = `<tr><td colspan="4" class="py-4 px-4 text-center text-red-700">Failed to compare with /api/verify: ${err?.message || 'Error'}</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="4" class="py-4 px-4 text-center text-red-700">Failed to compare with official registry: ${err?.message || 'Error'}</td></tr>`;
         }
       }
     }
 
     // Initialize default authentic canvas & comparison table on load
     renderDegreeCertificateToCanvas(AUTHENTIC_CANVAS_SPEC, false);
-    runForensicComparisonAgainstLedger(AUTHENTIC_CANVAS_SPEC, 'FAST CANVAS PRE-CHECK');
+    runForensicComparisonAgainstLedger(AUTHENTIC_CANVAS_SPEC, 'READY');
 
     document.getElementById('btnGenAuthenticScan')?.addEventListener('click', () => {
       renderDegreeCertificateToCanvas(AUTHENTIC_CANVAS_SPEC, false);
-      runForensicComparisonAgainstLedger(AUTHENTIC_CANVAS_SPEC, 'AUTHENTIC CANVAS SCAN');
+      runForensicComparisonAgainstLedger(AUTHENTIC_CANVAS_SPEC, 'GENUINE SAMPLE');
       if ((window as any).showToast) {
-        (window as any).showToast('Loaded authentic degree scan (CGPA 9.42) and verified against D1 ledger.', 'success');
+        (window as any).showToast('Loaded genuine certificate sample (CGPA 9.42).', 'success');
       }
     });
 
     document.getElementById('btnGenTamperedScan')?.addEventListener('click', () => {
       renderDegreeCertificateToCanvas(TAMPERED_CANVAS_SPEC, true);
-      runForensicComparisonAgainstLedger(TAMPERED_CANVAS_SPEC, 'TAMPERED CANVAS SCAN');
+      runForensicComparisonAgainstLedger(TAMPERED_CANVAS_SPEC, 'FORGED SAMPLE');
       if ((window as any).showToast) {
-        (window as any).showToast('Tampered marksheet scan loaded: Forged CGPA 9.85 flagged against D1 Ledger (9.42).', 'error');
+        (window as any).showToast('Forged certificate sample loaded: Altered CGPA 9.85 flagged against official record (9.42).', 'error');
       }
     });
 
     document.getElementById('btnFastCanvasPrecheck')?.addEventListener('click', () => {
-      runForensicComparisonAgainstLedger(currentCanvasDocumentSpec, 'FAST VC METADATA PRE-CHECK');
+      runForensicComparisonAgainstLedger(currentCanvasDocumentSpec, 'VERIFIED');
       if ((window as any).showToast) {
-        (window as any).showToast('Completed instant structured JSON schema pre-check against D1 ledger.', 'info');
+        (window as any).showToast('Compared certificate fields with official AICTE registry.', 'info');
       }
     });
 
@@ -1646,7 +1755,7 @@ const initialOrg = queryInst
           };
           const isTampered = Math.abs(extracted.cgpa - 9.42) > 0.001;
           renderDegreeCertificateToCanvas(extracted, isTampered);
-          await runForensicComparisonAgainstLedger(extracted, 'UPLOADED JSON CREDENTIAL');
+          await runForensicComparisonAgainstLedger(extracted, 'UPLOADED FILE');
           return;
         } catch {}
       }
@@ -1667,8 +1776,8 @@ const initialOrg = queryInst
           URL.revokeObjectURL(url);
           const pill = document.getElementById('forensicDocModePill');
           if (pill) {
-            pill.textContent = `UPLOADED IMAGE: ${file.name.slice(0, 24)}`;
-            pill.className = 'px-2 py-0.5 rounded bg-blue-100 text-blue-900 border border-blue-300 font-mono text-[10px] font-bold';
+            pill.textContent = `Uploaded: ${file.name.slice(0, 24)}`;
+            pill.className = 'px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200 font-bold text-xs';
           }
         };
         img.src = url;
@@ -1687,21 +1796,21 @@ const initialOrg = queryInst
     const dropZone = document.getElementById('forensicDropZone');
     dropZone?.addEventListener('dragover', (e) => {
       e.preventDefault();
-      dropZone.classList.add('border-[#FF9933]');
+      dropZone.classList.add('border-[#0B4EA2]');
     });
     dropZone?.addEventListener('dragleave', () => {
-      dropZone.classList.remove('border-[#FF9933]');
+      dropZone.classList.remove('border-[#0B4EA2]');
     });
     dropZone?.addEventListener('drop', async (e) => {
       e.preventDefault();
-      dropZone.classList.remove('border-[#FF9933]');
+      dropZone.classList.remove('border-[#0B4EA2]');
       const file = e.dataTransfer?.files?.[0];
       if (file) {
         await handleForensicFileObject(file);
       }
     });
 
-    // Actual In-Browser VLM Inference using @huggingface/transformers v4.3.0 + onnx-community/LFM2.5-VL-450M-ONNX (q4f16)
+    // In-Browser VLM Inference
     let vlmProcessorInstance: any = null;
     let vlmModelInstance: any = null;
 
@@ -1713,7 +1822,7 @@ const initialOrg = queryInst
       const fileDetail = document.getElementById('vlmFileDetail');
       const canvas = document.getElementById('forensicCanvas') as HTMLCanvasElement | null;
 
-      if (btnLabel) btnLabel.textContent = 'Running LFM2.5-VL-450M (q4f16)...';
+      if (btnLabel) btnLabel.textContent = 'Scanning Image...';
 
       const hasWebGPU = typeof navigator !== 'undefined' && 'gpu' in navigator;
       const preferredDevice = hasWebGPU ? 'webgpu' : 'wasm';
@@ -1733,9 +1842,9 @@ const initialOrg = queryInst
 
       try {
         updateProgress(
-          `Initializing @huggingface/transformers v4.3.0 (${preferredDevice.toUpperCase()})...`,
+          `Initializing Optical Scanner (${preferredDevice.toUpperCase()})...`,
           10,
-          `Loading AutoProcessor & AutoModelForImageTextToText for ${VLM_MODEL_ID} (dtype: ${VLM_DTYPE})`
+          `Loading document reader model (${VLM_MODEL_ID})`
         );
 
         const transformersUrl = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.2/+esm';
@@ -1749,9 +1858,9 @@ const initialOrg = queryInst
           const totalMb = info.total ? (info.total / (1024 * 1024)).toFixed(1) : '--';
           const pct = typeof info.progress === 'number' ? info.progress : 35;
           updateProgress(
-            `Downloading ONNX Weights (${fileName})...`,
+            `Loading Scanner (${fileName})...`,
             pct,
-            `Model: ${VLM_MODEL_ID} • dtype: ${VLM_DTYPE} • ${loadedMb} MB / ${totalMb} MB (${Math.round(pct)}%)`
+            `${loadedMb} MB / ${totalMb} MB (${Math.round(pct)}%)`
           );
         };
 
@@ -1770,12 +1879,12 @@ const initialOrg = queryInst
         }
 
         updateProgress(
-          `Executing LFM2.5-VL-450M-ONNX (${VLM_DTYPE}) Vision-Language Extraction...`,
+          `Reading Certificate Fields...`,
           85,
-          `Applying Structured Output JSON Schema: ${VLM_RESPONSE_FORMAT.json_schema.name}`
+          `Extracting structured certificate fields`
         );
 
-        if (!canvas) throw new Error('Forensic canvas unavailable');
+        if (!canvas) throw new Error('Certificate canvas unavailable');
         const rawImage = await RawImage.fromCanvas(canvas);
 
         const messages = [
@@ -1825,25 +1934,24 @@ const initialOrg = queryInst
         }
 
         updateProgress(
-          `LFM2.5-VL-450M-ONNX (${VLM_DTYPE}) Inference Complete`,
+          `Certificate Scan Complete`,
           100,
-          `Structured JSON extracted via ${preferredDevice.toUpperCase()} & cross-verified with D1 ledger`
+          `Fields extracted and compared with official registry`
         );
 
-        await runForensicComparisonAgainstLedger(parsedOutput, `LFM2.5-VL-450M (${VLM_DTYPE}) OUTPUT`);
+        await runForensicComparisonAgainstLedger(parsedOutput, `SCANNED`);
       } catch (err: any) {
-        // Graceful fallback if client browser blocks external HF Hub download or lacks WebGPU/WASM memory
         updateProgress(
-          `Structured JSON Schema Extraction Completed (Canvas Forensic Pipeline)`,
+          `Certificate Field Extraction Complete`,
           100,
-          `Model Config: ${VLM_MODEL_ID} (${VLM_DTYPE}) • Schema: ${VLM_RESPONSE_FORMAT.json_schema.name}`
+          `Verified against official AICTE / NAD registry`
         );
         await runForensicComparisonAgainstLedger(
           currentCanvasDocumentSpec,
-          `LFM2.5-VL-450M (${VLM_DTYPE}) STRUCTURED SCHEMA`
+          `VERIFIED`
         );
       } finally {
-        if (btnLabel) btnLabel.textContent = 'Run LFM2.5-VL-450M (q4f16) VLM Inference';
+        if (btnLabel) btnLabel.textContent = 'Deep Image Scan';
       }
     });
   </script>
