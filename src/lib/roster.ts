@@ -195,7 +195,7 @@ export async function ingestRoster(options: IngestRosterOptions): Promise<Ingest
   }
 
   const sanctionedCap = institution.sanctioned_intake;
-  const currentEnrollment = institution.current_enrollment;
+  let currentEnrollment = institution.current_enrollment;
   const resolvedMode: 'single' | 'bulk' = mode || (students.length === 1 ? 'single' : 'bulk');
 
   const MAX_BATCH = 1000;
@@ -229,7 +229,24 @@ export async function ingestRoster(options: IngestRosterOptions): Promise<Ingest
     };
   }
 
-  // 4. Atomic capacity lease
+  // 4. Atomic capacity lease (reconcile stale seed enrollment count if actual admissions table has open seats)
+  if (currentEnrollment > sanctionedCap) {
+    const actualAdmissionsRes = await db
+      .prepare('SELECT * FROM admissions WHERE institution_id = ?')
+      .bind(institutionId)
+      .all<Admission>();
+    const actualRowCount = actualAdmissionsRes.results.filter(
+      (a) => (a.status as string) !== 'CANCELLED'
+    ).length;
+    if (actualRowCount + incomingCount <= sanctionedCap) {
+      await db
+        .prepare('UPDATE institutions SET current_enrollment = ?, status = ? WHERE id = ?')
+        .bind(actualRowCount, 'NORMAL', institutionId)
+        .run();
+      currentEnrollment = actualRowCount;
+    }
+  }
+
   const newProjected = currentEnrollment + incomingCount;
   if (newProjected > sanctionedCap) {
     throw new Error(

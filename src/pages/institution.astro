@@ -152,6 +152,14 @@ const initialAdmissions = rawInstAdmissions.map((adm, idx) => {
 
 const sanctionedCap = collegeA.sanctioned_intake || 180;
 const actualAdmittedCount = initialAdmissions.length;
+if (collegeA.current_enrollment !== actualAdmittedCount) {
+  await db
+    .prepare('UPDATE institutions SET current_enrollment = ?, status = ? WHERE id = ?')
+    .bind(actualAdmittedCount, actualAdmittedCount > sanctionedCap ? 'OVERRUN_RISK' : 'NORMAL', collegeA.id)
+    .run();
+  collegeA.current_enrollment = actualAdmittedCount;
+  collegeA.status = actualAdmittedCount > sanctionedCap ? 'OVERRUN_RISK' : 'NORMAL';
+}
 const vacantSeatsCount = Math.max(0, sanctionedCap - actualAdmittedCount);
 const duplicateCount = initialAdmissions.filter((a) => a.is_duplicate).length;
 
@@ -776,7 +784,7 @@ const clientI18n = {
                   <span class="w-6 h-6 rounded-full bg-emerald-700 text-white font-mono font-bold inline-flex items-center justify-center shrink-0">3</span>
                   <div>
                     <div class="font-bold text-[#0B1E48]">3. Review &amp; Save Valid Rows</div>
-                    <div class="text-slate-600">Fix any APAAR typo inline before saving</div>
+                    <div class="text-slate-600">Check status &amp; save valid students</div>
                   </div>
                 </div>
               </div>
@@ -869,7 +877,7 @@ const clientI18n = {
                     <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
                       <tr>
                         <th class="py-3 px-4">#</th>
-                        <th class="py-3 px-4">12-Digit APAAR ID (Editable)</th>
+                        <th class="py-3 px-4">12-Digit APAAR ID</th>
                         <th class="py-3 px-4">Student Name</th>
                         <th class="py-3 px-4">Branch &amp; Quota</th>
                         <th class="py-3 px-4">Pre-Check Status</th>
@@ -1838,25 +1846,33 @@ const clientI18n = {
           statusTag = `<span class="inline-flex items-center gap-1 bg-red-50 text-red-800 px-2.5 py-1 rounded-full border border-red-200 font-bold text-xs whitespace-nowrap">✕ Invalid 12-Digit ID</span>`;
         }
 
+        const isEditing = Boolean(r._editing);
         const inputClasses = is12
           ? 'border-slate-300 bg-white text-[#0B1E48] focus:ring-[#0B4EA2]'
           : 'border-red-400 bg-red-50/50 text-red-900 focus:ring-red-500';
+        const displayApaar = is12
+          ? maskApaarClient(cleanApaar)
+          : cleanApaar || '—';
 
         html += `
           <tr class="hover:bg-slate-50">
             <td class="py-3 px-4 font-mono text-slate-500">${idx + 1}</td>
             <td class="py-3 px-4">
-              <input
-                type="text"
-                maxlength="12"
-                inputmode="numeric"
-                aria-label="Edit 12-Digit APAAR ID for row ${idx + 1}"
-                data-edit-triage-idx="${idx}"
-                data-edit-field="apaar_id"
-                value="${cleanApaar.replace(/"/g, '&quot;')}"
-                placeholder="12-digit APAAR"
-                class="w-36 h-8 px-2.5 rounded border font-mono text-xs font-bold focus:outline-none focus:ring-2 ${inputClasses}"
-              />
+              ${
+                isEditing
+                  ? `<input
+                      type="text"
+                      maxlength="12"
+                      inputmode="numeric"
+                      aria-label="12-Digit APAAR ID for row ${idx + 1}"
+                      data-edit-triage-idx="${idx}"
+                      data-edit-field="apaar_id"
+                      value="${cleanApaar.replace(/"/g, '&quot;')}"
+                      placeholder="12-digit APAAR"
+                      class="w-36 h-8 px-2.5 rounded border font-mono text-xs font-bold focus:outline-none focus:ring-2 ${inputClasses}"
+                    />`
+                  : `<span class="font-mono font-bold text-xs sm:text-sm ${is12 ? 'text-[#0B1E48]' : 'text-red-700'}">${displayApaar}</span>`
+              }
               <span class="sr-only">${maskApaarClient(cleanApaar)}</span>
             </td>
             <td class="py-3 px-4 text-slate-900 font-bold">${r.full_name || r.name || 'Candidate'}</td>
@@ -1865,7 +1881,14 @@ const clientI18n = {
               <div class="text-xs text-slate-500">${formatQuotaHuman(r.admission_quota || r.admission_category)} · <span class="font-mono">${allotmentRef}</span></div>
             </td>
             <td class="py-3 px-4">${statusTag}</td>
-            <td class="py-3 px-4 text-right">
+            <td class="py-3 px-4 text-right whitespace-nowrap space-x-1.5">
+              <button
+                type="button"
+                data-toggle-edit-triage-idx="${idx}"
+                class="px-2.5 py-1 rounded-lg ${isEditing ? 'bg-[#0B4EA2] text-white border-[#0B4EA2]' : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300'} border text-xs font-bold transition-colors cursor-pointer"
+              >
+                ${isEditing ? 'Done' : 'Edit'}
+              </button>
               <button
                 type="button"
                 data-remove-triage-idx="${idx}"
@@ -1973,9 +1996,33 @@ const clientI18n = {
 
     tableBody.addEventListener('input', handleTriageInlineEdit);
     tableBody.addEventListener('change', handleTriageInlineEdit);
+    tableBody.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key !== 'Enter' && e.key !== 'Escape') return;
+      const inputEl = (e.target as HTMLElement).closest<HTMLInputElement>('input[data-edit-triage-idx]');
+      if (!inputEl) return;
+      e.preventDefault();
+      const idx = parseInt(inputEl.getAttribute('data-edit-triage-idx') || '-1', 10);
+      if (idx < 0 || idx >= currentTriageData.length) return;
+      currentTriageData[idx].apaar_id = inputEl.value.trim();
+      currentTriageData[idx]._editing = false;
+      renderTriageRows(currentTriageData, { keepTab: true });
+    });
 
-    // Remove Single Row from Preview Table
+    // Toggle Edit / Remove Single Row from Preview Table
     tableBody.addEventListener('click', (e: MouseEvent) => {
+      const editBtn = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-toggle-edit-triage-idx]');
+      if (editBtn) {
+        const idx = parseInt(editBtn.getAttribute('data-toggle-edit-triage-idx') || '-1', 10);
+        if (idx >= 0 && idx < currentTriageData.length) {
+          currentTriageData[idx]._editing = !currentTriageData[idx]._editing;
+          renderTriageRows(currentTriageData, {
+            focusIdx: currentTriageData[idx]._editing ? idx : undefined,
+            keepTab: true,
+          });
+        }
+        return;
+      }
+
       const removeBtn = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-remove-triage-idx]');
       if (!removeBtn) return;
       const idx = parseInt(removeBtn.getAttribute('data-remove-triage-idx') || '-1', 10);

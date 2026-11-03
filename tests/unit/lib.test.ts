@@ -333,6 +333,47 @@ describe('College Roster & Admissions Backend (/api/roster/sync & ingestRoster)'
       .bind(187, 'OVERRUN_RISK', 'INST-001')
       .run();
   });
+
+  test('POST /api/roster/sync auto-reconciles stale seed current_enrollment (187) when actual admissions have open seats', async () => {
+    const locals = {
+      user: { username: 'nodal_tca', role: 'INSTITUTE_ADMIN', institution_id: 'INST-001' },
+    };
+
+    const sampleStudents = [
+      { apaar_id: '912348571920', full_name: 'Aarav Kulkarni', program: 'B.Tech Computer Science', admission_quota: 'APPROVED_INTAKE', batch_year: 2026 },
+      { apaar_id: '812349582031', full_name: 'Priya Nair', program: 'B.Tech Electronics & Comm.', admission_quota: 'SUPERNUMERARY', batch_year: 2026 },
+      { apaar_id: '723450693142', full_name: 'Rohan Deshmukh', program: 'B.Tech Mechanical Engg', admission_quota: 'NRI', batch_year: 2026 },
+      { apaar_id: '634561704253', full_name: 'Ananya Kulkarni', program: 'B.Tech Computer Science', admission_quota: 'OCI', batch_year: 2026 },
+      { apaar_id: '545672815364', full_name: 'Vikramaditya Joshi', program: 'B.Tech Electronics & Comm.', admission_quota: 'FN', batch_year: 2026 },
+    ];
+
+    const bulkRes = await postRosterSync({
+      request: new Request('http://localhost/api/roster/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          institutionId: 'INST-001',
+          students: sampleStudents,
+        }),
+      }),
+      locals,
+    } as any);
+    expect(bulkRes.status).toBe(200);
+    const bulkData = await bulkRes.json();
+    expect(bulkData.success).toBe(true);
+    expect(bulkData.inserted).toBe(5);
+    expect(bulkData.new_enrollment).toBeLessThanOrEqual(180);
+
+    // Clean up inserted rows and restore seed state
+    const db = getDB();
+    for (const s of sampleStudents) {
+      await db.prepare('DELETE FROM admissions WHERE apaar_id = ? AND institution_id = ?').bind(s.apaar_id, 'INST-001').run();
+    }
+    await db
+      .prepare('UPDATE institutions SET current_enrollment = ?, status = ? WHERE id = ?')
+      .bind(187, 'OVERRUN_RISK', 'INST-001')
+      .run();
+  });
 });
 
 describe('ISO/IEC 18004 QR Code Encoder & Decoder Verification (src/lib/qr.ts)', () => {
