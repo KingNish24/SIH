@@ -21,6 +21,8 @@ import { getDB } from '../../src/lib/db';
 import { ingestRoster, isValidApaar, computeInstitutionSeatTelemetry } from '../../src/lib/roster';
 import { GET as getRosterSync, POST as postRosterSync, DELETE as deleteRosterSync } from '../../src/pages/api/roster/sync';
 import { GET as getRosterLookup } from '../../src/pages/api/roster/lookup';
+import { generateQrSvg, rsEncode, computeFormatBits } from '../../src/lib/qr';
+import { verifyCredential } from '../../src/lib/attestation';
 
 describe('masking (DPDP)', () => {
   test('maskApaar keeps only last 4 digits', () => {
@@ -332,3 +334,180 @@ describe('College Roster & Admissions Backend (/api/roster/sync & ingestRoster)'
       .run();
   });
 });
+
+describe('ISO/IEC 18004 QR Code Encoder & Decoder Verification (src/lib/qr.ts)', () => {
+  test('generates a 100% standards-compliant, scannable QR code and decodes the exact verification URL', async () => {
+    const targetUrl = 'http://localhost:4321/verifier?apaar=412398471029&id=DEG-2024-8841';
+    const svg = generateQrSvg(targetUrl);
+
+    // 1. Parse viewBox & margin (Version 4 = 33x33, default margin = 4 => viewBox 0 0 41 41)
+    const vbMatch = svg.match(/viewBox="0 0 (\d+) (\d+)"/);
+    expect(vbMatch).not.toBeNull();
+    const totalDim = Number(vbMatch![1]);
+    const margin = 4;
+    const N = totalDim - margin * 2;
+    expect(N).toBe(33); // Version 4 (33x33) for 66-byte URL
+
+    // 2. Parse <path d="..."> modules into a 2D N x N grid
+    const grid: number[][] = Array.from({ length: N }, () => Array(N).fill(0));
+    const pathRegex = /M(\d+),(\d+)h1v1h-1z/g;
+    let match: RegExpExecArray | null;
+    while ((match = pathRegex.exec(svg)) !== null) {
+      const col = Number(match[1]) - margin;
+      const row = Number(match[2]) - margin;
+      if (row >= 0 && row < N && col >= 0 && col < N) {
+        grid[row][col] = 1;
+      }
+    }
+
+    // 3. Verify the 3 Finder Patterns (7x7 at (0,0), (0, N-7), (N-7, 0))
+    const checkFinder = (r0: number, c0: number) => {
+      for (let r = 0; r < 7; r++) {
+        for (let c = 0; c < 7; c++) {
+          const expected =
+            r === 0 || r === 6 || c === 0 || c === 6 || (r >= 2 && r <= 4 && c >= 2 && c <= 4)
+              ? 1
+              : 0;
+          expect(grid[r0 + r][c0 + c]).toBe(expected);
+        }
+      }
+    };
+    checkFinder(0, 0);
+    checkFinder(0, N - 7);
+    checkFinder(N - 7, 0);
+
+    // 4. Verify Timing Patterns (row 6 and col 6) & Dark Module at (4*4 + 9, 8) = (25, 8)
+    for (let i = 8; i < N - 8; i++) {
+      expect(grid[6][i]).toBe(i % 2 === 0 ? 1 : 0);
+      expect(grid[i][6]).toBe(i % 2 === 0 ? 1 : 0);
+    }
+    expect(grid[25][8]).toBe(1);
+
+    // 5. Verify both 15-bit BCH Format Information copies equal 0x77C4 (ECC Level L = 01, Mask 0 = 000)
+    expect(computeFormatBits(0b01, 0)).toBe(0x77c4);
+    const formatCoords1: Array<[number, number]> = [
+      [8, 0], [8, 1], [8, 2], [8, 3], [8, 4], [8, 5],
+      [8, 7], [8, 8], [7, 8],
+      [5, 8], [4, 8], [3, 8], [2, 8], [1, 8], [0, 8],
+    ];
+    const formatCoords2: Array<[number, number]> = [
+      [N - 1, 8], [N - 2, 8], [N - 3, 8], [N - 4, 8], [N - 5, 8], [N - 6, 8], [N - 7, 8],
+      [8, N - 8], [8, N - 7], [8, N - 6], [8, N - 5], [8, N - 4], [8, N - 3], [8, N - 2], [8, N - 1],
+    ];
+    let readFormat1 = 0;
+    let readFormat2 = 0;
+    for (let i = 0; i < 15; i++) {
+      readFormat1 = (readFormat1 << 1) | grid[formatCoords1[i][0]][formatCoords1[i][1]];
+      readFormat2 = (readFormat2 << 1) | grid[formatCoords2[i][0]][formatCoords2[i][1]];
+    }
+    expect(readFormat1).toBe(0x77c4);
+    expect(readFormat2).toBe(0x77c4);
+
+    // 6. Build reserved mask for Version 4 (alignment centers [6, 26] -> non-overlapping at (26, 26))
+    const reserved: boolean[][] = Array.from({ length: N }, () => Array(N).fill(false));
+    const markFinderReserved = (row: number, col: number) => {
+      for (let r = -1; r <= 7; r++) {
+        for (let c = -1; c <= 7; c++) {
+          const rr = row + r;
+          const cc = col + c;
+          if (rr >= 0 && rr < N && cc >= 0 && cc < N) reserved[rr][cc] = true;
+        }
+      }
+    };
+    markFinderReserved(0, 0);
+    markFinderReserved(0, N - 7);
+    markFinderReserved(N - 7, 0);
+    for (let r = -2; r <= 2; r++) {
+      for (let c = -2; c <= 2; c++) {
+        reserved[26 + r][26 + c] = true;
+      }
+    }
+    for (let i = 8; i < N - 8; i++) {
+      reserved[6][i] = true;
+      reserved[i][6] = true;
+    }
+    reserved[25][8] = true;
+    for (const [r, c] of formatCoords1) reserved[r][c] = true;
+    for (const [r, c] of formatCoords2) reserved[r][c] = true;
+
+    // 7. Read & unmask data modules in standard 2-column upward/downward zigzag
+    const unmaskedBits: number[] = [];
+    let up = true;
+    for (let right = N - 1; right >= 1; right -= 2) {
+      if (right === 6) right = 5;
+      for (let vert = 0; vert < N; vert++) {
+        const r = up ? N - 1 - vert : vert;
+        for (let j = 0; j < 2; j++) {
+          const c = right - j;
+          if (!reserved[r][c]) {
+            const unmasked = grid[r][c] ^ ((r + c) % 2 === 0 ? 1 : 0);
+            unmaskedBits.push(unmasked);
+          }
+        }
+      }
+      up = !up;
+    }
+
+    // Reconstruct the 100 codewords (80 data + 20 EC for Version 4-L)
+    const codewords = new Uint8Array(100);
+    for (let i = 0; i < 100; i++) {
+      let b = 0;
+      for (let j = 0; j < 8; j++) {
+        b = (b << 1) | unmaskedBits[i * 8 + j];
+      }
+      codewords[i] = b;
+    }
+
+    const dataCodewords = codewords.slice(0, 80);
+    const ecCodewords = codewords.slice(80, 100);
+
+    // Verify Reed-Solomon ECC bytes match rsEncode(dataCodewords, 20)
+    const expectedEc = rsEncode(dataCodewords, 20);
+    expect(Array.from(ecCodewords)).toEqual(Array.from(expectedEc));
+
+    // 8. Decode Byte Mode (0100) bit stream + 8-bit character count + UTF-8 payload
+    const readBits = (startBit: number, len: number): number => {
+      let val = 0;
+      for (let i = 0; i < len; i++) {
+        val = (val << 1) | unmaskedBits[startBit + i];
+      }
+      return val;
+    };
+
+    const modeIndicator = readBits(0, 4);
+    expect(modeIndicator).toBe(0b0100); // Byte Mode
+
+    const charCount = readBits(4, 8);
+    expect(charCount).toBe(targetUrl.length);
+
+    const payloadBytes = new Uint8Array(charCount);
+    for (let i = 0; i < charCount; i++) {
+      payloadBytes[i] = readBits(12 + i * 8, 8);
+    }
+    const decodedUrl = new TextDecoder().decode(payloadBytes);
+    expect(decodedUrl).toBe(targetUrl);
+
+    // 9. Verify verifyCredential encodes a scannable verification URL in deg.qrSvg while keeping deg.offlineQrPayload intact
+    const db = getDB();
+    const credResult = await verifyCredential({
+      apaar_id: '412398471029',
+      origin: 'http://localhost:4321',
+      db,
+    });
+    expect(credResult.success).toBe(true);
+    expect(credResult.degrees.length).toBeGreaterThan(0);
+    const primaryDeg = credResult.degrees[0] as any;
+    const expectedWithLabel = generateQrSvg(targetUrl, {
+      size: 176,
+      margin: 4,
+      darkColor: '#0F2942',
+      lightColor: '#FFFFFF',
+      label: `W3C Verifiable Credential QR for ${primaryDeg.id}`,
+    });
+    expect(primaryDeg.qrSvg).toBe(expectedWithLabel);
+    expect(primaryDeg.offlineQrPayload).toBeDefined();
+    expect(primaryDeg.offlineQrPayload.apaar_id).toBe('412398471029');
+    expect(primaryDeg.offlineQrPayload.sig.length).toBeGreaterThan(10);
+  });
+});
+

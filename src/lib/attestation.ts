@@ -19,6 +19,7 @@ export interface VerifyCredentialOptions {
   purpose?: string;
   predicate?: PredicateQuery;
   consent_token?: string;
+  origin?: string;
   db: DatabaseAdapter;
 }
 
@@ -191,9 +192,12 @@ export async function verifyCredential(options: VerifyCredentialOptions): Promis
         sig: d.signature || '',
       };
 
-      const qrSvg = generateQrSvg(JSON.stringify(qrVcPayloadObj), {
-        size: 168,
-        margin: 2,
+      const baseOrigin = (options.origin || 'http://localhost:4321').replace(/\/$/, '');
+      const qrVerifyUrl = `${baseOrigin}/verifier?apaar=${d.apaar_id}&id=${encodeURIComponent(d.id)}`;
+
+      const qrSvg = generateQrSvg(qrVerifyUrl, {
+        size: 176,
+        margin: 4,
         darkColor: '#0F2942',
         lightColor: '#FFFFFF',
         label: `W3C Verifiable Credential QR for ${d.id}`,

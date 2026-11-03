@@ -1342,8 +1342,35 @@ const initialOrg = queryInst
       const resultBox = document.getElementById('offlineVerifyResultBox');
       if (!offlineInput || !resultBox) return;
 
+      const rawText = offlineInput.value.trim();
       try {
-        const payload = JSON.parse(offlineInput.value);
+        let payload: Record<string, any> | null = null;
+        if (/^https?:\/\//i.test(rawText) || rawText.startsWith('/verifier')) {
+          const parsedUrl = new URL(rawText, window.location.origin);
+          const urlApaar = parsedUrl.searchParams.get('apaar')?.trim() || '';
+          if (!/^\d{12}$/.test(urlApaar)) {
+            throw new Error('Verification URL does not contain a valid 12-digit APAAR ID.');
+          }
+          const verifyRes = await fetch('/api/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ apaar_id: urlApaar, verifier_name: 'QR URL Scanner' }),
+          });
+          const verifyData = await verifyRes.json();
+          const info = verifyData.data || verifyData;
+          const deg = info.degrees?.[0];
+          if (!deg?.offlineQrPayload) {
+            throw new Error(verifyData.error || 'No signed degree credential found for scanned QR URL.');
+          }
+          payload = deg.offlineQrPayload;
+        } else {
+          payload = JSON.parse(rawText);
+        }
+
+        if (!payload) {
+          throw new Error('Empty QR payload.');
+        }
+
         if (!cachedIssuerKeyData?.jwk) {
           await loadPublicKeyForOfflineVerifier();
         }

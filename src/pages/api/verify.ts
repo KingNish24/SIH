@@ -15,6 +15,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
     };
 
     const db = getDB(locals);
+    let origin = 'http://localhost:4321';
+    try {
+      origin = new URL(request.url).origin;
+    } catch {
+      // Keep default origin if URL parsing fails
+    }
 
     const result = await verifyCredential({
       apaar_id: apaar_id || '',
@@ -22,6 +28,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       purpose,
       predicate,
       consent_token,
+      origin,
       db,
     });
 
