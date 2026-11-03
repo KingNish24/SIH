@@ -141,6 +141,7 @@ describe('College Roster & Admissions Backend (/api/roster/sync & ingestRoster)'
     const data = await okRes.json();
     expect(data.success).toBe(true);
     expect(data.institution.id).toBe('INST-001');
+    expect(data.institution.name).toBe('Apex Institute of Engineering, Pune');
     expect(Array.isArray(data.admissions)).toBe(true);
     expect(data.admissions.length).toBeGreaterThanOrEqual(12);
     expect(data.admissions[0]).toHaveProperty('full_name');

@@ -1,6 +1,6 @@
 import type { DatabaseAdapter } from './db';
 import type { Student, Degree, Admission, Institution } from './types';
-import { verifyDegree, getSigningKeys } from './signing';
+import { signDegree, verifyDegree, getSigningKeys } from './signing';
 import { generateQrSvg } from './qr';
 import { maskApaar, maskName, maskEmail, maskPhone } from './types';
 import { validateAndConsumeConsentToken, type TokenValidationResult } from '../pages/api/student/token';
@@ -149,6 +149,15 @@ export async function verifyCredential(options: VerifyCredentialOptions): Promis
         issuing_authority: d.issuing_authority,
         issued_at: d.issued_at,
       };
+      if (d.status === 'ISSUED' && (!d.signature || !d.signing_key_id)) {
+        try {
+          const signed = await signDegree(signablePayload);
+          d.signature = signed.signature;
+          d.signing_key_id = signed.keyId;
+        } catch {
+          // Ignore if signing unavailable
+        }
+      }
       const signatureValid = await verifyDegree(signablePayload, d.signature, d.signing_key_id);
 
       const qrVcPayloadObj = {

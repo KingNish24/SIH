@@ -27,7 +27,7 @@ if (targetInstId) {
 
 const collegeA = institutions.find((i) => i.id === (targetInstId || 'INST-001')) || institutions[0] || {
   id: targetInstId || 'INST-001',
-  name: 'Technical College A (Apex Institute of Engineering)',
+  name: 'Apex Institute of Engineering, Pune',
   code: 'TCA-1049',
   sanctioned_intake: 180,
   current_enrollment: 12,
@@ -526,8 +526,8 @@ const clientI18n = {
                             <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-900 px-2 py-0.5 rounded-full border border-amber-300 font-bold text-xs whitespace-nowrap">
                               <span>⚠ Duplicate Alert</span>
                             </span>
-                            <div class="text-[11px] text-amber-800 font-medium truncate" title={`Also at ${adm.other_colleges.length > 0 ? adm.other_colleges.join(', ') : 'Technical College B'}`}>
-                              Also at {adm.other_colleges.length > 0 ? adm.other_colleges.join(', ') : 'Technical College B'}
+                            <div class="text-[11px] text-amber-800 font-medium truncate" title={`Also at ${adm.other_colleges.length > 0 ? adm.other_colleges.join(', ') : 'Metro Institute of Technology, Bengaluru'}`}>
+                              Also at {adm.other_colleges.length > 0 ? adm.other_colleges.join(', ') : 'Metro Institute of Technology, Bengaluru'}
                             </div>
                           </div>
                         ) : (
@@ -719,29 +719,75 @@ const clientI18n = {
               <div>
                 <h2 class="text-base font-bold text-[#0B1E48]">Bulk Excel / CSV Upload</h2>
                 <p class="text-xs text-slate-600 mt-0.5">
-                  Upload an Excel CSV file of admitted students to verify APAAR IDs and add them in bulk.
+                  Upload a CSV file or paste rows directly from Microsoft Excel to verify 12-digit APAAR IDs and admit students in bulk.
                 </p>
               </div>
 
-              <button
-                type="button"
-                id="downloadSampleCsvBtn"
-                class="h-9 px-3.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-[#0B1E48] border border-slate-300 text-xs font-bold transition-colors inline-flex items-center gap-2 shrink-0 cursor-pointer"
-              >
-                <svg class="w-4 h-4 text-[#0B4EA2] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                <span>Download Sample Excel / CSV Template</span>
-              </button>
+              <div class="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  id="downloadSampleCsvBtn"
+                  class="h-9 px-3.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-[#0B1E48] border border-slate-300 text-xs font-bold transition-colors inline-flex items-center gap-2 shrink-0 cursor-pointer"
+                >
+                  <svg class="w-4 h-4 text-[#0B4EA2] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>Download Excel / CSV Format</span>
+                </button>
+
+                <button
+                  type="button"
+                  id="loadSamplePreviewBtn"
+                  class="h-9 px-3.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#0B4EA2] border border-blue-200 text-xs font-bold transition-colors inline-flex items-center gap-1.5 shrink-0 cursor-pointer"
+                >
+                  <span>Load 5-Row Sample Preview</span>
+                </button>
+
+                <button
+                  type="button"
+                  id="toggleExcelPasteBtn"
+                  aria-expanded="false"
+                  aria-controls="excelPasteBox"
+                  class="h-9 px-3.5 rounded-lg bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 text-xs font-bold transition-colors inline-flex items-center gap-1.5 shrink-0 cursor-pointer"
+                >
+                  <span>Paste from Excel</span>
+                </button>
+              </div>
             </div>
 
             <div class="p-5 sm:p-6 space-y-5">
+              <!-- Top 3-Step Visual Strip -->
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-6 h-6 rounded-full bg-[#0B1E48] text-white font-mono font-bold inline-flex items-center justify-center shrink-0">1</span>
+                  <div>
+                    <div class="font-bold text-[#0B1E48]">1. Download Format</div>
+                    <div class="text-slate-600">Use standard 6-column sheet or sample</div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2.5">
+                  <span class="w-6 h-6 rounded-full bg-[#0B4EA2] text-white font-mono font-bold inline-flex items-center justify-center shrink-0">2</span>
+                  <div>
+                    <div class="font-bold text-[#0B1E48]">2. Drop CSV or Paste from Excel</div>
+                    <div class="text-slate-600">Supports comma, tab, or semicolon rows</div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2.5">
+                  <span class="w-6 h-6 rounded-full bg-emerald-700 text-white font-mono font-bold inline-flex items-center justify-center shrink-0">3</span>
+                  <div>
+                    <div class="font-bold text-[#0B1E48]">3. Review &amp; Save Valid Rows</div>
+                    <div class="text-slate-600">Fix any APAAR typo inline before saving</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Upload Box -->
               <label
                 for="csvFileInput"
                 id="csvDropzoneLabel"
                 tabindex="0"
                 aria-describedby="csvSchemaHint"
-                class="border-2 border-dashed border-slate-300 hover:border-[#0B4EA2] hover:bg-blue-50/30 rounded-xl p-8 text-center cursor-pointer flex flex-col items-center justify-center bg-slate-50 transition-colors"
+                class="border-2 border-dashed border-slate-300 hover:border-[#0B4EA2] hover:bg-blue-50/30 rounded-xl p-7 text-center cursor-pointer flex flex-col items-center justify-center bg-slate-50 transition-colors"
               >
                 <svg class="w-8 h-8 text-[#0B4EA2] mb-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -755,51 +801,85 @@ const clientI18n = {
                 <input type="file" id="csvFileInput" accept=".csv,text/csv" class="hidden" />
               </label>
 
-              <!-- Embedded CSV Preview & Save Section -->
+              <!-- Collapsible Paste Directly from Excel Box -->
+              <div id="excelPasteBox" class="hidden rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                <div class="flex items-center justify-between gap-2">
+                  <label for="excelPasteInput" class="text-xs font-bold text-[#0B1E48]">
+                    Paste Rows Directly from Microsoft Excel or CSV
+                  </label>
+                  <span class="text-xs text-slate-500 font-mono">Tab or comma separated</span>
+                </div>
+                <textarea
+                  id="excelPasteInput"
+                  rows="4"
+                  placeholder="Paste rows copied from Excel or CSV here (APAAR ID, Full Name, Branch, Quota, Allotment No., Year)..."
+                  class="w-full rounded-lg bg-white border border-slate-300 p-3 font-mono text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B4EA2]"
+                ></textarea>
+                <div class="flex justify-end">
+                  <button
+                    type="button"
+                    id="parseExcelPasteBtn"
+                    class="h-9 px-4 rounded-lg bg-[#0B1E48] hover:bg-[#1E3A8A] text-white text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    Preview Pasted Rows
+                  </button>
+                </div>
+              </div>
+
+              <!-- Upgraded Preview Table (#triagePanel) -->
               <div id="triagePanel" class="rounded-xl border border-slate-200 overflow-hidden bg-white">
                 <div class="px-5 py-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4">
-                  <div class="flex flex-wrap items-center gap-4 text-sm">
+                  <div class="flex flex-wrap items-center gap-4 text-xs sm:text-sm" id="triageSummaryStrip">
                     <button
                       type="button"
                       id="viewTriageTabBtn"
-                      class="font-bold text-[#0B1E48] inline-flex items-center gap-2 cursor-pointer"
+                      class="font-bold text-[#0B1E48] inline-flex items-center gap-1.5 cursor-pointer"
                     >
-                      <span>Uploaded CSV Preview</span>
-                      <span id="stagedCountPill" class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-800 font-mono text-xs">0</span>
+                      <span>Total Rows:</span>
+                      <strong id="stagedCountPill" class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-800 font-mono text-xs">0</strong>
                     </button>
-                    <div id="triageSummaryStrip" class="flex flex-wrap items-center gap-4 text-xs sm:text-sm">
-                      <span>Valid APAAR: <strong id="countValid" class="text-emerald-700 font-mono">0</strong></span>
-                      <span>Format Errors: <strong id="countMalformed" class="text-red-700 font-mono">0</strong></span>
-                      <span>Missing APAAR: <strong id="countMissing" class="text-amber-700 font-mono">0</strong></span>
-                    </div>
+                    <span>Valid (Ready): <strong id="countValid" class="text-emerald-700 font-mono">0</strong></span>
+                    <span>Invalid APAAR: <strong id="countMalformed" class="text-red-700 font-mono">0</strong></span>
+                    <span>Missing APAAR: <strong id="countMissing" class="text-amber-700 font-mono">0</strong></span>
+                    <span>Seats After Upload: <strong id="projectedSeatsAfterUpload" class="text-[#0B4EA2] font-mono">{actualAdmittedCount} / {sanctionedCap}</strong></span>
                   </div>
 
-                  <button
-                    type="button"
-                    id="commitSyncBtn"
-                    disabled
-                    class="h-10 px-5 rounded-lg bg-[#0B4EA2] hover:bg-[#083B7E] disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-not-allowed text-white text-sm font-bold transition-colors inline-flex items-center gap-2 cursor-pointer"
-                  >
-                    <span>Save Uploaded Students</span>
-                  </button>
+                  <div class="flex items-center gap-2.5">
+                    <button
+                      type="button"
+                      id="clearTriageBtn"
+                      class="hidden h-10 px-3.5 rounded-lg bg-white hover:bg-red-50 text-slate-700 hover:text-red-700 border border-slate-300 hover:border-red-300 text-xs font-bold transition-colors cursor-pointer"
+                    >
+                      Clear List
+                    </button>
+
+                    <button
+                      type="button"
+                      id="commitSyncBtn"
+                      disabled
+                      class="h-10 px-5 rounded-lg bg-[#0B4EA2] hover:bg-[#083B7E] disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-not-allowed text-white text-sm font-bold transition-colors inline-flex items-center gap-2 cursor-pointer"
+                    >
+                      <span>Save Valid Students</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div class="overflow-x-auto">
-                  <table class="w-full text-left text-sm border-collapse">
+                  <table class="w-full text-left text-xs sm:text-sm border-collapse">
                     <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
                       <tr>
                         <th class="py-3 px-4">#</th>
-                        <th class="py-3 px-4">12-Digit APAAR ID</th>
+                        <th class="py-3 px-4">12-Digit APAAR ID (Editable)</th>
                         <th class="py-3 px-4">Student Name</th>
-                        <th class="py-3 px-4">Branch / Department</th>
-                        <th class="py-3 px-4">Quota &amp; Allotment</th>
-                        <th class="py-3 px-4">Check Status</th>
+                        <th class="py-3 px-4">Branch &amp; Quota</th>
+                        <th class="py-3 px-4">Pre-Check Status</th>
+                        <th class="py-3 px-4 text-right">Action</th>
                       </tr>
                     </thead>
                     <tbody id="triageTableBody" class="divide-y divide-slate-200 text-slate-800">
                       <tr>
                         <td colspan="6" class="py-10 px-4 text-center text-slate-500 text-sm">
-                          No CSV file selected yet. Choose a CSV file above or download the sample template to test.
+                          No rows queued yet. Drop a CSV file, paste from Excel, or click "Load 5-Row Sample Preview" above.
                         </td>
                       </tr>
                     </tbody>
@@ -1107,6 +1187,13 @@ const clientI18n = {
         filterDupeOpt.textContent = `Duplicate Alerts (${dupes})`;
       }
       if (pctEl) pctEl.textContent = `${pct}% seats filled`;
+      const projSeatsNode = document.getElementById('projectedSeatsAfterUpload');
+      if (projSeatsNode) {
+        const netValidQueued = currentTriageData.filter(
+          (r) => /^[0-9]{12}$/.test((r.apaar_id || '').trim()) && !enrolledList.some((e) => e.apaar_id === (r.apaar_id || '').trim())
+        ).length;
+        projSeatsNode.textContent = `${totalAdmitted + netValidQueued} / ${sanctioned}`;
+      }
 
       // Quota counts
       const countMerit = enrolledList.filter((a) => normalizeQuotaClient(a.admission_quota || a.quota_label) === 'APPROVED_INTAKE').length;
@@ -1217,7 +1304,7 @@ const clientI18n = {
           }
           if (Array.isArray(data.active_admissions)) {
             concurrentColleges = data.active_admissions.map(
-              (a: any) => (a.institution_name || a.institution_id || 'Technical College B').split('(')[0].trim()
+              (a: any) => (a.institution_name || a.institution_id || 'Metro Institute of Technology, Bengaluru').split('(')[0].trim()
             );
           }
         } else {
@@ -1230,7 +1317,7 @@ const clientI18n = {
           hasConcurrent = Boolean(existingMatch.is_duplicate) || existingMatch.other_colleges?.length > 0;
           concurrentColleges = existingMatch.other_colleges?.length
             ? existingMatch.other_colleges
-            : ['Technical College B'];
+            : ['Metro Institute of Technology, Bengaluru'];
         }
       } finally {
         if (btnVerifyApaar) btnVerifyApaar.disabled = false;
@@ -1254,7 +1341,7 @@ const clientI18n = {
         if (hasConcurrent) {
           apaarVerifyCard.classList.add('bg-amber-50', 'border-amber-300', 'text-amber-950');
           const conflictText =
-            concurrentColleges.length > 0 ? concurrentColleges.join(', ') : 'Technical College B';
+            concurrentColleges.length > 0 ? concurrentColleges.join(', ') : 'Metro Institute of Technology, Bengaluru';
           apaarVerifyCard.innerHTML = `
             <div class="font-bold text-amber-900">
               ⚠ Duplicate Seat Alert: Student is already admitted in ${conflictText}
@@ -1604,16 +1691,26 @@ const clientI18n = {
       }
     });
 
+    const loadSamplePreviewBtn = document.getElementById('loadSamplePreviewBtn');
+    const toggleExcelPasteBtn = document.getElementById('toggleExcelPasteBtn');
+    const excelPasteBox = document.getElementById('excelPasteBox');
+    const excelPasteInput = document.getElementById('excelPasteInput') as HTMLTextAreaElement | null;
+    const parseExcelPasteBtn = document.getElementById('parseExcelPasteBtn');
+    const clearTriageBtn = document.getElementById('clearTriageBtn');
+    const projectedSeatsEl = document.getElementById('projectedSeatsAfterUpload');
+
+    const SAMPLE_CSV_LINES = [
+      'apaar_id,full_name,program,admission_quota,allotment_ref,batch_year',
+      '912348571920,Aarav Kulkarni,B.Tech Computer Science,APPROVED_INTAKE,CET-2026-MH-88412,2026',
+      '812349582031,Priya Nair,B.Tech Electronics & Comm.,SUPERNUMERARY,CET-2026-TFW-88419,2026',
+      '723450693142,Rohan Deshmukh,B.Tech Mechanical Engg,NRI,INST-NRI-2026-004,2026',
+      '634561704253,Ananya Kulkarni,B.Tech Computer Science,OCI,JOSAA-OCI-2026-112,2026',
+      '545672815364,Vikramaditya Joshi,B.Tech Electronics & Comm.,FN,ICCR-FN-2026-019,2026',
+    ];
+
     // Download Sample CSV Template
     downloadSampleCsvBtn?.addEventListener('click', () => {
-      const csvContent = [
-        'apaar_id,full_name,program,admission_quota,allotment_ref,batch_year',
-        '901238471920,Aaditya Patel,B.Tech Computer Science,APPROVED_INTAKE,CET-2026-MH-88412,2026',
-        '812349582031,Priya Nair,B.Tech Electronics & Comm.,SUPERNUMERARY,CET-2026-TFW-88419,2026',
-        '723450693142,Rohan Deshmukh,B.Tech Mechanical Engg,NRI,INST-NRI-2026-004,2026',
-        '634561704253,Ananya Kulkarni,B.Tech Computer Science,OCI,JOSAA-OCI-2026-112,2026',
-        '545672815364,Vikramaditya Joshi,B.Tech Electronics & Comm.,FN,ICCR-FN-2026-019,2026',
-      ].join('\n');
+      const csvContent = SAMPLE_CSV_LINES.join('\n');
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -1632,50 +1729,151 @@ const clientI18n = {
       return `${val.slice(0, 4)}-${val.slice(4, 8)}-${val.slice(8, 12)}`;
     }
 
-    function renderTriageRows(rows: any[]) {
+    function parseCols(line: string): string[] {
+      const delimiter = line.includes('\t') ? '\t' : line.includes(';') && !line.includes(',') ? ';' : ',';
+      return line.split(delimiter).map((c) => c.trim().replace(/^["']|["']$/g, ''));
+    }
+
+    function parseRawTextToRows(text: string): any[] {
+      const lines = text
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0);
+      if (lines.length === 0) return [];
+
+      const headerCols = parseCols(lines[0]).map((h) => h.toLowerCase());
+      const apaarIdx = headerCols.findIndex((h) => h.includes('apaar'));
+      const nameIdx = headerCols.findIndex((h) => h.includes('name'));
+      const progIdx = headerCols.findIndex((h) => h.includes('prog') || h.includes('branch'));
+      const quotaIdx = headerCols.findIndex((h) => h.includes('quota') || h.includes('cat'));
+      const allotIdx = headerCols.findIndex((h) => h.includes('allot') || h.includes('ref'));
+      const batchIdx = headerCols.findIndex((h) => h.includes('batch') || h.includes('year'));
+
+      const hasHeader = apaarIdx !== -1 || nameIdx !== -1;
+      const startIdx = hasHeader ? 1 : 0;
+      const parsedRows: any[] = [];
+
+      for (let i = startIdx; i < lines.length; i++) {
+        const cols = parseCols(lines[i]);
+        if (!cols || cols.length === 0 || (cols.length === 1 && !cols[0])) continue;
+
+        const apaar = apaarIdx !== -1 ? cols[apaarIdx] : cols[0];
+        const name = nameIdx !== -1 ? cols[nameIdx] : cols[1] || `Candidate ${i}`;
+        const prog = progIdx !== -1 ? cols[progIdx] : cols[2] || 'B.Tech Computer Science';
+        const quota = quotaIdx !== -1 ? cols[quotaIdx] : cols[3] || 'APPROVED_INTAKE';
+        const allotment = allotIdx !== -1 ? cols[allotIdx] : cols[4] || `CET-2026-MH-${88500 + i}`;
+        const batchRaw = batchIdx !== -1 ? cols[batchIdx] : cols[5];
+        const batchYear = parseInt(batchRaw, 10) || 2026;
+
+        parsedRows.push({
+          apaar_id: (apaar || '').trim(),
+          full_name: (name || 'Candidate').trim(),
+          program: normalizeBranchClient(prog),
+          admission_quota: normalizeQuotaClient(quota),
+          allotment_ref: (allotment || `CET-2026-MH-${88500 + i}`).trim(),
+          batch_year: batchYear,
+        });
+      }
+
+      return parsedRows;
+    }
+
+    function renderTriageRows(
+      rows: any[],
+      options?: { focusIdx?: number; selectionStart?: number | null; selectionEnd?: number | null; keepTab?: boolean }
+    ) {
       currentTriageData = rows;
       if (stagedCountPill) stagedCountPill.textContent = String(rows.length);
-      switchWorkspaceTab('csv');
+      clearTriageBtn?.classList.toggle('hidden', rows.length === 0);
+      if (!options?.keepTab) {
+        switchWorkspaceTab('csv');
+      }
+
+      const sanctioned = parseInt(activeCollegeEl?.getAttribute('data-sanctioned') || '180', 10);
 
       if (!rows.length) {
-        tableBody.innerHTML = `<tr><td colspan="6" class="py-10 px-4 text-center text-slate-500">0 records found in CSV file.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="6" class="py-10 px-4 text-center text-slate-500 text-sm">No rows queued yet. Drop a CSV file, paste from Excel, or click "Load 5-Row Sample Preview" above.</td></tr>`;
+        document.getElementById('countValid')!.textContent = '0';
+        document.getElementById('countMalformed')!.textContent = '0';
+        document.getElementById('countMissing')!.textContent = '0';
+        if (projectedSeatsEl) {
+          projectedSeatsEl.textContent = `${enrolledList.length} / ${sanctioned}`;
+        }
         if (commitBtn) commitBtn.disabled = true;
         return;
       }
 
       let valid = 0,
         malformed = 0,
-        missing = 0;
+        missing = 0,
+        netNewValid = 0;
       let html = '';
 
       rows.forEach((r, idx) => {
-        const is12 = /^[0-9]{12}$/.test(r.apaar_id || '');
-        const isMissing = !r.apaar_id || r.apaar_id.trim() === '';
+        const cleanApaar = (r.apaar_id || '').trim();
+        const is12 = /^[0-9]{12}$/.test(cleanApaar);
+        const isMissing = !cleanApaar;
+        const alreadyInThisCollege = is12 && enrolledList.some((item) => item.apaar_id === cleanApaar);
+        const duplicateInOtherCollege = is12 && !alreadyInThisCollege && (cleanApaar === '819203847561' || cleanApaar === '601928374819');
         const allotmentRef = r.allotment_ref || `CET-2026-MH-${88500 + idx}`;
 
         let statusTag = '';
         if (is12) {
           valid++;
-          statusTag = `<span class="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-full border border-emerald-200 font-bold text-xs">✓ Valid APAAR</span>`;
+          if (!alreadyInThisCollege) {
+            netNewValid++;
+          }
+          if (alreadyInThisCollege) {
+            statusTag = `<span class="inline-flex items-center gap-1 bg-amber-50 text-amber-900 px-2.5 py-1 rounded-full border border-amber-300 font-bold text-xs whitespace-nowrap">⚠ Already in This College</span>`;
+          } else if (duplicateInOtherCollege) {
+            statusTag = `<span class="inline-flex items-center gap-1 bg-amber-50 text-amber-900 px-2.5 py-1 rounded-full border border-amber-300 font-bold text-xs whitespace-nowrap">⚠ Duplicate in Another College</span>`;
+          } else {
+            statusTag = `<span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-full border border-emerald-200 font-bold text-xs whitespace-nowrap">✓ Ready to Admit</span>`;
+          }
         } else if (isMissing) {
           missing++;
-          statusTag = `<span class="bg-amber-50 text-amber-800 px-2.5 py-1 rounded-full border border-amber-200 font-bold text-xs">Missing APAAR</span>`;
+          statusTag = `<span class="inline-flex items-center gap-1 bg-amber-50 text-amber-800 px-2.5 py-1 rounded-full border border-amber-200 font-bold text-xs whitespace-nowrap">✕ Missing APAAR</span>`;
         } else {
           malformed++;
-          statusTag = `<span class="bg-red-50 text-red-800 px-2.5 py-1 rounded-full border border-red-200 font-bold text-xs">Invalid 12-Digit ID</span>`;
+          statusTag = `<span class="inline-flex items-center gap-1 bg-red-50 text-red-800 px-2.5 py-1 rounded-full border border-red-200 font-bold text-xs whitespace-nowrap">✕ Invalid 12-Digit ID</span>`;
         }
+
+        const inputClasses = is12
+          ? 'border-slate-300 bg-white text-[#0B1E48] focus:ring-[#0B4EA2]'
+          : 'border-red-400 bg-red-50/50 text-red-900 focus:ring-red-500';
 
         html += `
           <tr class="hover:bg-slate-50">
             <td class="py-3 px-4 font-mono text-slate-500">${idx + 1}</td>
-            <td class="py-3 px-4 font-mono font-bold text-[#0B1E48]">${maskApaarClient(r.apaar_id)}</td>
-            <td class="py-3 px-4 text-slate-900 font-bold">${r.full_name || r.name || 'Candidate'}</td>
-            <td class="py-3 px-4 text-slate-800">${normalizeBranchClient(r.program)}</td>
             <td class="py-3 px-4">
-              <div class="font-semibold text-slate-800">${formatQuotaHuman(r.admission_quota || r.admission_category)}</div>
-              <div class="font-mono text-xs text-slate-500">${allotmentRef}</div>
+              <input
+                type="text"
+                maxlength="12"
+                inputmode="numeric"
+                aria-label="Edit 12-Digit APAAR ID for row ${idx + 1}"
+                data-edit-triage-idx="${idx}"
+                data-edit-field="apaar_id"
+                value="${cleanApaar.replace(/"/g, '&quot;')}"
+                placeholder="12-digit APAAR"
+                class="w-36 h-8 px-2.5 rounded border font-mono text-xs font-bold focus:outline-none focus:ring-2 ${inputClasses}"
+              />
+              <span class="sr-only">${maskApaarClient(cleanApaar)}</span>
+            </td>
+            <td class="py-3 px-4 text-slate-900 font-bold">${r.full_name || r.name || 'Candidate'}</td>
+            <td class="py-3 px-4">
+              <div class="font-semibold text-slate-800">${normalizeBranchClient(r.program)}</div>
+              <div class="text-xs text-slate-500">${formatQuotaHuman(r.admission_quota || r.admission_category)} · <span class="font-mono">${allotmentRef}</span></div>
             </td>
             <td class="py-3 px-4">${statusTag}</td>
+            <td class="py-3 px-4 text-right">
+              <button
+                type="button"
+                data-remove-triage-idx="${idx}"
+                class="px-2.5 py-1 rounded-lg bg-white hover:bg-red-50 text-slate-700 hover:text-red-700 border border-slate-300 hover:border-red-300 text-xs font-bold transition-colors cursor-pointer"
+              >
+                Remove
+              </button>
+            </td>
           </tr>
         `;
       });
@@ -1684,8 +1882,107 @@ const clientI18n = {
       document.getElementById('countValid')!.textContent = String(valid);
       document.getElementById('countMalformed')!.textContent = String(malformed);
       document.getElementById('countMissing')!.textContent = String(missing);
+      if (projectedSeatsEl) {
+        projectedSeatsEl.textContent = `${enrolledList.length + netNewValid} / ${sanctioned}`;
+      }
       if (commitBtn) commitBtn.disabled = valid === 0;
+
+      if (options && typeof options.focusIdx === 'number' && options.focusIdx >= 0) {
+        const restoredInput = tableBody.querySelector<HTMLInputElement>(
+          `input[data-edit-triage-idx="${options.focusIdx}"]`
+        );
+        if (restoredInput) {
+          restoredInput.focus();
+          const pos = options.selectionStart ?? restoredInput.value.length;
+          try {
+            restoredInput.setSelectionRange(pos, options.selectionEnd ?? pos);
+          } catch {
+            // Ignore selection range errors on unsupported input states
+          }
+        }
+      }
     }
+
+    // Load 5-Row Sample Preview directly into preview table
+    loadSamplePreviewBtn?.addEventListener('click', () => {
+      const sampleRows = parseRawTextToRows(SAMPLE_CSV_LINES.join('\n'));
+      if (dropzoneTitle) {
+        dropzoneTitle.textContent = 'Loaded: 5-Row Sample Admission Preview';
+      }
+      renderTriageRows(sampleRows);
+      (window as any).showToast?.('Loaded 5 sample students into preview. Click "Save Valid Students" to admit them.', 'info');
+    });
+
+    // Toggle Collapsible Excel Paste Box
+    toggleExcelPasteBtn?.addEventListener('click', () => {
+      if (!excelPasteBox) return;
+      const isHidden = excelPasteBox.classList.toggle('hidden');
+      toggleExcelPasteBtn.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
+      if (!isHidden) {
+        excelPasteInput?.focus();
+      }
+    });
+
+    // Parse Pasted Rows from Excel / CSV Textarea
+    parseExcelPasteBtn?.addEventListener('click', () => {
+      const rawText = (excelPasteInput?.value || '').trim();
+      if (!rawText) {
+        (window as any).showToast?.('Please paste one or more student rows from Excel or CSV first.', 'warning');
+        excelPasteInput?.focus();
+        return;
+      }
+      const parsedRows = parseRawTextToRows(rawText);
+      if (parsedRows.length > 0) {
+        if (dropzoneTitle) {
+          dropzoneTitle.textContent = `Loaded ${parsedRows.length} Pasted Excel / CSV Rows`;
+        }
+        renderTriageRows(parsedRows);
+        (window as any).showToast?.(`Parsed ${parsedRows.length} pasted rows into preview.`, 'info');
+      } else {
+        (window as any).showToast?.('Could not parse any valid rows from pasted text.', 'warning');
+      }
+    });
+
+    // Clear Triage Queue
+    clearTriageBtn?.addEventListener('click', () => {
+      currentTriageData = [];
+      if (csvFileInput) csvFileInput.value = '';
+      if (excelPasteInput) excelPasteInput.value = '';
+      if (dropzoneTitle) {
+        dropzoneTitle.textContent = 'Drag & drop your CSV file here, or click to browse';
+      }
+      renderTriageRows([]);
+      (window as any).showToast?.('Cleared preview list.', 'info');
+    });
+
+    // Inline Editing of 12-Digit APAAR ID inside Preview Table
+    function handleTriageInlineEdit(e: Event) {
+      const inputEl = (e.target as HTMLElement).closest<HTMLInputElement>('input[data-edit-triage-idx]');
+      if (!inputEl) return;
+      const idx = parseInt(inputEl.getAttribute('data-edit-triage-idx') || '-1', 10);
+      if (idx < 0 || idx >= currentTriageData.length) return;
+      const newVal = inputEl.value.trim();
+      if (currentTriageData[idx].apaar_id === newVal && e.type === 'change') return;
+      currentTriageData[idx].apaar_id = newVal;
+      renderTriageRows(currentTriageData, {
+        focusIdx: e.type === 'input' ? idx : undefined,
+        selectionStart: inputEl.selectionStart,
+        selectionEnd: inputEl.selectionEnd,
+      });
+    }
+
+    tableBody.addEventListener('input', handleTriageInlineEdit);
+    tableBody.addEventListener('change', handleTriageInlineEdit);
+
+    // Remove Single Row from Preview Table
+    tableBody.addEventListener('click', (e: MouseEvent) => {
+      const removeBtn = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-remove-triage-idx]');
+      if (!removeBtn) return;
+      const idx = parseInt(removeBtn.getAttribute('data-remove-triage-idx') || '-1', 10);
+      if (idx < 0 || idx >= currentTriageData.length) return;
+      currentTriageData.splice(idx, 1);
+      renderTriageRows(currentTriageData);
+    });
 
     function processCsvFile(file: File) {
       if (!file) return;
@@ -1699,53 +1996,11 @@ const clientI18n = {
           const text = evt.target?.result as string;
           if (!text) return;
 
-          const lines = text
-            .split(/\r?\n/)
-            .map((l) => l.trim())
-            .filter((l) => l.length > 0);
-          if (lines.length === 0) return;
-
-          const parseCols = (line: string) => {
-            return line.split(',').map((c) => c.trim().replace(/^["']|["']$/g, ''));
-          };
-
-          const headerCols = parseCols(lines[0]).map((h) => h.toLowerCase());
-          const apaarIdx = headerCols.findIndex((h) => h.includes('apaar'));
-          const nameIdx = headerCols.findIndex((h) => h.includes('name'));
-          const progIdx = headerCols.findIndex((h) => h.includes('prog') || h.includes('branch'));
-          const quotaIdx = headerCols.findIndex((h) => h.includes('quota') || h.includes('cat'));
-          const allotIdx = headerCols.findIndex((h) => h.includes('allot') || h.includes('ref'));
-          const batchIdx = headerCols.findIndex((h) => h.includes('batch') || h.includes('year'));
-
-          const hasHeader = apaarIdx !== -1 || nameIdx !== -1;
-          const startIdx = hasHeader ? 1 : 0;
-          const parsedRows: any[] = [];
-
-          for (let i = startIdx; i < lines.length; i++) {
-            const cols = parseCols(lines[i]);
-            if (!cols || cols.length === 0 || (cols.length === 1 && !cols[0])) continue;
-
-            const apaar = apaarIdx !== -1 ? cols[apaarIdx] : cols[0];
-            const name = nameIdx !== -1 ? cols[nameIdx] : cols[1] || `Candidate ${i}`;
-            const prog = progIdx !== -1 ? cols[progIdx] : cols[2] || 'B.Tech Computer Science';
-            const quota = quotaIdx !== -1 ? cols[quotaIdx] : cols[3] || 'APPROVED_INTAKE';
-            const allotment = allotIdx !== -1 ? cols[allotIdx] : cols[4] || `CET-2026-MH-${88500 + i}`;
-            const batchRaw = batchIdx !== -1 ? cols[batchIdx] : cols[5];
-            const batchYear = parseInt(batchRaw, 10) || 2026;
-
-            parsedRows.push({
-              apaar_id: (apaar || '').trim(),
-              full_name: (name || 'Candidate').trim(),
-              program: normalizeBranchClient(prog),
-              admission_quota: normalizeQuotaClient(quota),
-              allotment_ref: (allotment || `CET-2026-MH-${88500 + i}`).trim(),
-              batch_year: batchYear,
-            });
-          }
+          const parsedRows = parseRawTextToRows(text);
 
           if (parsedRows.length > 0) {
             renderTriageRows(parsedRows);
-            (window as any).showToast?.(`Loaded ${parsedRows.length} rows from ${file.name}. Click "Save Uploaded Students" to finish.`, 'info');
+            (window as any).showToast?.(`Loaded ${parsedRows.length} rows from ${file.name}. Click "Save Valid Students" to finish.`, 'info');
           } else {
             (window as any).showToast?.('No valid rows found in CSV file.', 'warning');
           }
@@ -1831,6 +2086,7 @@ const clientI18n = {
             });
           });
 
+          renderTriageRows([], { keepTab: true });
           switchWorkspaceTab('enrolled');
           showFeedbackBanner(
             `<div><strong>Bulk CSV Upload Saved:</strong> Added <strong>${inserted}</strong> students (${dupes} duplicate alerts). Total Admitted: <strong>${enrolledList.length} / ${capUiVal}</strong>.</div>`,

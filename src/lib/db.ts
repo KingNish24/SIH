@@ -17,7 +17,7 @@ class MemoryDBAdapter implements DatabaseAdapter {
   private institutions: Institution[] = [
     {
       id: 'INST-001',
-      name: 'Technical College A (Apex Institute of Engineering)',
+      name: 'Apex Institute of Engineering, Pune',
       code: 'TCA-1049',
       sanctioned_intake: 180,
       current_enrollment: 187,
@@ -28,7 +28,7 @@ class MemoryDBAdapter implements DatabaseAdapter {
     },
     {
       id: 'INST-002',
-      name: 'Technical College B (Metro Polytechnic & College)',
+      name: 'Metro Institute of Technology, Bengaluru',
       code: 'TCB-2081',
       sanctioned_intake: 120,
       current_enrollment: 115,
@@ -39,7 +39,7 @@ class MemoryDBAdapter implements DatabaseAdapter {
     },
     {
       id: 'INST-003',
-      name: 'State University College of Engineering',
+      name: 'Delhi College of Engineering & Technology',
       code: 'SUC-3302',
       sanctioned_intake: 240,
       current_enrollment: 238,
@@ -519,7 +519,7 @@ class MemoryDBAdapter implements DatabaseAdapter {
       username: 'principal.pune',
       password_hash: '5ce6651ef4d90f081964a610390d72bd6c21684076d552c40fcf52c134ec367b',
       salt: 'e8c17281c34c78ce820a1124e9066700',
-      full_name: 'Dr. Ramesh Joshi (Principal, Technical College A)',
+      full_name: 'Dr. Ramesh Joshi (Principal, Apex Institute of Engineering)',
       designation: 'Principal & AISHE Nodal Officer',
       institution_id: 'INST-001',
       role: 'INSTITUTE_ADMIN',
@@ -530,7 +530,7 @@ class MemoryDBAdapter implements DatabaseAdapter {
       username: 'principal.bengaluru',
       password_hash: '5ce6651ef4d90f081964a610390d72bd6c21684076d552c40fcf52c134ec367b',
       salt: 'e8c17281c34c78ce820a1124e9066700',
-      full_name: 'Dr. Kavitha Nair (Principal, Technical College B)',
+      full_name: 'Dr. Kavitha Nair (Principal, Metro Institute of Technology)',
       designation: 'Principal & AISHE Nodal Officer',
       institution_id: 'INST-002',
       role: 'INSTITUTE_ADMIN',
@@ -602,7 +602,7 @@ class MemoryDBAdapter implements DatabaseAdapter {
       username: 'principal.pune',
       password_hash: '5ce6651ef4d90f081964a610390d72bd6c21684076d552c40fcf52c134ec367b',
       salt: 'e8c17281c34c78ce820a1124e9066700',
-      full_name: 'Dr. Ramesh Joshi (Principal, Technical College A)',
+      full_name: 'Dr. Ramesh Joshi (Principal, Apex Institute of Engineering)',
       role: 'INSTITUTE_ADMIN',
       institution_id: 'INST-001',
       apaar_id: null,

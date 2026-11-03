@@ -38,15 +38,22 @@ const bytesToB64 = (buf: ArrayBuffer | Uint8Array) => {
 
 let cached: { priv: CryptoKey; pub: CryptoKey; rawPub: string; kid: string } | null = null;
 
-/** Loads Ed25519 keypair from DEGREE_SIGNING_KEY (PKCS8 base64). Returns null if unset. */
+/** Loads Ed25519 keypair from DEGREE_SIGNING_KEY (PKCS8 base64), or generates a session Ed25519 keypair in local dev. */
 export async function getSigningKeys() {
   if (cached) return cached;
   const pkcs8 = getEnv().DEGREE_SIGNING_KEY as string | undefined;
-  if (!pkcs8) return null;
-  const priv = await crypto.subtle.importKey('pkcs8', b64ToBytes(pkcs8.trim()), { name: 'Ed25519' }, true, ['sign']);
-  const jwk = (await crypto.subtle.exportKey('jwk', priv)) as JsonWebKey;
-  const pubJwk: JsonWebKey = { kty: 'OKP', crv: 'Ed25519', x: jwk.x };
-  const pub = await crypto.subtle.importKey('jwk', pubJwk, { name: 'Ed25519' }, true, ['verify']);
+  let priv: CryptoKey;
+  let pub: CryptoKey;
+  if (pkcs8) {
+    priv = await crypto.subtle.importKey('pkcs8', b64ToBytes(pkcs8.trim()), { name: 'Ed25519' }, true, ['sign']);
+    const jwk = (await crypto.subtle.exportKey('jwk', priv)) as JsonWebKey;
+    const pubJwk: JsonWebKey = { kty: 'OKP', crv: 'Ed25519', x: jwk.x };
+    pub = await crypto.subtle.importKey('jwk', pubJwk, { name: 'Ed25519' }, true, ['verify']);
+  } else {
+    const kp = (await crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify'])) as CryptoKeyPair;
+    priv = kp.privateKey;
+    pub = kp.publicKey;
+  }
   const rawPub = bytesToB64(await crypto.subtle.exportKey('raw', pub) as ArrayBuffer);
   const digest = await crypto.subtle.digest('SHA-256', b64ToBytes(rawPub));
   const kid = 'ed25519-' + bytesToB64(digest).replace(/[^A-Za-z0-9]/g, '').slice(0, 16);

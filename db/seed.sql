@@ -4,9 +4,9 @@
 -- 1. Institutions
 INSERT INTO institutions (id, name, code, sanctioned_intake, current_enrollment, status, risk_score, state, district)
 VALUES 
-  ('INST-001', 'Technical College A (Apex Institute of Engineering)', 'TCA-1049', 180, 187, 'OVERRUN_RISK', 94.2, 'Maharashtra', 'Pune'),
-  ('INST-002', 'Technical College B (Metro Polytechnic & College)', 'TCB-2081', 120, 115, 'NORMAL', 12.5, 'Karnataka', 'Bengaluru'),
-  ('INST-003', 'State University College of Engineering', 'SUC-3302', 240, 238, 'WARNING', 48.0, 'Delhi', 'New Delhi');
+  ('INST-001', 'Apex Institute of Engineering, Pune', 'TCA-1049', 180, 187, 'OVERRUN_RISK', 94.2, 'Maharashtra', 'Pune'),
+  ('INST-002', 'Metro Institute of Technology, Bengaluru', 'TCB-2081', 120, 115, 'NORMAL', 12.5, 'Karnataka', 'Bengaluru'),
+  ('INST-003', 'Delhi College of Engineering & Technology', 'SUC-3302', 240, 238, 'WARNING', 48.0, 'Delhi', 'New Delhi');
 
 -- 2. Students
 INSERT INTO students (apaar_id, full_name, dob, gender, email, phone, dpdp_consent_status, passkey_credential_id)
@@ -102,8 +102,8 @@ VALUES
 -- 9. 4 Separate Portal Account Spaces (PBKDF2 SHA-256 with 100k iterations)
 INSERT OR REPLACE INTO college_accounts (id, username, password_hash, salt, full_name, designation, institution_id, role)
 VALUES
-  ('col_inst_001', 'principal.pune', '5ce6651ef4d90f081964a610390d72bd6c21684076d552c40fcf52c134ec367b', 'e8c17281c34c78ce820a1124e9066700', 'Dr. Ramesh Joshi (Principal, Technical College A)', 'Principal & AISHE Nodal Officer', 'INST-001', 'INSTITUTE_ADMIN'),
-  ('col_inst_002', 'principal.bengaluru', '5ce6651ef4d90f081964a610390d72bd6c21684076d552c40fcf52c134ec367b', 'e8c17281c34c78ce820a1124e9066700', 'Dr. Kavitha Nair (Principal, Technical College B)', 'Principal & AISHE Nodal Officer', 'INST-002', 'INSTITUTE_ADMIN');
+  ('col_inst_001', 'principal.pune', '5ce6651ef4d90f081964a610390d72bd6c21684076d552c40fcf52c134ec367b', 'e8c17281c34c78ce820a1124e9066700', 'Dr. Ramesh Joshi (Principal, Apex Institute of Engineering)', 'Principal & AISHE Nodal Officer', 'INST-001', 'INSTITUTE_ADMIN'),
+  ('col_inst_002', 'principal.bengaluru', '5ce6651ef4d90f081964a610390d72bd6c21684076d552c40fcf52c134ec367b', 'e8c17281c34c78ce820a1124e9066700', 'Dr. Kavitha Nair (Principal, Metro Institute of Technology)', 'Principal & AISHE Nodal Officer', 'INST-002', 'INSTITUTE_ADMIN');
 
 INSERT OR REPLACE INTO aicte_accounts (id, username, password_hash, salt, full_name, designation, region, role)
 VALUES
@@ -121,7 +121,7 @@ VALUES
 INSERT OR REPLACE INTO users (id, username, password_hash, salt, full_name, role, institution_id, apaar_id)
 VALUES
   ('usr_aicte_001', 'aicte.officer', '824e730d989e0352cfb0a1673d07a2791e30717a9b6d5fec437ae261088f5750', 'c5d4d9749769e7571454fd79b79d2ad7', 'Dr. S. K. Mahajan (AICTE Chief Regulatory Officer)', 'AICTE_ADMIN', NULL, NULL),
-  ('usr_inst_001', 'principal.pune', '5ce6651ef4d90f081964a610390d72bd6c21684076d552c40fcf52c134ec367b', 'e8c17281c34c78ce820a1124e9066700', 'Dr. Ramesh Joshi (Principal, Technical College A)', 'INSTITUTE_ADMIN', 'INST-001', NULL),
+  ('usr_inst_001', 'principal.pune', '5ce6651ef4d90f081964a610390d72bd6c21684076d552c40fcf52c134ec367b', 'e8c17281c34c78ce820a1124e9066700', 'Dr. Ramesh Joshi (Principal, Apex Institute of Engineering)', 'INSTITUTE_ADMIN', 'INST-001', NULL),
   ('usr_univ_001', 'registrar.univ', '301b2c4bb975359a21844de3943e2055ede072ecc7f886ea0d82c75de0cbfea8', '002d37270c2f723012aca513ff600724', 'Prof. K. Venkatesh (Registrar, State Affiliating University)', 'UNIVERSITY_ADMIN', NULL, NULL),
   ('usr_student_001', 'student.rahul', '61a1c0df9dbfb018cc68b2dd46cb88d40225f39203fb2fa0b9e9c20db79f8fe8', '1a2784398d44ba4056557f678ed2b7e8', 'Rahul Sharma', 'STUDENT', 'INST-001', '739284019283'),
   ('usr_verifier_001', 'verifier.gov', '02ebdecc9c7fbc3fcca1fcc4648d647833d70405b16992cba0a9cc5f7ffa3b92', 'f2ab869161bb2a63630f857ccd0c3d6e', 'Vikramaditya Rao (Chief Verification Officer, National Gateway)', 'VERIFIER', NULL, NULL);
