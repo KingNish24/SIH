@@ -161,88 +161,50 @@ const initialOrg = queryInst
     <div class="lg:col-span-9 space-y-5 min-w-0">
       <!-- PANEL 1 (Default Visible): Verify by APAAR ID -->
       <div id="panelApaarLookup" role="tabpanel" aria-labelledby="navTabApaarLookup" class="space-y-5">
-        <!-- Top 3 Simple Summary Cards (matching /institution top cards) -->
-        <section aria-label="Verification Summary" class="grid grid-cols-1 sm:grid-cols-3 gap-4 no-print">
-          <!-- Card 1: Verification Status -->
-          <div class="rounded-xl bg-white border border-slate-200 p-4">
-            <div class="text-xs font-semibold text-slate-600">Verification Status</div>
-            <div id="topCardStatus" class="text-2xl font-extrabold text-[#0B1E48] mt-1">
-              Ready
-            </div>
-            <div id="topCardStatusSub" class="text-xs text-slate-500 mt-0.5">
-              Official NAD / AICTE Record
-            </div>
-          </div>
-
-          <!-- Card 2: Student & Roll No. -->
-          <div class="rounded-xl bg-white border border-slate-200 p-4">
-            <div class="text-xs font-semibold text-slate-600">Student &amp; Roll No.</div>
-            <div id="resName" class="text-xl font-extrabold text-[#0B1E48] mt-1 truncate">
-              Enter 12-Digit APAAR
-            </div>
-            <div id="resStudentRollId" class="text-xs font-mono text-slate-500 mt-0.5">
-              {initialApaar ? `Roll: STU-TCA-2020-${initialApaar.slice(-4)}` : 'Roll: Awaiting Lookup'}
-            </div>
-          </div>
-
-          <!-- Card 3: Digital Signature -->
-          <div class="rounded-xl bg-white border border-slate-200 p-4">
-            <div class="text-xs font-semibold text-slate-600">Digital Signature</div>
-            <div id="resCryptoStatus" class="text-xl font-extrabold text-slate-700 mt-1 flex items-center gap-1">
-              <span>Awaiting Check</span>
-            </div>
-            <div id="resConsentPill" class="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
-              <span>DPDP Consent: Pending</span>
-            </div>
-            <span id="i18nTamperVerified" class="hidden">{t.verifier_tamper_verified}</span>
-            <span id="i18nTamperFailed" class="hidden">{t.verifier_tamper_failed}</span>
-          </div>
-        </section>
-
         <!-- Clean Search Card -->
         <div class="rounded-2xl bg-white border border-slate-200 p-6 space-y-4 no-print shadow-xs">
-          <!-- Header Row: Title on Left + 3 Clean Sample Buttons on Right -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h2 class="text-base font-bold text-[#0B1E48]">
-                Check Student Degree or Admission Record
-              </h2>
-              <p class="text-xs text-slate-600 mt-0.5">
-                Enter the student's 12-digit APAAR ID to verify degree status, university signature, and enrollment history.
-              </p>
-            </div>
+          <!-- Header Row -->
+          <div>
+            <h2 class="text-base font-bold text-[#0B1E48]">
+              Check Student Degree or Admission Record
+            </h2>
+            <p class="text-xs text-slate-600 mt-0.5">
+              Enter the student's 12-digit APAAR ID to verify degree status, university signature, and enrollment history.
+            </p>
+          </div>
 
-            <div class="flex flex-wrap items-center gap-2 shrink-0">
-              <button
-                type="button"
-                class="demoApaarBtn px-2.5 py-1.5 rounded-lg text-xs font-bold border border-slate-300 bg-slate-50 hover:bg-slate-100 text-[#0B1E48] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
-                data-apaar="412398471029"
-                data-org="UPSC / Employer Verification"
-              >
-                <span class="w-2 h-2 rounded-full bg-emerald-600 shrink-0" aria-hidden="true"></span>
-                <span>Sample: Valid Degree</span>
-              </button>
+          <!-- Dedicated Sample Records Bar (Never collides with heading) -->
+          <div class="flex flex-wrap items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+            <span class="text-xs font-bold text-slate-600 px-1">Quick Demo Records:</span>
+            <button
+              type="button"
+              class="demoApaarBtn px-2.5 py-1.5 rounded-lg text-xs font-bold border border-slate-300 bg-white hover:bg-slate-100 text-[#0B1E48] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+              data-apaar="412398471029"
+              data-org="UPSC / Employer Verification"
+            >
+              <span class="w-2 h-2 rounded-full bg-emerald-600 shrink-0" aria-hidden="true"></span>
+              <span>Valid Degree (412398471029)</span>
+            </button>
 
-              <button
-                type="button"
-                class="demoApaarBtn px-2.5 py-1.5 rounded-lg text-xs font-bold border border-slate-300 bg-slate-50 hover:bg-slate-100 text-[#0B1E48] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
-                data-apaar="601928374819"
-                data-org="AICTE Vigilance Desk"
-              >
-                <span class="w-2 h-2 rounded-full bg-red-600 shrink-0" aria-hidden="true"></span>
-                <span>Sample: Revoked Degree</span>
-              </button>
+            <button
+              type="button"
+              class="demoApaarBtn px-2.5 py-1.5 rounded-lg text-xs font-bold border border-slate-300 bg-white hover:bg-slate-100 text-[#0B1E48] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+              data-apaar="601928374819"
+              data-org="AICTE Vigilance Desk"
+            >
+              <span class="w-2 h-2 rounded-full bg-red-600 shrink-0" aria-hidden="true"></span>
+              <span>Revoked Degree (601928374819)</span>
+            </button>
 
-              <button
-                type="button"
-                class="demoApaarBtn px-2.5 py-1.5 rounded-lg text-xs font-bold border border-slate-300 bg-slate-50 hover:bg-slate-100 text-[#0B1E48] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
-                data-apaar="739284019283"
-                data-org="NSP Scholarship Desk"
-              >
-                <span class="w-2 h-2 rounded-full bg-amber-600 shrink-0" aria-hidden="true"></span>
-                <span>Sample: Duplicate Alert</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              class="demoApaarBtn px-2.5 py-1.5 rounded-lg text-xs font-bold border border-slate-300 bg-white hover:bg-slate-100 text-[#0B1E48] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+              data-apaar="739284019283"
+              data-org="NSP Scholarship Desk"
+            >
+              <span class="w-2 h-2 rounded-full bg-amber-600 shrink-0" aria-hidden="true"></span>
+              <span>Duplicate Alert (739284019283)</span>
+            </button>
           </div>
 
           <!-- Search Form -->
@@ -293,12 +255,12 @@ const initialOrg = queryInst
 
           <!-- Collapsible Optional Eligibility Check & Consent Pass -->
           <div class="pt-3 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-            <details class="flex-1">
+            <details class="flex-1 min-w-0">
               <summary class="cursor-pointer font-semibold text-slate-700 hover:text-[#0B4EA2] select-none">
                 Optional: Check Minimum CGPA Cutoff or Enter Student Consent Pass
               </summary>
 
-              <div class="mt-3 pt-3 border-t border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              <div class="mt-3 pt-3 border-t border-slate-100 flex flex-col xl:flex-row xl:items-center justify-between gap-3">
                 <div class="flex items-start sm:items-center gap-2.5">
                   <input
                     type="checkbox"
@@ -315,7 +277,7 @@ const initialOrg = queryInst
                   </div>
                 </div>
 
-                <div id="zkPredicateControls" class="flex flex-wrap items-center gap-2.5 text-xs pt-2 lg:pt-0">
+                <div id="zkPredicateControls" class="flex flex-wrap items-center gap-2.5 text-xs pt-2 xl:pt-0">
                   <button
                     type="button"
                     id="zkPresetCutoffBtn"
@@ -381,12 +343,12 @@ const initialOrg = queryInst
         <section id="resultContainer" aria-live="polite" class="rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-xs">
           <!-- Clean White/Slate Header Bar -->
           <div id="resBanner" class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 min-w-0">
               <div class="bg-white rounded-lg border border-slate-200 p-1.5 shrink-0">
                 <img src="/emblem.svg" alt="State Emblem of India" class="h-7 w-auto object-contain" width="22" height="28" />
               </div>
-              <div>
-                <h2 id="resTitle" class="text-base font-bold text-[#0B1E48]">
+              <div class="min-w-0">
+                <h2 id="resTitle" class="text-base font-bold text-[#0B1E48] leading-snug">
                   Official Degree &amp; Enrollment Verification Report
                 </h2>
                 <div class="text-xs text-slate-600 mt-0.5">
@@ -395,7 +357,7 @@ const initialOrg = queryInst
               </div>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2.5 self-start sm:self-center">
+            <div class="flex flex-wrap items-center gap-2.5 shrink-0 self-start sm:self-center">
               <span id="resBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-300">
                 <span>Awaiting Lookup</span>
               </span>
@@ -412,6 +374,41 @@ const initialOrg = queryInst
             </div>
           </div>
 
+          <!-- Compact 3-Cell Summary Bar inside Result Card (Eliminates Top Redundant Cards) -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 border-b border-slate-200 bg-white">
+            <div class="px-5 py-3.5 min-w-0">
+              <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Verification Status</div>
+              <div id="topCardStatus" class="text-lg font-extrabold text-[#0B1E48] mt-0.5 leading-snug">
+                Ready
+              </div>
+              <div id="topCardStatusSub" class="text-xs text-slate-500 mt-0.5">
+                Official NAD / AICTE Record
+              </div>
+            </div>
+
+            <div class="px-5 py-3.5 min-w-0">
+              <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Student &amp; Roll No.</div>
+              <div id="resName" class="text-lg font-extrabold text-[#0B1E48] mt-0.5 leading-snug break-words">
+                Enter 12-Digit APAAR
+              </div>
+              <div id="resStudentRollId" class="text-xs font-mono text-slate-500 mt-0.5">
+                {initialApaar ? `Roll: STU-TCA-2020-${initialApaar.slice(-4)}` : 'Roll: Awaiting Lookup'}
+              </div>
+            </div>
+
+            <div class="px-5 py-3.5 min-w-0">
+              <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Digital Signature</div>
+              <div id="resCryptoStatus" class="text-lg font-extrabold text-slate-700 mt-0.5 leading-snug flex items-center gap-1">
+                <span>Awaiting Check</span>
+              </div>
+              <div id="resConsentPill" class="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
+                <span>DPDP Consent: Pending</span>
+              </div>
+              <span id="i18nTamperVerified" class="hidden">{t.verifier_tamper_verified}</span>
+              <span id="i18nTamperFailed" class="hidden">{t.verifier_tamper_failed}</span>
+            </div>
+          </div>
+
           <div class="p-6 space-y-4">
             <!-- Eligibility Check Banner (shown when cutoff toggle is active) -->
             <div id="resPredicateBanner" class="hidden p-4 rounded-xl border bg-blue-50/70 border-blue-200 text-xs space-y-2"></div>
@@ -419,7 +416,7 @@ const initialOrg = queryInst
             <!-- Degree & Enrollment Table / Grid Body -->
             <div id="resDegrees" class="space-y-4">
               <div class="py-4 px-4 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-600">
-                Enter a 12-digit student APAAR ID above or click <strong>Sample: Valid Degree</strong> to view the official verification report.
+                Enter a 12-digit student APAAR ID above or click <strong>Valid Degree (412398471029)</strong> to view the official verification report.
               </div>
             </div>
 
@@ -465,35 +462,34 @@ const initialOrg = queryInst
         id="vlmForensicsSection"
         role="tabpanel"
         aria-labelledby="navTabScanMarksheet"
-        class="hidden no-print bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-5"
+        class="hidden no-print bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4"
       >
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-4 border-b border-slate-200">
-          <div>
-            <h2 class="text-base font-bold text-[#0B1E48]">
-              Check a Scanned Certificate or Marksheet
-            </h2>
-            <p class="text-xs text-slate-600 mt-0.5">
-              Upload a certificate image or PDF to compare every field on the document against the official AICTE / NAD record.
-            </p>
-          </div>
+        <div>
+          <h2 class="text-base font-bold text-[#0B1E48]">
+            Check a Scanned Certificate or Marksheet
+          </h2>
+          <p class="text-xs text-slate-600 mt-0.5">
+            Upload a certificate image or PDF to compare every field on the document against the official AICTE / NAD record.
+          </p>
+        </div>
 
-          <div class="flex flex-wrap items-center gap-2 shrink-0">
-            <button
-              type="button"
-              id="btnGenAuthenticScan"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 font-bold text-xs transition-colors cursor-pointer"
-            >
-              <span>Load Genuine Sample (CGPA 9.42)</span>
-            </button>
+        <div class="flex flex-wrap items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+          <span class="text-xs font-bold text-slate-600 px-1">Quick Certificate Samples:</span>
+          <button
+            type="button"
+            id="btnGenAuthenticScan"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 font-bold text-xs transition-colors cursor-pointer"
+          >
+            <span>Load Genuine Sample (CGPA 9.42)</span>
+          </button>
 
-            <button
-              type="button"
-              id="btnGenTamperedScan"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-900 border border-red-200 font-bold text-xs transition-colors cursor-pointer"
-            >
-              <span>Load Forged Sample (CGPA 9.85)</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            id="btnGenTamperedScan"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-900 border border-red-200 font-bold text-xs transition-colors cursor-pointer"
+          >
+            <span>Load Forged Sample (CGPA 9.85)</span>
+          </button>
         </div>
 
         <!-- Top Area: Clean Certificate Preview + Upload & Action Controls -->
@@ -963,7 +959,7 @@ const initialOrg = queryInst
         if (!data.success) {
           if (topCardStatus) {
             topCardStatus.textContent = 'Not Found';
-            topCardStatus.className = 'text-2xl font-extrabold text-amber-700 mt-1';
+            topCardStatus.className = 'text-lg font-extrabold text-amber-700 mt-0.5 leading-snug';
           }
           if (topCardStatusSub) topCardStatusSub.textContent = 'Verification Halted';
 
@@ -1088,7 +1084,7 @@ const initialOrg = queryInst
           if (deg.status === 'ISSUED') {
             if (topCardStatus) {
               topCardStatus.textContent = 'Verified';
-              topCardStatus.className = 'text-2xl font-extrabold text-emerald-700 mt-1';
+              topCardStatus.className = 'text-lg font-extrabold text-emerald-700 mt-0.5 leading-snug';
             }
             if (topCardStatusSub) topCardStatusSub.textContent = 'Official NAD / AICTE Record';
 
@@ -1101,7 +1097,7 @@ const initialOrg = queryInst
           } else {
             if (topCardStatus) {
               topCardStatus.textContent = 'Revoked';
-              topCardStatus.className = 'text-2xl font-extrabold text-red-700 mt-1';
+              topCardStatus.className = 'text-lg font-extrabold text-red-700 mt-0.5 leading-snug';
             }
             if (topCardStatusSub) topCardStatusSub.textContent = 'Revoked by Issuing University';
 
@@ -1115,53 +1111,53 @@ const initialOrg = queryInst
 
           if (resDegrees) {
             resDegrees.innerHTML = `
-              <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                <!-- Left 9 Cols: Clean Official Credential Key-Value Table -->
-                <div class="lg:col-span-9 space-y-3">
+              <div class="flex flex-col lg:flex-row gap-6 items-start">
+                <!-- Left Column: Clean Official Credential Key-Value Table -->
+                <div class="flex-1 min-w-0 w-full">
                   <div class="bg-white border border-slate-200 rounded-xl divide-y divide-slate-200 text-sm overflow-hidden">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 px-4 py-3 gap-1">
-                      <div class="text-slate-600 font-semibold">Student Name</div>
-                      <div class="sm:col-span-2 font-bold text-slate-900">${fullStudentName}</div>
+                    <div class="flex flex-col sm:flex-row sm:items-baseline px-4 py-3 gap-1 sm:gap-4">
+                      <div class="sm:w-52 shrink-0 text-slate-600 font-semibold">Student Name</div>
+                      <div class="flex-1 font-bold text-slate-900 min-w-0 break-words">${fullStudentName}</div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-3 px-4 py-3 gap-1">
-                      <div class="text-slate-600 font-semibold">12-Digit APAAR ID &amp; Roll No.</div>
-                      <div class="sm:col-span-2 font-mono font-bold text-[#0B1E48]">
+                    <div class="flex flex-col sm:flex-row sm:items-baseline px-4 py-3 gap-1 sm:gap-4">
+                      <div class="sm:w-52 shrink-0 text-slate-600 font-semibold">12-Digit APAAR &amp; Roll No.</div>
+                      <div class="flex-1 font-mono font-bold text-[#0B1E48] min-w-0 break-words">
                         ${formatApaarHyphenated(apaar)} &bull; <span class="text-slate-700">${rollDisplay}</span>
                       </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-3 px-4 py-3 gap-1">
-                      <div class="text-slate-600 font-semibold">Degree &amp; Branch</div>
-                      <div class="sm:col-span-2 font-bold text-slate-900">
+                    <div class="flex flex-col sm:flex-row sm:items-baseline px-4 py-3 gap-1 sm:gap-4">
+                      <div class="sm:w-52 shrink-0 text-slate-600 font-semibold">Degree &amp; Branch</div>
+                      <div class="flex-1 font-bold text-slate-900 min-w-0 break-words">
                         ${deg.degree_name} &mdash; ${deg.specialization}
                       </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-3 px-4 py-3 gap-1">
-                      <div class="text-slate-600 font-semibold">College Name</div>
-                      <div class="sm:col-span-2 font-semibold text-slate-900">
+                    <div class="flex flex-col sm:flex-row sm:items-baseline px-4 py-3 gap-1 sm:gap-4">
+                      <div class="sm:w-52 shrink-0 text-slate-600 font-semibold">College Name</div>
+                      <div class="flex-1 font-semibold text-slate-900 min-w-0 break-words">
                         ${deg.institution_name || deg.institution_id || 'Apex Institute of Engineering, Pune'}
                       </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-3 px-4 py-3 gap-1">
-                      <div class="text-slate-600 font-semibold">Issuing University</div>
-                      <div class="sm:col-span-2 font-semibold text-slate-900">
+                    <div class="flex flex-col sm:flex-row sm:items-baseline px-4 py-3 gap-1 sm:gap-4">
+                      <div class="sm:w-52 shrink-0 text-slate-600 font-semibold">Issuing University</div>
+                      <div class="flex-1 font-semibold text-slate-900 min-w-0 break-words">
                         ${deg.issuing_authority}
                       </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-3 px-4 py-3 gap-1">
-                      <div class="text-slate-600 font-semibold">Passing Year &amp; CGPA</div>
-                      <div class="sm:col-span-2 font-mono font-bold text-slate-900">
+                    <div class="flex flex-col sm:flex-row sm:items-baseline px-4 py-3 gap-1 sm:gap-4">
+                      <div class="sm:w-52 shrink-0 text-slate-600 font-semibold">Passing Year &amp; CGPA</div>
+                      <div class="flex-1 font-mono font-bold text-slate-900 min-w-0 break-words">
                         ${deg.year_of_passing} &bull; CGPA: ${deg.cgpa}
                       </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-3 px-4 py-3 gap-1">
-                      <div class="text-slate-600 font-semibold">University Signature</div>
-                      <div class="sm:col-span-2 font-bold ${deg.status === 'ISSUED' && sigValid ? 'text-emerald-700' : 'text-red-700'}">
+                    <div class="flex flex-col sm:flex-row sm:items-baseline px-4 py-3 gap-1 sm:gap-4">
+                      <div class="sm:w-52 shrink-0 text-slate-600 font-semibold">University Signature</div>
+                      <div class="flex-1 font-bold min-w-0 break-words ${deg.status === 'ISSUED' && sigValid ? 'text-emerald-700' : 'text-red-700'}">
                         ${
                           deg.status === 'ISSUED'
                             ? '✓ Verified Digital Signature (NAD Ed25519)'
@@ -1172,12 +1168,12 @@ const initialOrg = queryInst
                   </div>
                 </div>
 
-                <!-- Right 3 Cols: Clean QR Code Card -->
-                <div class="lg:col-span-3 flex flex-col items-center justify-center p-4 bg-slate-50 rounded-xl border border-slate-200 text-center">
+                <!-- Right Column: Clean QR Code Card (Never Overflows) -->
+                <div class="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-xl border border-slate-200 text-center w-full lg:w-52 shrink-0">
                   <div class="text-xs font-bold text-[#0B1E48] mb-2">
                     Official QR Code
                   </div>
-                  <div class="p-2 bg-white rounded-lg border border-slate-200">
+                  <div class="p-2 bg-white rounded-lg border border-slate-200 [&_svg]:w-40 [&_svg]:h-40 [&_svg]:max-w-full">
                     ${deg.qrSvg || ''}
                   </div>
                   <div class="text-xs text-slate-500 mt-2">
@@ -1194,7 +1190,7 @@ const initialOrg = queryInst
           if (hasDuplicate) {
             if (topCardStatus) {
               topCardStatus.textContent = 'Duplicate Alert';
-              topCardStatus.className = 'text-2xl font-extrabold text-amber-700 mt-1';
+              topCardStatus.className = 'text-lg font-extrabold text-amber-700 mt-0.5 leading-snug';
             }
             if (topCardStatusSub) topCardStatusSub.textContent = '2 Colleges Simultaneously';
             if (resCryptoStatus) {
@@ -1210,7 +1206,7 @@ const initialOrg = queryInst
           } else {
             if (topCardStatus) {
               topCardStatus.textContent = 'Verified';
-              topCardStatus.className = 'text-2xl font-extrabold text-emerald-700 mt-1';
+              topCardStatus.className = 'text-lg font-extrabold text-emerald-700 mt-0.5 leading-snug';
             }
             if (topCardStatusSub) topCardStatusSub.textContent = 'Active Student Enrollment';
             if (resCryptoStatus) {
@@ -1540,34 +1536,34 @@ const initialOrg = queryInst
       ctx.fillStyle = '#FF9933';
       ctx.font = 'bold 12px Inter, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('NATIONAL ACADEMIC DEPOSITORY (NAD) • ALL INDIA COUNCIL FOR TECHNICAL EDUCATION', w / 2, 52);
+      ctx.fillText('NATIONAL ACADEMIC DEPOSITORY (NAD) • ALL INDIA COUNCIL FOR TECHNICAL EDUCATION', w / 2, 52, w - 90);
 
       ctx.fillStyle = '#FFFFFF';
-      ctx.font = 'bold 21px Inter, serif';
-      ctx.fillText(spec.issuing_authority.toUpperCase(), w / 2, 82);
+      ctx.font = 'bold 20px Inter, serif';
+      ctx.fillText(spec.issuing_authority.toUpperCase(), w / 2, 82, w - 90);
 
       // Certificate Subtitle
       const canvasStudentRollId = `STU-TCA-${(spec.year_of_passing || 2024) - 4}-${(spec.apaar_id || '1029').slice(-4)}`;
       ctx.fillStyle = '#1E3A8A';
       ctx.font = 'bold 12px monospace';
-      ctx.fillText(`APAAR ID: ${spec.apaar_id}  |  ROLL NO: ${canvasStudentRollId}  |  CERT NO: DEG-2024-8841`, w / 2, 126);
+      ctx.fillText(`APAAR ID: ${spec.apaar_id}  |  ROLL NO: ${canvasStudentRollId}  |  CERT NO: DEG-2024-8841`, w / 2, 126, w - 90);
 
       // Main Conferral Text
       ctx.fillStyle = '#475569';
       ctx.font = '14px Inter, sans-serif';
-      ctx.fillText('This is to certify that the Academic Senate has conferred upon', w / 2, 162);
+      ctx.fillText('This is to certify that the Academic Senate has conferred upon', w / 2, 162, w - 90);
 
       ctx.fillStyle = '#0F172A';
       ctx.font = 'bold 26px Inter, serif';
-      ctx.fillText(spec.candidate_name, w / 2, 198);
+      ctx.fillText(spec.candidate_name, w / 2, 198, w - 90);
 
       ctx.fillStyle = '#475569';
       ctx.font = '14px Inter, sans-serif';
-      ctx.fillText('the degree and academic qualification of', w / 2, 228);
+      ctx.fillText('the degree and academic qualification of', w / 2, 228, w - 90);
 
       ctx.fillStyle = '#0F2942';
       ctx.font = 'bold 22px Inter, sans-serif';
-      ctx.fillText(spec.degree_name, w / 2, 260);
+      ctx.fillText(spec.degree_name, w / 2, 260, w - 90);
 
       // Specialization box
       ctx.fillStyle = isTampered ? '#FEF2F2' : '#F8FAFC';
@@ -1577,8 +1573,8 @@ const initialOrg = queryInst
       ctx.strokeRect(80, 278, w - 160, 44);
 
       ctx.fillStyle = isTampered ? '#991B1B' : '#1E293B';
-      ctx.font = 'bold 16px Inter, sans-serif';
-      ctx.fillText(`Branch: ${spec.specialization}`, w / 2, 306);
+      ctx.font = 'bold 15px Inter, sans-serif';
+      ctx.fillText(`Branch: ${spec.specialization}`, w / 2, 306, w - 190);
 
       // Structured Metrics Row (CGPA & Year of Passing)
       ctx.fillStyle = '#F1F5F9';
@@ -1592,12 +1588,12 @@ const initialOrg = queryInst
       ctx.strokeRect(430, 338, 310, 56);
 
       ctx.fillStyle = '#0F172A';
-      ctx.font = 'bold 15px monospace';
-      ctx.fillText(`YEAR OF PASSING: ${spec.year_of_passing}`, 235, 372);
+      ctx.font = 'bold 14px monospace';
+      ctx.fillText(`PASSING YEAR: ${spec.year_of_passing}`, 235, 372, 280);
 
       ctx.fillStyle = isTampered ? '#B91C1C' : '#065F46';
-      ctx.font = 'bold 17px monospace';
-      ctx.fillText(`CUMULATIVE GPA (CGPA): ${spec.cgpa.toFixed(2)}`, 585, 372);
+      ctx.font = 'bold 14px monospace';
+      ctx.fillText(`CGPA: ${spec.cgpa.toFixed(2)} / 10.00`, 585, 372, 280);
 
       if (isTampered) {
         ctx.save();
