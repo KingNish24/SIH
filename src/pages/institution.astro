@@ -738,18 +738,21 @@ const clientI18n = {
             <div class="p-5 sm:p-6 space-y-5">
               <label
                 for="csvFileInput"
+                id="csvDropzoneLabel"
                 tabindex="0"
                 aria-describedby="csvSchemaHint"
                 class="border-2 border-dashed border-slate-300 hover:border-[#0B4EA2] hover:bg-blue-50/30 rounded-xl p-8 text-center cursor-pointer flex flex-col items-center justify-center bg-slate-50 transition-colors"
               >
-                <svg class="w-8 h-8 text-[#0B4EA2] mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <svg class="w-8 h-8 text-[#0B4EA2] mb-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
-                <span class="text-base font-bold text-[#0B1E48]">Click here to select CSV file from your computer</span>
-                <span id="csvSchemaHint" class="text-xs font-mono text-slate-500 mt-1">
+                <span id="csvDropzoneTitle" class="text-base font-bold text-[#0B1E48] pointer-events-none">
+                  Drag &amp; drop your CSV file here, or click to browse
+                </span>
+                <span id="csvSchemaHint" class="text-xs font-mono text-slate-500 mt-1 pointer-events-none">
                   Columns: apaar_id, full_name, program, admission_quota, allotment_ref, batch_year
                 </span>
-                <input type="file" id="csvFileInput" accept=".csv" class="hidden" />
+                <input type="file" id="csvFileInput" accept=".csv,text/csv" class="hidden" />
               </label>
 
               <!-- Embedded CSV Preview & Save Section -->
@@ -1552,12 +1555,52 @@ const clientI18n = {
       }
     });
 
-    // Keyboard support for CSV upload box
-    const dropzoneLabel = document.querySelector('label[for="csvFileInput"]') as HTMLElement | null;
+    // Keyboard & Drag-and-Drop support for CSV upload box
+    const dropzoneLabel = (document.getElementById('csvDropzoneLabel') ||
+      document.querySelector('label[for="csvFileInput"]')) as HTMLElement | null;
+    const dropzoneTitle = document.getElementById('csvDropzoneTitle');
+
     dropzoneLabel?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         csvFileInput?.click();
+      }
+    });
+
+    function setDropzoneActive(active: boolean) {
+      if (!dropzoneLabel) return;
+      if (active) {
+        dropzoneLabel.classList.add('border-[#0B4EA2]', 'bg-blue-50/70', 'ring-2', 'ring-[#0B4EA2]/20');
+        dropzoneLabel.classList.remove('border-slate-300', 'bg-slate-50');
+      } else {
+        dropzoneLabel.classList.remove('border-[#0B4EA2]', 'bg-blue-50/70', 'ring-2', 'ring-[#0B4EA2]/20');
+        dropzoneLabel.classList.add('border-slate-300', 'bg-slate-50');
+      }
+    }
+
+    ['dragenter', 'dragover'].forEach((evtName) => {
+      dropzoneLabel?.addEventListener(evtName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDropzoneActive(true);
+      });
+    });
+
+    ['dragleave', 'dragend'].forEach((evtName) => {
+      dropzoneLabel?.addEventListener(evtName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDropzoneActive(false);
+      });
+    });
+
+    dropzoneLabel?.addEventListener('drop', (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDropzoneActive(false);
+      const droppedFile = e.dataTransfer?.files?.[0];
+      if (droppedFile) {
+        processCsvFile(droppedFile);
       }
     });
 
@@ -1644,9 +1687,11 @@ const clientI18n = {
       if (commitBtn) commitBtn.disabled = valid === 0;
     }
 
-    csvFileInput?.addEventListener('change', (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
+    function processCsvFile(file: File) {
       if (!file) return;
+      if (dropzoneTitle) {
+        dropzoneTitle.textContent = `Loaded File: ${file.name}`;
+      }
 
       const reader = new FileReader();
       reader.onload = (evt) => {
@@ -1700,17 +1745,37 @@ const clientI18n = {
 
           if (parsedRows.length > 0) {
             renderTriageRows(parsedRows);
-            (window as any).showToast?.(`Loaded ${parsedRows.length} rows from CSV. Click "Save Uploaded Students" to finish.`, 'info');
+            (window as any).showToast?.(`Loaded ${parsedRows.length} rows from ${file.name}. Click "Save Uploaded Students" to finish.`, 'info');
           } else {
             (window as any).showToast?.('No valid rows found in CSV file.', 'warning');
           }
         } catch (err: any) {
           (window as any).showToast?.('CSV Error: ' + err.message, 'error');
         } finally {
-          (e.target as HTMLInputElement).value = '';
+          if (csvFileInput) csvFileInput.value = '';
         }
       };
       reader.readAsText(file);
+    }
+
+    csvFileInput?.addEventListener('change', (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        processCsvFile(file);
+      }
+    });
+
+    // Also allow dropping anywhere inside #panelBulkCsv without browser navigating away
+    panelBulkCsv?.addEventListener('dragover', (e) => {
+      e.preventDefault();
+    });
+    panelBulkCsv?.addEventListener('drop', (e: DragEvent) => {
+      e.preventDefault();
+      setDropzoneActive(false);
+      const droppedFile = e.dataTransfer?.files?.[0];
+      if (droppedFile) {
+        processCsvFile(droppedFile);
+      }
     });
 
     commitBtn?.addEventListener('click', async () => {
